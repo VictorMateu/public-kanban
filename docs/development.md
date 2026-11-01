@@ -17,6 +17,7 @@
 | @supabase/supabase-js | 2.118.0 |
 | @supabase/ssr | 0.12.7 |
 | server-only | 0.0.1 |
+| next-intl | 4.14.9 |
 
 Type packages and transitive dependencies are also pinned in `package.json` and `package-lock.json`. Install with `npm ci`; use `npm install` only for intentional, confirmed dependency changes.
 
@@ -38,13 +39,36 @@ npm start
 
 The application builds without Supabase configuration and does not query the database during compilation. After changing `NEXT_PUBLIC_*` variables, restart `dev` and rebuild before using `start`: those variables are incorporated into the browser bundle at build time.
 
+## Interface internationalization
+
+The owner selected `next-intl` with English (`en`) as the default, Spanish (`es`) and Catalan (`ca`). Paths such as `/projects/[slug]` and `/admin/login` stay unchanged; no `[locale]` route segment or localization proxy is used. The existing Supabase proxy remains unchanged.
+
+- `messages/en.json` is the source catalog; `messages/es.json` and `messages/ca.json` hold translations.
+- Catalogs use two levels: a namespace containing string messages. `i18n/messages.ts` merges missing translations from English, allowing progressive translation.
+- `i18n/locales.ts` defines the supported locale allowlist and English default.
+- `i18n/request.ts` reads the preference per request and configures messages and UTC.
+- `i18n/types.d.ts` checks locale and message keys through TypeScript augmentation.
+- `next.config.ts` registers the plugin; the root layout provides messages to client components and sets the HTML language.
+
+Use `getTranslations` in async Server Components and `useTranslations` in synchronous or client components. Keep new UI text, metadata, accessible labels and user-facing errors in the catalogs. ICU messages handle task-count plurals. Authentication actions return stable error codes; the client translates them in the current locale.
+
+The native language form is available in the public header and administrative layout. Its Server Action validates the submitted locale, writes `portfolio-kanban-locale` and revalidates the root layout. The preference lasts one year and uses `Path=/`, `SameSite=Lax`, `HttpOnly` and `Secure` in production. The cookie contains only `en`, `es` or `ca`; visiting without a preference does not create it. Invalid or missing values use English, without browser-language detection. Authentication cookies and authorization are independent of this preference.
+
+The existing interface has translations in all three languages. Project names, descriptions, columns and task content remain owner-authored data and are not automatically translated. Date-only values retain their calendar day through UTC while their display follows the chosen locale.
+
+Cookie-based language selection means a URL alone does not select a language. Language-specific URLs and related SEO behavior would require a separate routing decision. The selector's visual treatment remains provisional. A [data-protection and cookie review](ideas.md#data-protection-and-cookie-compliance-review) is pending before publication; no legal conclusion has been established.
+
+See [ADR 0003](adr/0003-interface-internationalization.md) for the decision and alternatives.
+
 ## Existing public implementation — acceptance pending
 
-The following describes the preserved phase 3 code, not an accepted navigation or visual design. Review [Product requirements](product.md) before changing it. Existing Spanish interface text will be translated in the subsequent UI iteration.
+The following describes the preserved phase 3 navigation and visual design, which remain pending acceptance. Its interface text now uses the internationalization configuration above. Review [Product requirements](product.md) before changing the product experience.
 
 `/` lists published projects by `position, id`. `/projects/[slug]` shows a project's description, columns and tasks, including priority and a due date when present. Columns and tasks follow the same ordering, and the board supports horizontal scrolling using the keyboard and touch input.
 
 The routes use dynamically rendered Server Components. Queries use the anonymous client and do not persist responses in a shared cache. `React.cache` shares the project query between metadata and the page only within a request. Private and nonexistent projects return the same generic 404, including metadata.
+
+Observed limitation: project 404 responses currently deliver the localized heading in the React/RSC payload while their initial HTML body is empty. HTTP tests check the actual React heading and absence of private data; they do not establish a working project 404 without JavaScript. Unknown-route 404 pages do render localized HTML. Browser hydration and a solution for the project-404 initial response remain pending review; no framework upgrade or routing workaround has been introduced.
 
 Project and task loading uses `Suspense`. The board does not start streaming until publication has been checked, preserving the 404 response for unavailable projects. The `app/(public)/` route group currently shares a header, footer and error boundary without changing URLs or the existing administrative routes. This grouping remains part of the structure review.
 
@@ -58,9 +82,9 @@ After starting local Supabase, building and serving the application, run in anot
 npm run test:public
 ```
 
-The command requires Docker and the `supabase_db_portfolio-kanban` container. It accepts only an HTTP server on `localhost` or `127.0.0.1`, defaulting to port 3000. Set `KANBAN_TEST_URL` to use a different local HTTP origin.
+At this commit, the command runs `tests/i18n-http.test.mjs`: locale cookies, unchanged URLs, English fallback, request isolation and localized invalid-sign-in feedback. It requires the application running with the documented local Supabase configuration; it does not create users or database fixtures. Only an HTTP origin on `localhost` or `127.0.0.1` is accepted, defaulting to port 3000. `KANBAN_TEST_URL` selects another local HTTP origin.
 
-The tests create only temporary projects, columns and tasks in the local database and delete their own specific UUIDs during cleanup. They do not create users or change administrator authorization. They check ordering, drafts, 404 responses, empty states, text escaping, dates, priorities and unpublishing. They can preserve the owner's existing local account. The phase 2 SQL suite instead requires an empty test instance.
+The public-board implementation and its separate integration suite remain uncommitted working-tree changes pending review. The recorded combined-working-tree results in [Validation](validation.md) include that additional suite.
 
 ## Environment variables
 
@@ -169,12 +193,13 @@ Current organization:
 - `lib/projects/`, `lib/columns/`, `lib/tasks/`: domain queries and utilities.
 - `supabase/`: configuration, migrations and SQL tests.
 - `tests/`: application and public HTTP tests.
+- `i18n/` and `messages/`: interface locale configuration, selection action, types and translation catalogs.
 
 Generated Next.js and TypeScript files are ignored by Git. This inventory describes the preserved implementation; it does not authorize new layers or settle future structure choices.
 
 ## Documentation and comments
 
-Use English for repository content, including instructions, documentation, interface text and comments. Conversation with the owner may remain in Spanish. The existing interface will be translated as part of the subsequent UI work.
+Use English for repository instructions, documentation, code and comments. Interface text uses the English source catalog with Spanish and Catalan translations. Conversation with the owner may remain in Spanish.
 
 The owner makes project decisions. ADRs, documentation and comments should describe them using wording such as "It has been decided", "The project uses" or "The owner selected", with context, reasons and consequences. Do not attribute decisions to agreements or consensus between parties. References to confirmation apply to actions that actually require permission.
 

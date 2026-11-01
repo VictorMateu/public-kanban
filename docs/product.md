@@ -6,7 +6,9 @@ These requirements record the owner's product direction. They describe the inten
 
 Visitors should be able to understand the state of the owner's projects, explore their tasks and find supporting project information. The minimum experience is a conventional Kanban showing current progress. How to present changes over time remains undecided.
 
-Portfolio Kanban will be the first project featured in the projects section of the owner's personal website. The repository, documentation and interface use English to reach an international audience, including recruiters. Existing interface text will be translated during the subsequent UI work.
+Portfolio Kanban will be the first project featured in the projects section of the owner's personal website. Repository instructions, documentation and code use English to reach an international audience, including recruiters. The interface supports English (default), Spanish and Catalan from this initial stage, with progressive translation through `next-intl` message catalogs.
+
+Language preference is stored in a cookie while URLs remain unchanged. Without a valid preference, English is used regardless of browser-language headers. Localizing project or task content is outside this interface-only scope.
 
 ## Confirmed requirements
 
@@ -85,10 +87,12 @@ Possible approaches are recorded in [Future ideas](ideas.md).
 | Columns | Currently stored per project; reusable definitions and propagation choices are not implemented |
 | Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
 | New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
-| Language | Instructions and documentation are English; existing Spanish interface text is preserved for the UI iteration |
+| Language | English instructions and documentation; existing interface localized in English, Spanish and Catalan, with cookie selection and English fallback |
 | Hosting and remote services | No deployments or remote Supabase connection |
 
 The schema is an implementation baseline that can be revised through confirmed, versioned migrations. Its existing fields and constraints do not settle open product decisions.
+
+Project 404 responses currently deliver localized content through the React payload but have an empty initial HTML body. Resolving that rendering limitation and verifying hydration remain pending; see [Validation](validation.md#project-404-rendering-limitation).
 
 ## Decisions required before the relevant implementation
 
@@ -103,6 +107,6 @@ The schema is an implementation baseline that can be revised through confirmed, 
 
 ## Current work boundary
 
-The current iteration updates instructions and documentation. Existing UI and application code are preserved. The next implementation task must first propose the navigation, UI and structure review scope.
+The current iteration integrates interface internationalization while preserving the existing navigation and visual design. The language selector is a provisional native form; shadcn/ui adoption, administration CRUD, role-aware board queries and database changes remain outside this task. The next UI iteration must first propose the navigation, visual design and structure review scope.
 
 Successful tests do not imply acceptance of provisional product or design decisions. Phase 3 remains pending acceptance until the owner reviews those decisions. Future phases, deployments and remote operations require explicit confirmation.

@@ -122,8 +122,22 @@ Its consideration does not establish the application's visual design.
 
 ## Language and code style
 
-Use English for repository instructions, documentation, interface text,
-identifiers, comments and commit messages.
+Use English for repository instructions, documentation, identifiers,
+comments and commit messages.
+
+Use `next-intl` message catalogs for interface text, accessible labels,
+user-facing errors and metadata. English (`en`) is the default and source
+language; Spanish (`es`) and Catalan (`ca`) are supported. Missing translations
+fall back to English within each namespace, allowing progressive translation.
+
+Keep existing URLs independent of language. Read the validated language
+preference from its cookie; do not add locale route prefixes or automatic
+browser-language detection without confirmation. Format dates and plurals
+for the selected locale, preserving UTC for date-only database values.
+
+Project and task content remains owner-authored data, separate from interface
+translations. Do not add automatic content translation or schema changes
+as part of interface localization.
 
 Conversation with the owner may remain in Spanish.
 

@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Portfolio Kanban",
-  description: "El tablero de proyectos de Portfolio Kanban está en construcción.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: "Portfolio Kanban", description: t("description") };
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="es">
-      <body>{children}</body>
+    <html lang={locale}>
+      <body><NextIntlClientProvider>{children}</NextIntlClientProvider></body>
     </html>
   );
 }

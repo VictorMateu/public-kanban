@@ -1,0 +1,87 @@
+{
+  "Common": {
+    "skipContent": "Skip to content",
+    "navigation": "Main navigation",
+    "projects": "Projects",
+    "privateAccess": "Administrator sign-in",
+    "footer": "Projects, tasks and progress.",
+    "exploreBoard": "Explore board",
+    "retry": "Try again",
+    "viewProjects": "View projects",
+    "backHome": "Back to home"
+  },
+  "Language": {
+    "label": "Interface language",
+    "apply": "Apply"
+  },
+  "Metadata": {
+    "description": "Explore portfolio projects and follow the progress of their tasks on a public Kanban board."
+  },
+  "Home": {
+    "eyebrow": "Ideas in motion",
+    "introduction": "Discover portfolio projects and follow their progress, task by task.",
+    "projects": "Projects",
+    "openProject": "Open a project to explore its board.",
+    "loading": "Loading projects…",
+    "publishedProjects": "Published projects",
+    "unavailableTitle": "Projects unavailable",
+    "unavailableDescription": "Projects cannot be loaded right now. Please try again later.",
+    "emptyTitle": "No published projects yet",
+    "emptyDescription": "This space will bring together portfolio projects and their progress. Come back soon to discover them."
+  },
+  "Project": {
+    "label": "Project",
+    "allProjects": "All projects",
+    "board": "Board",
+    "boardDescription": "Explore the tasks in each column.",
+    "readOnly": "Read only",
+    "loading": "Loading board…",
+    "unavailableTitle": "Project unavailable",
+    "unavailableDescription": "This project cannot be loaded right now. Please try again later.",
+    "notFoundTitle": "Project not found",
+    "notFoundDescription": "The project you are looking for is unavailable. You can explore published projects from the home page."
+  },
+  "Board": {
+    "emptyTitle": "This board has no columns yet",
+    "emptyDescription": "This project's columns and tasks will appear here when available.",
+    "region": "Board columns and tasks",
+    "taskCount": "{count, plural, one {# task} other {# tasks}}",
+    "emptyColumn": "No tasks yet."
+  },
+  "Task": {
+    "priority": "Priority",
+    "priorityValue": "Priority {priority}",
+    "low": "low",
+    "medium": "medium",
+    "high": "high",
+    "dueDate": "Due date:"
+  },
+  "Auth": {
+    "title": "Administrator sign-in",
+    "description": "Exclusive access for the owner of Portfolio Kanban.",
+    "email": "Email address",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "adminTitle": "Administration",
+    "verified": "Administrator session verified. Board management will be implemented in a later phase.",
+    "notConfigured": "Administrator sign-in is currently unavailable.",
+    "invalidCredentials": "Unable to sign in with the provided credentials.",
+    "signInUnavailable": "Unable to sign in. Please try again later.",
+    "signOutFailed": "Unable to sign out. Please try again."
+  },
+  "Error": {
+    "title": "Unable to load the content",
+    "description": "There was a problem loading the projects. Please try again in a moment."
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for is unavailable."
+  },
+  "Construction": {
+    "status": "Under construction",
+    "description": "The board is under construction. Here you will be able to explore portfolio projects, their tasks and progress."
+  }
+}

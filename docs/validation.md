@@ -107,3 +107,55 @@ After applying the owner-reviewed instructions and English documentation, the fo
 | `git diff --check` | Passed; Git reported only line-ending conversion notices |
 
 No database migrations, database tests, HTTP integration tests or browser checks were rerun for this documentation-only change. Their previous results remain historical evidence, with the prerequisites and limitations above. No users, authorization records or application data were changed. No commits, pushes, deployments or remote connections were made.
+
+## Interface internationalization — 2026-11-01
+
+After integrating `next-intl` 4.14.9 with English, Spanish and Catalan, the final application checks passed:
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route types and TypeScript passed |
+| `npm test` | All 20 application tests passed |
+| `npm run build` | Production build passed with existing local Supabase configuration |
+| `npm run test:public` | All 18 HTTP tests passed against the production build on local port 3001 |
+| Documentation and diff checks | Nine Markdown documents, 36 local links and six heading anchors checked; `git diff --check` passed |
+| Credential-pattern scan | No credential patterns found in changed files; `.env.local` remains ignored |
+
+Type generation and build ran under the real Windows user because the agent's restricted sandbox could not use SWC's native cache. The normal user environment completed those checks successfully. No project permission changes or extra dependencies were introduced as a cache workaround.
+
+Unit coverage includes validated locale selection, English fallback within namespaces, translated authentication/error messages, ICU task-count plurals and date-only formatting without timezone shifts.
+
+HTTP coverage includes:
+
+- Unchanged home, project and sign-in URLs with locale cookies for all three languages.
+- Localized HTML language, metadata, sign-in fields, task labels and plural counts.
+- English default for missing or unsupported cookies, regardless of browser-language headers.
+- Independent locale responses for concurrent visitors.
+- Native Server Action preference changes, persistence, cookie attributes and rejection of unsupported values.
+- Real localized invalid-sign-in feedback without user creation, permission grants or successful authentication.
+- Existing publication visibility, ordering, text escaping, unavailable/empty distinctions and administrator-route redirects.
+
+Temporary application fixtures were cleaned up by their own UUIDs. The suite compared project, column, task, user and administrator counts before and after, preserving existing users and authorization. No migrations, schema changes or RLS changes were executed. The SQL suite requiring an empty database was not rerun.
+
+A final read-only count confirmed zero projects, columns and tasks, with one Auth user and one authorized administrator. The temporary HTTP test server was stopped after validation; the existing server on port 3000 was not replaced.
+
+### Project 404 rendering limitation
+
+Project 404 responses preserve HTTP 404, hide private data and contain the localized heading as a React element in the RSC payload. However, the initial HTML uses an empty error shell without the heading or HTML language attribute. A temporary static heading showed the same behavior, so replacing translated text alone did not resolve it. The final implementation retains the standard localization setup; diagnostic code was removed.
+
+Tests explicitly inspect the React heading rather than accepting a matching string from the serialized message catalog. They do not claim that the heading exists in initial HTML or that the page works without JavaScript. Unknown-route 404 pages do contain localized HTML.
+
+Browser visual review and hydration checks could not run because both native computer access and the browser-access host were unavailable. Resolving the project-404 initial response and reviewing the provisional language-selector design remain pending. Language-specific URLs, administration CRUD and role-aware board access are outside this iteration.
+
+The [data-protection and cookie review](ideas.md#data-protection-and-cookie-compliance-review) is recorded for the pre-publication stage. No legal-compliance conclusion has been established.
+
+## Isolated i18n commit validation — 2026-11-01
+
+The internationalization changes were separated from the uncommitted public-board implementation. The selected Git index was exported to an ignored temporary directory and validated independently, using the original construction page translated in place. The pending project routes, board components, slug/date utilities and public-board tests were excluded.
+
+For this isolated selection, lint, type checking and the production build passed; all 15 application tests and seven i18n HTTP tests passed. The HTTP suite checked the three language preferences, English fallback, request isolation, native cookie selection and localized invalid-sign-in feedback. It created no database fixtures or users.
+
+The combined-working-tree results of 20 application tests and 18 HTTP tests above also include the pending public-board work and must not be confused with the isolated commit's suite. Next.js reported multiple lockfiles because the temporary export lived below the repository; this warning was specific to that validation arrangement.
+
+Public-board translations remain with their uncommitted pages and components. The isolated commit retains the original construction-page layout and introduces no project-listing or board functionality.

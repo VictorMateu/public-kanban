@@ -7,6 +7,7 @@ A public Kanban for exploring my projects, their progress and supporting informa
 - **Phase 1 complete:** Next.js App Router, strict TypeScript, Tailwind CSS and ESLint.
 - **Phase 2 validated locally:** Supabase schema, password authentication, single-administrator authorization and RLS.
 - **Phase 3 implementation preserved; acceptance pending:** a public project list and read-only boards exist. Navigation, design and structure will be reviewed before this phase is accepted.
+- The interface supports English (default), Spanish and Catalan through `next-intl`, with a cookie preference and unchanged URLs.
 - Administration CRUD and the additional [product requirements](docs/product.md) are not implemented. No remote services are connected or deployments made.
 
 ## Stack and local development
@@ -38,6 +39,7 @@ Open [localhost:3000](http://localhost:3000). Follow the [development guide](doc
 - [Validation evidence and limitations](docs/validation.md)
 - [ADR 0001: Next.js and Supabase](docs/adr/0001-nextjs-and-supabase.md)
 - [ADR 0002: Single administrator and RLS](docs/adr/0002-single-administrator-and-rls.md)
+- [ADR 0003: Interface internationalization](docs/adr/0003-interface-internationalization.md)
 
 The next step is to review navigation, UI and structure proposals. Each implementation scope and phase transition requires the owner's confirmation.
 

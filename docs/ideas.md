@@ -48,3 +48,11 @@ No event model, history-retention policy, release system or automatic publicatio
 If the project evolves in that direction, an AI integration might draft change messages for the owner to review.
 
 This remains a future possibility. No provider, dependency, external connection or data transfer has been approved. A proposal would need to cover usefulness, cost, privacy, input data and the owner's review before publication.
+
+## Data protection and cookie compliance review
+
+Before public deployment, review which data-protection and cookie rules apply to the actual application, hosting and intended audience. The absence of public forms or public sign-in does not settle that review.
+
+Include the language-preference cookie and the administrator's authentication cookies in the review. Document each cookie's purpose, contents, duration and access, then determine whether information, consent, controls or other privacy documentation are required under the applicable rules.
+
+Also inspect any personal-data processing introduced by hosting, request logs or future external services. No legal classification, exemption or compliance conclusion has been established. This is a pending pre-publication review, not authorization to add analytics, tracking or a consent-management dependency.
