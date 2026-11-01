@@ -1,49 +1,55 @@
-# ADR 0002: un único administrador y permisos mediante RLS
+# ADR 0002: Single administrator and RLS authorization
 
-- Estado: aceptada.
-- Fecha: 2026-11-01.
-- Alcance: datos, autenticación y seguridad de la fase 2.
+- Status: accepted.
+- Date: 2026-11-01.
+- Scope: data, authentication and security in phase 2.
 
-## Contexto
+## Context
 
-La lectura debe ser pública solo para los proyectos publicados y sus columnas y tareas. La escritura corresponde a un único propietario. No se permite registro público, colaboración multiusuario ni confiar en permisos enviados por el frontend.
+Public reading must include only published projects and their columns and tasks. Writes belong to a single owner. Public registration, multiuser collaboration and permissions supplied by the frontend are not allowed.
 
-## Decisión
+## Decision
 
-Guardar el UUID de Supabase Auth autorizado en `private.administrator`. Una clave primaria booleana con restricción a `TRUE` limita la tabla a una fila. El UUID referencia `auth.users.id`; no se crean usuarios ni se asigna un administrador desde las migraciones o la aplicación.
+Store the authorized Supabase Auth UUID in `private.administrator`. A boolean primary key restricted to `TRUE` limits the table to one row. The UUID references `auth.users.id`; migrations and the application neither create users nor assign an administrator.
 
-Solo el propietario de la base de datos modifica esa tabla mediante SQL. El esquema privado no se expone por la Data API y no tiene permisos para `anon` o `authenticated`.
+Only the database owner changes that table through SQL. The private schema is not exposed by the Data API and grants no permissions to `anon` or `authenticated`.
 
-La función `public.is_admin()` no recibe argumentos: compara `auth.uid()` con el UUID autorizado. Usa `SECURITY DEFINER`, nombres de objetos cualificados y `search_path` vacío; solo se concede ejecución a `authenticated`. El servidor y las políticas consultan esa misma autorización, sin duplicar un UUID en variables de entorno ni confiar en email o metadata.
+`public.is_admin()` takes no arguments: it compares `auth.uid()` with the authorized UUID. It uses `SECURITY DEFINER`, qualified object names and an empty `search_path`; execution is granted only to `authenticated`. The server and policies query the same authorization, without duplicating a UUID in environment variables or trusting email or metadata.
 
-Habilitar RLS y revocar los permisos predeterminados antes de conceder los necesarios. Los proyectos son privados por defecto.
+Enable RLS and revoke default permissions before granting the required access. Projects are private by default.
 
-| Identidad | Lectura | Escritura |
+| Identity | Read | Write |
 | --- | --- | --- |
-| Anónimo | Publicaciones y sus columnas/tareas | Denegada |
-| Autenticado sin autorización | Igual que anónimo | Denegada |
-| UUID autorizado | Todos los proyectos, columnas y tareas | Permitida por RLS |
+| Anonymous | Published projects and their columns/tasks | Denied |
+| Authenticated without authorization | Same as anonymous | Denied |
+| Authorized UUID | All projects, columns and tasks | Allowed by RLS |
 
-El acceso del administrador usa correo y contraseña de una cuenta creada manualmente. El registro público y los inicios anónimos permanecen desactivados. Una identidad autenticada sin autorización se rechaza y se cierra su sesión desde el flujo de acceso de la aplicación.
+Administrator sign-in uses the email and password of a manually created account. Public registration and anonymous sign-ins remain disabled. An authenticated identity without authorization is rejected and signed out by the application's sign-in flow.
 
-La aplicación usa únicamente una clave publicable. Las consultas públicas no heredan la sesión administrativa; ocultar botones o proteger rutas no sustituye RLS.
+The application uses only a publishable key. Public queries do not inherit the administrator's session; hiding controls or protecting routes does not replace RLS.
 
-## Integridad de los datos
+## Data integrity
 
-`projects`, `columns` y `tasks` usan UUID, posiciones enteras no negativas y timestamps con zona horaria. Un trigger conserva `created_at` y actualiza `updated_at`. Los empates de posición se resuelven con el orden `position, id`.
+`projects`, `columns` and `tasks` use UUIDs, nonnegative integer positions and timestamps with time zone. A trigger preserves `created_at` and updates `updated_at`. Position ties use `position, id` ordering.
 
-El slug de proyecto es único y admite minúsculas y guiones; nombres y títulos no son vacíos y tienen longitud acotada. Las descripciones son opcionales. Las tareas admiten prioridad `low`, `medium` o `high` y fecha límite opcional; su columna representa el estado.
+Project slugs are unique and allow lowercase letters, numbers and hyphens; names and titles are nonempty with bounded lengths. Descriptions are optional. Tasks allow optional `low`, `medium` or `high` priority and an optional due date; their column represents their state.
 
-Las relaciones eliminan en cascada los descendientes del proyecto o columna. La clave foránea compuesta `(column_id, project_id)` impide que una tarea pertenezca a una columna de otro proyecto. Las restricciones e índices exactos están en las [migraciones](../../supabase/migrations/20261024000100_create_kanban.sql); los permisos, en la [migración de RLS](../../supabase/migrations/20261024000200_authorize_kanban.sql).
+Relationships cascade deletion to the descendants of a project or column. The composite `(column_id, project_id)` foreign key prevents a task from belonging to another project's column. Exact constraints and indexes are in the [schema migration](../../supabase/migrations/20261024000100_create_kanban.sql); permissions are in the [RLS migration](../../supabase/migrations/20261024000200_authorize_kanban.sql).
 
-## Alternativas consideradas
+## Alternatives considered
 
-- UUID fijo en una función SQL: se eligió la tabla privada de una fila para cambiar la autorización mediante una operación administrativa explícita.
-- Permisos por email o metadata editable: se descartaron porque no constituyen autorización fiable.
-- Enlace mágico: se eligió correo y contraseña para el acceso del propietario, sin añadir un flujo de correo.
+- Fixed UUID in a SQL function: the private singleton table was selected so authorization can change through an explicit administrative operation.
+- Permissions based on email or editable metadata: rejected because they do not provide reliable authorization.
+- Magic link: email and password were selected for owner access without adding an email-link flow.
 
-## Consecuencias
+## Consequences
 
-Cambiar o eliminar el UUID revoca los permisos en la base de datos inmediatamente, sin esperar a que caduque el JWT. Borrar el usuario de Auth elimina su autorización mediante la clave foránea.
+Changing or removing the UUID revokes database permissions immediately, without waiting for JWT expiration. Deleting the Auth user removes authorization through the foreign key.
 
-El propietario debe crear y autorizar manualmente su cuenta. Los cambios de autorización y las migraciones remotas requieren confirmación. Las pruebas locales de RLS y de autenticación no sustituyen la comprobación del proyecto remoto que se configure posteriormente.
+The owner must create and authorize the account manually. Authorization changes and remote migrations require confirmation. Local RLS and authentication tests do not replace checks against a subsequently configured remote project.
+
+## Subsequent requirements not implemented here
+
+The owner has since requested individually hidden tasks and comments with selectable visibility. The policies recorded above implement project-level publication only. They do not implement those additional privacy rules. Reusable columns and automatic actual completion dates are also outside this migration's scope.
+
+Those changes require confirmed schema and security proposals, new migrations and access-policy tests before exposure. See [Product requirements](../product.md).

@@ -1,65 +1,46 @@
 # Portfolio Kanban
 
-Tablero público para mostrar los proyectos de mi portfolio, sus tareas y su evolución. Cualquier persona podrá consultar los proyectos publicados; únicamente el propietario podrá administrar los datos.
+A public Kanban for exploring my projects, their progress and supporting information. Visitors can browse published content; only the owner can manage it. Portfolio Kanban will also be featured as a project on my personal website.
 
-El proyecto prioriza sencillez, accesibilidad, seguridad y mantenimiento, con una única aplicación Next.js y persistencia en Supabase.
+## Status
 
-## Estado
+- **Phase 1 complete:** Next.js App Router, strict TypeScript, Tailwind CSS and ESLint.
+- **Phase 2 validated locally:** Supabase schema, password authentication, single-administrator authorization and RLS.
+- **Phase 3 implementation preserved; acceptance pending:** a public project list and read-only boards exist. Navigation, design and structure will be reviewed before this phase is accepted.
+- Administration CRUD and the additional [product requirements](docs/product.md) are not implemented. No remote services are connected or deployments made.
 
-- **Fase 1 completada:** base del proyecto y página de inicio responsive con el tablero en construcción.
-- **Fase 2 validada en local:** esquema PostgreSQL, autenticación por contraseña, autorización de un único administrador mediante UUID, políticas RLS y consultas tipadas.
-- **Pendiente:** crear manualmente la cuenta definitiva del propietario y autorizarla. El tablero visual, el listado público de proyectos y el CRUD de administración todavía no están implementados.
-- No hay proyectos de ejemplo en la aplicación ni servicios remotos conectados.
+## Stack and local development
 
-## Alcance previsto
-
-El MVP permitirá consultar proyectos y tareas en un Kanban con columnas iniciales Pendiente, En progreso y Completado. El propietario podrá crear, editar, mover y eliminar los datos desde un área privada. Solo serán públicos los proyectos publicados y sus columnas y tareas.
-
-Quedan fuera del alcance inicial el registro público, la colaboración multiusuario, pagos, notificaciones y tiempo real. No se incorpora un backend independiente ni un ORM adicional.
-
-## Stack
-
-- Next.js 16.4.3 con App Router y React 19.3.1.
-- TypeScript estricto y Tailwind CSS 4.3.3.
-- Supabase PostgreSQL, Auth y Row Level Security.
-- ESLint, tests nativos de Node.js y pruebas SQL con pgTAP.
-
-Las versiones exactas están fijadas en `package.json` y `package-lock.json`. Los requisitos y las limitaciones de compatibilidad están en la [guía de desarrollo](docs/development.md).
-
-## Desarrollo local
-
-Requiere Node.js 24.x y npm 11.x. Para usar Supabase local también se necesita Docker funcionando.
+Next.js 16.4.3, React 19.3.1, strict TypeScript, Tailwind CSS 4.3.3 and Supabase PostgreSQL/Auth. Use Node.js 24.x and npm 11.x; Docker is required for local Supabase.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-La aplicación se abre en [http://localhost:3000](http://localhost:3000). Sin configurar Supabase, la página inicial funciona y el acceso administrativo muestra un aviso. Consulta la [configuración de Supabase y del administrador](docs/development.md#supabase-local) para habilitar el acceso.
+Open [localhost:3000](http://localhost:3000). Follow the [development guide](docs/development.md) to configure local Supabase and the administrator. Without configuration, the application shows an unavailable state and disables sign-in.
 
-| Comando | Finalidad |
+| Command | Purpose |
 | --- | --- |
-| `npm run lint` | Revisar el código sin permitir advertencias |
-| `npm run typecheck` | Generar tipos de rutas y comprobar TypeScript |
-| `npm test` | Ejecutar las pruebas de aplicación |
-| `npm run build` | Compilar para producción |
-| `npm start` | Servir una compilación de producción existente |
+| `npm run lint` | Check code without warnings |
+| `npm run typecheck` | Generate route types and check TypeScript |
+| `npm test` | Run application tests |
+| `npm run test:public` | Test public HTTP routes with local Next.js and Supabase running |
+| `npm run build` | Build for production |
+| `npm start` | Serve an existing production build |
 
-## Documentación
+## Documentation
 
-- [Desarrollo, variables de entorno, migraciones y administrador](docs/development.md).
-- [Validaciones y resultados locales](docs/validation.md).
-- [ADR 0001: aplicación Next.js e integración con Supabase](docs/adr/0001-nextjs-and-supabase.md).
-- [ADR 0002: autorización de un único administrador y RLS](docs/adr/0002-single-administrator-and-rls.md).
+- [Agent instructions and required reading](AGENTS.md)
+- [Product requirements and open decisions](docs/product.md)
+- [Future ideas](docs/ideas.md)
+- [Development, configuration and database operations](docs/development.md)
+- [Validation evidence and limitations](docs/validation.md)
+- [ADR 0001: Next.js and Supabase](docs/adr/0001-nextjs-and-supabase.md)
+- [ADR 0002: Single administrator and RLS](docs/adr/0002-single-administrator-and-rls.md)
 
-## Próximas fases
+The next step is to review navigation, UI and structure proposals. Each implementation scope and phase transition requires the owner's confirmation.
 
-3. Consulta pública: listado de proyectos y tablero en modo lectura.
-4. Administración: CRUD de proyectos, columnas y tareas sobre el acceso privado existente.
-5. Calidad y despliegue: ampliar pruebas, revisar accesibilidad y publicar en Vercel.
+## License
 
-Cada fase requiere revisión y confirmación antes de avanzar.
-
-## Licencia
-
-El código se distribuye bajo la [licencia MIT](LICENSE). Se permite copiar, modificar y redistribuir, incluso con fines comerciales, conservando el aviso de copyright y la licencia. Se proporciona sin garantías. Las dependencias conservan sus propias licencias.
+[MIT](LICENSE). Copying, modification and redistribution, including commercial use, are permitted while retaining the copyright and license notices. The code is provided without warranty. Dependencies retain their own licenses.
