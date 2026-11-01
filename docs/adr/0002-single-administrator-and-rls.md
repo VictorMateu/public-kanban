@@ -1,6 +1,6 @@
 # ADR 0002: un único administrador y permisos mediante RLS
 
-- Estado: aceptada por el propietario.
+- Estado: aceptada.
 - Fecha: 2026-11-01.
 - Alcance: datos, autenticación y seguridad de la fase 2.
 

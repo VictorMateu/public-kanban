@@ -127,4 +127,8 @@ SQL usa palabras clave y tipos en mayúsculas; esquemas, tablas, columnas y func
 
 `app/` contiene las rutas; `lib/supabase/` los clientes y tipos; `lib/auth/` la autenticación y autorización; `lib/projects/`, `lib/columns/` y `lib/tasks/` las consultas por dominio. `supabase/` guarda configuración, migraciones y tests SQL; `tests/` las pruebas de aplicación. Los archivos generados de Next.js y TypeScript están excluidos de Git.
 
+## Redacción de documentación y comentarios
+
+Las decisiones técnicas las toma el propietario durante el desarrollo. Los ADR, la documentación y los comentarios deben reflejarlas con expresiones como «se ha decidido», «se ha elegido» o «se utiliza», explicando el contexto, el motivo y las consecuencias. Evitar atribuirlas a acuerdos entre partes. Las referencias a autorización o confirmación se reservan para acciones que realmente requieren permiso.
+
 Referencias: [Next.js](https://nextjs.org/docs/app/getting-started/installation), [Tailwind con Next.js](https://tailwindcss.com/docs/installation/framework-guides/nextjs), [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client) y [CLI local](https://supabase.com/docs/guides/local-development/cli/getting-started).

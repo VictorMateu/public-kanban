@@ -6,7 +6,7 @@
 
 ## Contexto
 
-Portfolio Kanban necesita una consulta pública y administración exclusiva del propietario. Se priorizan sencillez, seguridad, mantenimiento y costes reducidos. El alcance acordado excluye un backend independiente y un ORM adicional.
+Portfolio Kanban necesita una consulta pública y administración exclusiva del propietario. Se priorizan sencillez, seguridad, mantenimiento y costes reducidos. Se ha decidido mantener una única aplicación, sin backend independiente ni ORM adicional.
 
 ## Decisión
 
