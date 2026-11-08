@@ -67,6 +67,27 @@ Possible approaches are recorded in [Future ideas](ideas.md).
 
 ## Technical and quality boundaries
 
+### Shared visual direction
+
+The owner selected a cozy visual direction and the following shared palette. The supplied images are visual references; their sidebar, search, notifications, avatar, controls and workflow labels do not define application features or navigation.
+
+| Palette color | Value | Intended use |
+| --- | --- | --- |
+| Cream | `#FAF4EE` | Main background |
+| Peach | `#EBCDBB` | Secondary surfaces |
+| Honey | `#E8B66D` | Accents and active treatments |
+| Sage | `#DCE6D3` | Positive treatments |
+| Espresso | `#49382F` | Main text and strong outlines |
+| Soft peach | `#F5E4DA` | Warm column/surface tint |
+| Soft honey | `#FBF9C9` | Highlighted column/surface tint |
+| Soft sage | `#E8EFDF` | Positive column/surface tint |
+
+The current scope centralizes these colors in CSS and exposes semantic Tailwind utilities, applying only the global background and text colors. The reference column tints do not establish default columns, fixed task states or automatic mappings from column names to colors. Existing component colors will be migrated as their UI is reviewed.
+
+Rounded cards, soft shadows, pastel labels and readable, slightly rounded typography guide future proposals. Font selection, exact radii and shadows, illustrations, animations and screen composition remain pending their own design review. No component library or additional dependency is adopted by this palette work.
+
+### Existing boundaries
+
 - Keep Next.js App Router, strict TypeScript, Supabase PostgreSQL/Auth and one authorized administrator.
 - Use Tailwind CSS; shadcn/ui is the preferred candidate for component tooling, with adoption and configuration still requiring confirmation.
 - Keep a single application without an independent backend or additional ORM.
@@ -88,6 +109,7 @@ Possible approaches are recorded in [Future ideas](ideas.md).
 | Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
 | New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
 | Language | English instructions and documentation; existing interface localized in English, Spanish and Catalan, with cookie selection and English fallback |
+| Visual foundation | Cozy palette centralized in CSS with semantic Tailwind colors; component restyling and detailed visual standards remain pending |
 | Hosting and remote services | No deployments or remote Supabase connection |
 
 The schema is an implementation baseline that can be revised through confirmed, versioned migrations. Its existing fields and constraints do not settle open product decisions.
@@ -97,7 +119,7 @@ Project 404 responses currently deliver localized content through the React payl
 ## Decisions required before the relevant implementation
 
 1. Home-page content, navigation and project information/board entry points.
-2. Visual design, component-library adoption and review method for the proposed UI change.
+2. Screen-level visual design beyond the selected cozy direction and palette, component-library adoption and the review method for each UI change.
 3. Code-structure adjustments justified by the selected screens and interactions.
 4. Reusable column modeling, propagation choices and deletion behavior.
 5. Task completion semantics, automatic date behavior and reopening rules.
@@ -107,6 +129,6 @@ Project 404 responses currently deliver localized content through the React payl
 
 ## Current work boundary
 
-The current iteration integrates interface internationalization while preserving the existing navigation and visual design. The language selector is a provisional native form; shadcn/ui adoption, administration CRUD, role-aware board queries and database changes remain outside this task. The next UI iteration must first propose the navigation, visual design and structure review scope.
+Interface internationalization is implemented. The owner has selected the cozy visual direction and palette above. The current palette task adds shared color tokens and connects the global background/text only. It does not redesign existing components, change layouts or settle the remaining visual and navigation decisions. The language selector remains provisional; shadcn/ui adoption, administration CRUD, role-aware board queries and database changes remain outside this task. Further UI work requires its own confirmed scope.
 
 Successful tests do not imply acceptance of provisional product or design decisions. Phase 3 remains pending acceptance until the owner reviews those decisions. Future phases, deployments and remote operations require explicit confirmation.

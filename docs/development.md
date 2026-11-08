@@ -39,6 +39,30 @@ npm start
 
 The application builds without Supabase configuration and does not query the database during compilation. After changing `NEXT_PUBLIC_*` variables, restart `dev` and rebuild before using `start`: those variables are incorporated into the browser bundle at build time.
 
+## Shared UI colors
+
+`app/globals.css` is the single source for the cozy palette. `:root` stores the eight `--palette-*` values; Tailwind's `@theme inline` maps them to roles that components can use without repeating color values. Keeping the palette in CSS avoids a JavaScript theme object, client provider or additional dependency.
+
+| Role / Tailwind utilities | Palette color |
+| --- | --- |
+| `bg-background`, `text-foreground` | Cream background, espresso text |
+| `bg-surface` | Cream surface |
+| `bg-surface-secondary` | Peach secondary surface |
+| `bg-accent`, `text-accent-foreground` | Honey accent, espresso text |
+| `bg-positive`, `text-positive-foreground` | Sage positive treatment, espresso text |
+| `bg-surface-warm` | Soft peach surface tint |
+| `bg-surface-highlight` | Soft honey surface tint |
+| `bg-surface-positive` | Soft sage surface tint |
+| `border-border`, `outline-focus` | Espresso borders and keyboard-focus outlines |
+
+For example, an accent action can use `bg-accent text-accent-foreground focus-visible:outline-focus`. Native CSS can reference `var(--palette-cream)` when necessary, as the global body background does. Tailwind opacity modifiers such as `border-border/20` are suitable for decorative separators; do not assume a faded border is sufficient to identify a control or keyboard focus.
+
+Use semantic roles in new or reviewed UI instead of hex literals, arbitrary color values or named Tailwind hues. The stock Tailwind palette is retained while existing components await review; this task does not migrate their slate, indigo or priority colors. Only the global body background and text consume the new palette so far. Font, spacing and component geometry are unchanged.
+
+Use espresso text on the supplied light backgrounds. In particular, do not use white text on honey: its calculated contrast is approximately 1.85:1, while espresso on honey is approximately 6.00:1. These color-pair calculations are not a complete accessibility audit. Do not communicate task state or priority through color alone, or infer workflow states from the reference tint names.
+
+The current palette defines the supplied light appearance only. Dark mode, component interaction treatments, fonts, shadows, radii and illustrations require their own confirmed scope. See the [visual direction](product.md#shared-visual-direction) for the selected palette and boundaries.
+
 ## Interface internationalization
 
 The owner selected `next-intl` with English (`en`) as the default, Spanish (`es`) and Catalan (`ca`). Paths such as `/projects/[slug]` and `/admin/login` stay unchanged; no `[locale]` route segment or localization proxy is used. The existing Supabase proxy remains unchanged.

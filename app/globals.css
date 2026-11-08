@@ -1,11 +1,39 @@
 @import "tailwindcss";
 
+:root {
+  --palette-cream: #faf4ee;
+  --palette-peach: #ebcdbb;
+  --palette-honey: #e8b66d;
+  --palette-sage: #dce6d3;
+  --palette-espresso: #49382f;
+  --palette-peach-soft: #f5e4da;
+  --palette-honey-soft: #fbf9c9;
+  --palette-sage-soft: #e8efdf;
+}
+
 @theme {
   --font-sans: Arial, Helvetica, sans-serif;
 }
 
+/* Components use roles so palette changes stay in this file. */
+@theme inline {
+  --color-background: var(--palette-cream);
+  --color-foreground: var(--palette-espresso);
+  --color-surface: var(--palette-cream);
+  --color-surface-secondary: var(--palette-peach);
+  --color-accent: var(--palette-honey);
+  --color-accent-foreground: var(--palette-espresso);
+  --color-positive: var(--palette-sage);
+  --color-positive-foreground: var(--palette-espresso);
+  --color-surface-warm: var(--palette-peach-soft);
+  --color-surface-highlight: var(--palette-honey-soft);
+  --color-surface-positive: var(--palette-sage-soft);
+  --color-border: var(--palette-espresso);
+  --color-focus: var(--palette-espresso);
+}
+
 body {
-  background: var(--color-slate-50);
-  color: var(--color-slate-950);
+  background: var(--palette-cream);
+  color: var(--palette-espresso);
   font-family: var(--font-sans);
 }
