@@ -12,6 +12,11 @@
     "viewProjects": "Mostra els projectes",
     "backHome": "Torna a l'inici"
   },
+  "Navigation": {
+    "label": "Navegació principal",
+    "overview": "Resum",
+    "projects": "Projectes"
+  },
   "Language": {
     "label": "Idioma de la interfície",
     "apply": "Aplica"
@@ -41,7 +46,7 @@
     "unavailableTitle": "Projecte no disponible",
     "unavailableDescription": "Ara mateix no es pot consultar aquest projecte. Torna-ho a provar més tard.",
     "notFoundTitle": "Projecte no trobat",
-    "notFoundDescription": "El projecte que cerques no està disponible. Pots explorar els projectes publicats des de l'inici."
+    "notFoundDescription": "El projecte que cerques no està disponible."
   },
   "Board": {
     "emptyTitle": "El tauler encara no té columnes",
@@ -76,7 +81,7 @@
   },
   "Error": {
     "title": "No s'ha pogut carregar el contingut",
-    "description": "Hi ha hagut un problema en consultar els projectes. Torna-ho a provar d'aquí a uns instants."
+    "description": "Hi ha hagut un problema en carregar el contingut. Torna-ho a provar d'aquí a uns instants."
   },
   "NotFound": {
     "title": "Pàgina no trobada",

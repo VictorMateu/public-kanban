@@ -16,7 +16,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --test tests/*.test.ts",
-    "test:public": "node --test tests/i18n-http.test.mjs"
+    "test:public": "node --test tests/*-http.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

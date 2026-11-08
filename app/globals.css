@@ -15,6 +15,7 @@
 @theme inline {
   --font-sans: var(--font-handlee), cursive;
   --font-heading: var(--font-dancing-script), cursive;
+  --shadow-panel: 0 12px 32px color-mix(in srgb, var(--palette-espresso) 12%, transparent);
   --color-background: var(--palette-cream);
   --color-foreground: var(--palette-espresso);
   --color-surface: var(--palette-cream);
@@ -60,7 +61,7 @@
 
 .workspace-stage {
   --workspace-inset: clamp(0.5rem, 1vw, 1rem);
-  --workspace-sidebar-width: 4.5rem;
+  --workspace-sidebar-width: 5rem;
 
   display: grid;
   grid-template-columns: calc(var(--workspace-sidebar-width) + var(--workspace-inset)) minmax(0, 1fr);
@@ -92,7 +93,7 @@
 
 @media (width >= 48rem) {
   .workspace-stage {
-    --workspace-sidebar-width: 16.5rem;
+    --workspace-sidebar-width: 19rem;
   }
 
   .workspace-sidebar {

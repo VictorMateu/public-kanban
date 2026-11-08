@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { SidebarNavigation } from "./sidebar-navigation";
 
 export async function AppShell({ children }: { children: ReactNode }) {
   const t = await getTranslations("Common");
@@ -11,10 +13,11 @@ export async function AppShell({ children }: { children: ReactNode }) {
         {t("skipContent")}
       </a>
       <aside aria-label={t("sidebar")} className="workspace-sidebar">
-        <div className="flex items-center justify-center gap-3 md:justify-start">
-          <Image src="/brand/logo.svg" alt="" width={32} height={32} className="size-8 shrink-0 object-contain" />
-          <p className="sr-only font-heading text-2xl font-semibold md:not-sr-only">{t("appName")}</p>
-        </div>
+        <Link href="/" title={t("backHome")} className="flex items-center justify-center gap-4 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus md:justify-start">
+          <Image src="/brand/logo.svg" alt="" width={40} height={40} className="size-10 shrink-0 object-contain" />
+          <p className="sr-only font-heading text-3xl font-semibold md:not-sr-only">{t("appName")}</p>
+        </Link>
+        <SidebarNavigation />
       </aside>
       <div className="workspace-content">{children}</div>
     </div>

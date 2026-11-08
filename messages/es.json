@@ -12,6 +12,11 @@
     "viewProjects": "Ver proyectos",
     "backHome": "Volver al inicio"
   },
+  "Navigation": {
+    "label": "Navegación principal",
+    "overview": "Resumen",
+    "projects": "Proyectos"
+  },
   "Language": {
     "label": "Idioma de la interfaz",
     "apply": "Aplicar"
@@ -41,7 +46,7 @@
     "unavailableTitle": "Proyecto no disponible",
     "unavailableDescription": "No se puede consultar este proyecto en este momento. Vuelve a intentarlo más tarde.",
     "notFoundTitle": "Proyecto no encontrado",
-    "notFoundDescription": "El proyecto que buscas no está disponible. Puedes explorar los proyectos publicados desde el inicio."
+    "notFoundDescription": "El proyecto que buscas no está disponible."
   },
   "Board": {
     "emptyTitle": "El tablero todavía no tiene columnas",
@@ -76,7 +81,7 @@
   },
   "Error": {
     "title": "No se ha podido cargar el contenido",
-    "description": "Ha ocurrido un problema al consultar los proyectos. Vuelve a intentarlo en unos instantes."
+    "description": "Ha ocurrido un problema al cargar el contenido. Vuelve a intentarlo en unos instantes."
   },
   "NotFound": {
     "title": "Página no encontrada",

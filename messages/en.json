@@ -13,6 +13,11 @@
     "viewProjects": "View projects",
     "backHome": "Back to home"
   },
+  "Navigation": {
+    "label": "Main navigation",
+    "overview": "Overview",
+    "projects": "Projects"
+  },
   "Language": {
     "label": "Interface language",
     "apply": "Apply"
@@ -42,7 +47,7 @@
     "unavailableTitle": "Project unavailable",
     "unavailableDescription": "This project cannot be loaded right now. Please try again later.",
     "notFoundTitle": "Project not found",
-    "notFoundDescription": "The project you are looking for is unavailable. You can explore published projects from the home page."
+    "notFoundDescription": "The project you are looking for is unavailable."
   },
   "Board": {
     "emptyTitle": "This board has no columns yet",
@@ -77,7 +82,7 @@
   },
   "Error": {
     "title": "Unable to load the content",
-    "description": "There was a problem loading the projects. Please try again in a moment."
+    "description": "There was a problem loading the content. Please try again in a moment."
   },
   "NotFound": {
     "title": "Page not found",
