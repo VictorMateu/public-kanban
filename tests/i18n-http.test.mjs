@@ -19,19 +19,34 @@ async function page(path, headers = {}) {
   return { response, html, renderedHtml: html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "") };
 }
 
+function assertSharedLayout(html) {
+  assert.equal((html.match(/<aside\b/g) ?? []).length, 1, "The shared sidebar should appear once");
+  assert.match(html, /<img\b[^>]*src="\/brand\/logo\.svg"/);
+  assert.match(html, /href="#main-content"/);
+  assert.match(html, /<main\b[^>]*id="main-content"/);
+}
+
 for (const locale of ["en", "es", "ca"]) {
   test(`cookie preference renders ${locale} on unchanged public and sign-in URLs`, async () => {
     const headers = { Cookie: `${cookieName}=${locale}` };
     const home = await page("/", headers);
     assert.equal(home.response.status, 200);
+    assertSharedLayout(home.renderedHtml);
     assert.ok(home.html.includes(`<html lang="${locale}"`));
     assert.ok(home.html.includes(`name="description" content="${catalogs[locale].Metadata.description.replaceAll("'", "&#x27;")}"`));
-    assert.ok(home.renderedHtml.includes(catalogs[locale].Construction.status));
-    assert.match(home.html, new RegExp(`<option(?=[^>]*value="${locale}")(?=[^>]*selected="")[^>]*>`));
+    const main = home.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/);
+    assert.ok(main, "The blank home should have a main landmark");
+    assert.equal(main[1].trim(), "", "The initial content area must remain empty");
+    assert.ok(home.renderedHtml.includes(`aria-label="${catalogs[locale].Common.mainContent}"`));
+    assert.doesNotMatch(home.renderedHtml, /<(nav|form|button|input|select)\b/);
+    assert.doesNotMatch(home.renderedHtml, /href="\/(?:projects|admin)/);
     assert.ok(!home.response.headers.has("set-cookie"), "Reading a page must not create a preference cookie");
 
     const login = await page("/admin/login", headers);
     assert.equal(login.response.status, 200);
+    assertSharedLayout(login.renderedHtml);
+    assert.equal((login.renderedHtml.match(/<select\b[^>]*name="locale"/g) ?? []).length, 1);
+    assert.match(login.html, new RegExp(`<option(?=[^>]*value="${locale}")(?=[^>]*selected="")[^>]*>`));
     assert.ok(login.html.includes(`<html lang="${locale}"`));
     assert.ok(login.renderedHtml.includes(catalogs[locale].Auth.email));
     assert.ok(login.renderedHtml.includes(catalogs[locale].Auth.password));
@@ -39,6 +54,7 @@ for (const locale of ["en", "es", "ca"]) {
 
     const unknown = await page("/unknown-i18n-test-route", headers);
     assert.equal(unknown.response.status, 404);
+    assertSharedLayout(unknown.renderedHtml);
     assert.ok(unknown.renderedHtml.includes(catalogs[locale].NotFound.title));
   });
 }
@@ -63,14 +79,15 @@ test("locale responses stay isolated between visitors and do not change authenti
   assert.equal(new URL(admin.response.headers.get("location"), origin).pathname, "/admin/login");
 });
 
-test("the native language form persists a validated preference and ignores unsupported values", async () => {
-  const home = await page("/");
-  const action = home.html.match(/name="(\$ACTION_ID_[^"]+)"/);
+test("the sign-in language form persists a validated preference and ignores unsupported values", async () => {
+  const login = await page("/admin/login");
+  const form = [...login.html.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)].find(match => match[0].includes('name="locale"'));
+  const action = form?.[0].match(/name="(\$ACTION_ID_[^"]+)"/);
   assert.ok(action, "Language selection should work through a native Server Action form");
   const body = new FormData();
   body.set(action[1], "");
   body.set("locale", "ca");
-  const changed = await fetch(origin, { method: "POST", headers: { Origin: origin.origin }, body, redirect: "manual" });
+  const changed = await fetch(new URL("/admin/login", origin), { method: "POST", headers: { Origin: origin.origin }, body, redirect: "manual" });
   assert.equal(changed.status, 200);
   await changed.text();
   const cookie = changed.headers.getSetCookie().find(value => value.startsWith(`${cookieName}=`));
@@ -85,7 +102,7 @@ test("the native language form persists a validated preference and ignores unsup
   assert.ok(persisted.html.includes('<html lang="ca"'));
 
   body.set("locale", "fr");
-  const invalid = await fetch(origin, { method: "POST", headers: { Origin: origin.origin, Cookie: `${cookieName}=es` }, body, redirect: "manual" });
+  const invalid = await fetch(new URL("/admin/login", origin), { method: "POST", headers: { Origin: origin.origin, Cookie: `${cookieName}=es` }, body, redirect: "manual" });
   assert.equal(invalid.status, 200);
   await invalid.text();
   assert.ok(!invalid.headers.getSetCookie().some(value => value.startsWith(`${cookieName}=`)));

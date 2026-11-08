@@ -26,6 +26,7 @@ The home page may show a summary, all projects or another presentation chosen af
 
 - A single owner manages the application.
 - The owner edits through the same board visitors use, with administration controls available after authorized sign-in.
+- The application uses a shared layout for the project pages and sign-in, without separate public/private route groups. `/admin/login` is the intended administrative entry point; management belongs in the shared interface.
 - Authorization is enforced by the server and database, independently of which controls are shown.
 - The existing dedicated `/admin` placeholder is not a final administration-design decision.
 
@@ -82,9 +83,17 @@ The owner selected a cozy visual direction and the following shared palette. The
 | Soft honey | `#FBF9C9` | Highlighted column/surface tint |
 | Soft sage | `#E8EFDF` | Positive column/surface tint |
 
-The current scope centralizes these colors in CSS and exposes semantic Tailwind utilities, applying only the global background and text colors. The reference column tints do not establish default columns, fixed task states or automatic mappings from column names to colors. Existing component colors will be migrated as their UI is reviewed.
+These colors are centralized in CSS and exposed as semantic Tailwind utilities. The base layout now uses the palette for its canvas, sidebar and brand mark. The main area is currently transparent over the canvas. The reference column tints do not establish default columns, fixed task states or automatic mappings from column names to colors. Existing project and task component colors will be migrated as their UI is reviewed.
 
-Rounded cards, soft shadows, pastel labels and readable, slightly rounded typography guide future proposals. Font selection, exact radii and shadows, illustrations, animations and screen composition remain pending their own design review. No component library or additional dependency is adopted by this palette work.
+Rounded cards, soft shadows, pastel labels and readable, slightly rounded typography guide future proposals. The current base-layout prototype uses provisional drawer rounding, shadow and sidebar proportions for review. Font selection, card styling, illustrations, animations and detailed screen composition remain pending their own design review. No component library or additional dependency is adopted.
+
+### Current base-layout prototype
+
+The owner requested a shared cozy shell inspired by the reference, with a left sidebar and a blank initial content area. `/` intentionally renders no project listing, heading, cards, columns, menus, search, notifications, avatar, language form or visible navigation. The sidebar contains only the Portfolio Kanban brand and the owner's personal logo, copied unchanged from the sibling `victor-portfolio` project in its original green variant. A keyboard-only skip link targets the empty, accessibly named main landmark.
+
+The owner corrected the initial inset-panel prototype: the application must fill the viewport, preserve the warm ambient background and remove the cream content panel for now. The peach sidebar sits at the left edge with small top, bottom and left margins so its independent rounding and shadow remain visible. It occupies the viewport height minus those vertical margins and remains in view when retained content scrolls. The main content area is transparent over the shared background. On narrow viewports the sidebar remains on the left as a compact brand rail; its full brand text is visually hidden but available to assistive technology. Exact sidebar widths, spacing, radius, shadow and responsive treatment remain provisional for visual review.
+
+The earlier project-list and board implementation remains uncommitted and outside the base-layout commit. In the combined working tree, the former home listing is preserved in `components/project-list.tsx` and is not mounted on any route. Existing `/projects/[slug]` routes and authentication behavior are preserved. The native language selector remains available on `/admin/login`; its absence on the blank initial screen does not remove cookie-based localization. Navigation and further content require a separate confirmed scope.
 
 ### Existing boundaries
 
@@ -98,18 +107,20 @@ Rounded cards, soft shadows, pastel labels and readable, slightly rounded typogr
 
 ## Implementation and acceptance status
 
+This inventory also describes preserved uncommitted board work. The base-layout commit contains the blank home, shared shell and existing authentication routes; it excludes the project-list and board implementation.
+
 | Area | Current state |
 | --- | --- |
 | Project foundation | Phase 1 complete |
 | Supabase integration, Auth and initial RLS | Phase 2 validated locally; owner account manually authorized locally |
-| Public project listing and read-only boards | Existing phase 3 implementation preserved; navigation, design and structure acceptance pending |
+| Public project listing and read-only boards | Former listing preserved as an unmounted component; existing board routes remain available directly; home is intentionally blank during base-layout review |
 | Administration | Sign-in, authorization and sign-out exist; administration CRUD is not implemented |
 | Project information | Existing schema has name, slug, description, publication, ordering and timestamps; objectives and repository link are not implemented |
 | Columns | Currently stored per project; reusable definitions and propagation choices are not implemented |
 | Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
 | New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
 | Language | English instructions and documentation; existing interface localized in English, Spanish and Catalan, with cookie selection and English fallback |
-| Visual foundation | Cozy palette centralized in CSS with semantic Tailwind colors; component restyling and detailed visual standards remain pending |
+| Visual foundation | Cozy palette centralized in CSS; shared sidebar shell implemented provisionally for visual review; project and task component restyling remains pending |
 | Hosting and remote services | No deployments or remote Supabase connection |
 
 The schema is an implementation baseline that can be revised through confirmed, versioned migrations. Its existing fields and constraints do not settle open product decisions.
@@ -129,6 +140,8 @@ Project 404 responses currently deliver localized content through the React payl
 
 ## Current work boundary
 
-Interface internationalization is implemented. The owner has selected the cozy visual direction and palette above. The current palette task adds shared color tokens and connects the global background/text only. It does not redesign existing components, change layouts or settle the remaining visual and navigation decisions. The language selector remains provisional; shadcn/ui adoption, administration CRUD, role-aware board queries and database changes remain outside this task. Further UI work requires its own confirmed scope.
+Interface internationalization is implemented. The owner subsequently approved removing the `(public)` route group and sharing the root layout with the sign-in page, keeping existing URLs and authentication behavior. This structure decision does not accept the remaining phase 3 navigation or visual design. The language selector is a provisional native form; shadcn/ui adoption, administration CRUD, role-aware board queries and database changes remain outside this adjustment. The existing `/admin` authorization placeholder is preserved until inline administration is implemented. Further UI work requires its own confirmed scope.
+
+The cozy palette foundation is committed. The owner has now requested the base sidebar layout above, with the initial screen kept blank and without navigation. This task implements that provisional shell, preserves the previous listing outside the active home route and moves language selection to the existing sign-in page. It does not redesign the board, add navigation, change authentication or implement administration CRUD. The layout remains pending visual acceptance.
 
 Successful tests do not imply acceptance of provisional product or design decisions. Phase 3 remains pending acceptance until the owner reviews those decisions. Future phases, deployments and remote operations require explicit confirmation.

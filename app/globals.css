@@ -37,3 +37,45 @@ body {
   color: var(--palette-espresso);
   font-family: var(--font-sans);
 }
+
+.workspace-stage {
+  --workspace-inset: clamp(0.5rem, 1vw, 1rem);
+  --workspace-sidebar-width: 4.5rem;
+
+  display: grid;
+  grid-template-columns: calc(var(--workspace-sidebar-width) + var(--workspace-inset)) minmax(0, 1fr);
+  min-height: 100svh;
+  background-color: var(--palette-peach);
+  background-image:
+    radial-gradient(ellipse at 85% 10%, color-mix(in srgb, var(--palette-honey) 45%, transparent), transparent 55%),
+    radial-gradient(ellipse at 10% 90%, color-mix(in srgb, var(--palette-espresso) 12%, transparent), transparent 60%);
+}
+
+.workspace-sidebar {
+  position: sticky;
+  top: var(--workspace-inset);
+  align-self: start;
+  height: calc(100svh - 2 * var(--workspace-inset));
+  margin: var(--workspace-inset) 0 var(--workspace-inset) var(--workspace-inset);
+  padding: 2rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--palette-cream) 80%, transparent);
+  border-radius: clamp(1rem, 1.5vw, 1.5rem);
+  background: linear-gradient(155deg, var(--palette-peach), var(--palette-peach-soft));
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--palette-espresso) 12%, transparent);
+}
+
+.workspace-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+@media (width >= 48rem) {
+  .workspace-stage {
+    --workspace-sidebar-width: 16.5rem;
+  }
+
+  .workspace-sidebar {
+    padding: 3rem 2rem;
+  }
+}

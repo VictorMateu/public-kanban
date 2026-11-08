@@ -57,11 +57,21 @@ The application builds without Supabase configuration and does not query the dat
 
 For example, an accent action can use `bg-accent text-accent-foreground focus-visible:outline-focus`. Native CSS can reference `var(--palette-cream)` when necessary, as the global body background does. Tailwind opacity modifiers such as `border-border/20` are suitable for decorative separators; do not assume a faded border is sufficient to identify a control or keyboard focus.
 
-Use semantic roles in new or reviewed UI instead of hex literals, arbitrary color values or named Tailwind hues. The stock Tailwind palette is retained while existing components await review; this task does not migrate their slate, indigo or priority colors. Only the global body background and text consume the new palette so far. Font, spacing and component geometry are unchanged.
+Use semantic roles in new or reviewed UI instead of hex literals, arbitrary color values or named Tailwind hues. The stock Tailwind palette is retained while existing project and task components await review; their slate, indigo and priority colors are not yet migrated. The body and shared shell consume the new palette. Shell gradients and shadows derive from the same centralized palette variables; no separate color values are defined in the components.
 
 Use espresso text on the supplied light backgrounds. In particular, do not use white text on honey: its calculated contrast is approximately 1.85:1, while espresso on honey is approximately 6.00:1. These color-pair calculations are not a complete accessibility audit. Do not communicate task state or priority through color alone, or infer workflow states from the reference tint names.
 
-The current palette defines the supplied light appearance only. Dark mode, component interaction treatments, fonts, shadows, radii and illustrations require their own confirmed scope. See the [visual direction](product.md#shared-visual-direction) for the selected palette and boundaries.
+The current palette defines the supplied light appearance only. The base shell's geometry and shadows are provisional; dark mode, card and control treatments, fonts and illustrations require their own confirmed scope. See the [visual direction](product.md#shared-visual-direction) for the selected palette and boundaries.
+
+### Base workspace shell
+
+`components/app-shell.tsx` is a Server Component mounted by `app/layout.tsx`. It supplies the decorative brand/sidebar and keyboard skip link. `.workspace-stage` in `app/globals.css` is a full-width grid with a minimum height of `100svh` and the palette-derived ambient background; no centered shell, width cap or cream content panel is rendered. The sidebar is provisionally 16.5rem wide from 48rem viewports upwards, and a 4.5rem brand rail below that breakpoint. Its small top, bottom and left margins use `--workspace-inset` (0.5rem–1rem); the drawer height subtracts twice that inset from the viewport. The sidebar is sticky with its own rounded border and shadow. Content is transparent and uses `minmax(0, 1fr)` and `min-width: 0` so retained boards can manage their own horizontal scrolling.
+
+`app/page.tsx` renders only an empty, localized main landmark that can receive skip-link focus. It performs no project query and renders no content, visible navigation or language selector. The former home implementation is preserved as `ProjectList` in `components/project-list.tsx`, without mounting it elsewhere or adding a route. `/admin/login` retains the native language form and its existing sign-in behavior. The old shared header and footer are not rendered by the shell.
+
+The sidebar's brand is decorative text rather than a link. No menu, mobile toggle, project link, task control or example-image feature is implemented. The shell is a working visual prototype awaiting owner review, not final design acceptance.
+
+`public/brand/logo.svg` is copied unchanged from `victor-portfolio/public/brand/logo.svg`, the sibling personal website's green logo. Keep the original SVG artwork and brand color; it is an existing brand asset rather than a component-specific UI color. `AppShell` renders it at 32px alongside the application name with an empty `alt` because that adjacent text already identifies the brand, including its screen-reader-only mobile text. No navigation link or extra visible attribution is added to the blank prototype.
 
 ## Interface internationalization
 
@@ -76,7 +86,7 @@ The owner selected `next-intl` with English (`en`) as the default, Spanish (`es`
 
 Use `getTranslations` in async Server Components and `useTranslations` in synchronous or client components. Keep new UI text, metadata, accessible labels and user-facing errors in the catalogs. ICU messages handle task-count plurals. Authentication actions return stable error codes; the client translates them in the current locale.
 
-The native language form is available in the public header and administrative layout. Its Server Action validates the submitted locale, writes `portfolio-kanban-locale` and revalidates the root layout. The preference lasts one year and uses `Path=/`, `SameSite=Lax`, `HttpOnly` and `Secure` in production. The cookie contains only `en`, `es` or `ca`; visiting without a preference does not create it. Invalid or missing values use English, without browser-language detection. Authentication cookies and authorization are independent of this preference.
+The native language form is available once on the sign-in page; the initial screen remains blank without visible controls. Its Server Action validates the submitted locale, writes `portfolio-kanban-locale` and revalidates the root layout. The preference lasts one year and uses `Path=/`, `SameSite=Lax`, `HttpOnly` and `Secure` in production. The cookie contains only `en`, `es` or `ca`; visiting without a preference does not create it. Invalid or missing values use English, without browser-language detection. Authentication cookies and authorization are independent of this preference.
 
 The existing interface has translations in all three languages. Project names, descriptions, columns and task content remain owner-authored data and are not automatically translated. Date-only values retain their calendar day through UTC while their display follows the chosen locale.
 
@@ -86,17 +96,19 @@ See [ADR 0003](adr/0003-interface-internationalization.md) for the decision and 
 
 ## Existing public implementation — acceptance pending
 
+This section also describes the preserved uncommitted public-board work in the combined working tree. Those project pages, components, utilities and database-backed HTTP tests are excluded from the base-layout commit.
+
 The following describes the preserved phase 3 navigation and visual design, which remain pending acceptance. Its interface text now uses the internationalization configuration above. Review [Product requirements](product.md) before changing the product experience.
 
-`/` lists published projects by `position, id`. `/projects/[slug]` shows a project's description, columns and tasks, including priority and a due date when present. Columns and tasks follow the same ordering, and the board supports horizontal scrolling using the keyboard and touch input.
+`/` currently presents the blank base-layout prototype described above. The previous ordered listing is preserved in the unmounted `ProjectList` component. `/projects/[slug]` still shows a project's description, columns and tasks, including priority and a due date when present, when opened directly. Columns and tasks follow `position, id` ordering, and the board supports horizontal scrolling using the keyboard and touch input.
 
 The routes use dynamically rendered Server Components. Queries use the anonymous client and do not persist responses in a shared cache. `React.cache` shares the project query between metadata and the page only within a request. Private and nonexistent projects return the same generic 404, including metadata.
 
 Observed limitation: project 404 responses currently deliver the localized heading in the React/RSC payload while their initial HTML body is empty. HTTP tests check the actual React heading and absence of private data; they do not establish a working project 404 without JavaScript. Unknown-route 404 pages do render localized HTML. Browser hydration and a solution for the project-404 initial response remain pending review; no framework upgrade or routing workaround has been introduced.
 
-Project and task loading uses `Suspense`. The board does not start streaming until publication has been checked, preserving the 404 response for unavailable projects. The `app/(public)/` route group currently shares a header, footer and error boundary without changing URLs or the existing administrative routes. This grouping remains part of the structure review.
+Project and task loading uses `Suspense` in the retained listing and board. The board does not start streaming until publication has been checked, preserving the 404 response for unavailable projects. The owner selected a shared application layout without a public/private route group: `app/layout.tsx` now supplies the sidebar shell for all pages, including sign-in. The home and project routes live directly under `app/`, and `app/error.tsx` handles page errors within that layout. URLs remain unchanged. `app/admin/layout.tsx` retains only its metadata and search-indexing restrictions; the existing `/admin` authorization placeholder remains until inline administration is implemented.
 
-Without configuration, pages report unavailable data rather than treating the missing connection as an empty list. An actual empty response from Supabase produces the appropriate empty-project, empty-column or empty-task state. Query errors show a generic message and allow another attempt.
+The blank home is independent of Supabase availability and does not query projects. Retained data views report unavailable configuration rather than treating it as an empty response. An actual empty response from Supabase produces the appropriate empty-project, empty-column or empty-task state in those views. Query errors show a generic message and allow another attempt.
 
 ### Local HTTP tests
 
@@ -210,7 +222,7 @@ Review the generated output and diff before replacing the existing types. SQL us
 
 Current organization:
 
-- `app/`: routes and their layouts; the public route group remains subject to review.
+- `app/`: home, project and sign-in routes under a shared root layout, without a public/private route group.
 - `components/`: current project, board and task presentation.
 - `lib/supabase/`: clients and database types.
 - `lib/auth/`: authentication and authorization.

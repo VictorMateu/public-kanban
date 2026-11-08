@@ -1,5 +1,7 @@
 {
   "Common": {
+    "sidebar": "Workspace sidebar",
+    "mainContent": "Main content",
     "skipContent": "Skip to content",
     "navigation": "Main navigation",
     "projects": "Projects",

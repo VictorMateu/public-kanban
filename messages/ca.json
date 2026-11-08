@@ -1,5 +1,7 @@
 {
   "Common": {
+    "sidebar": "Barra lateral",
+    "mainContent": "Contingut principal",
     "skipContent": "Salta al contingut",
     "navigation": "Navegació principal",
     "projects": "Projectes",
