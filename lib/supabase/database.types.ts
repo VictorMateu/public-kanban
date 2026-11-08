@@ -1,4 +1,4 @@
-// Tipos del contrato SQL versionado. Regenerar con la CLI tras validar las migraciones.
+// Types mirror the versioned SQL contract. Regenerate with the CLI after validating migrations.
 type ProjectRow = {
   id: string;
   slug: string;
