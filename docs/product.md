@@ -85,7 +85,15 @@ The owner selected a cozy visual direction and the following shared palette. The
 
 These colors are centralized in CSS and exposed as semantic Tailwind utilities. The base layout now uses the palette for its canvas, sidebar and brand mark. The main area is currently transparent over the canvas. The reference column tints do not establish default columns, fixed task states or automatic mappings from column names to colors. Existing project and task component colors will be migrated as their UI is reviewed.
 
-Rounded cards, soft shadows, pastel labels and readable, slightly rounded typography guide future proposals. The current base-layout prototype uses provisional drawer rounding, shadow and sidebar proportions for review. Font selection, card styling, illustrations, animations and detailed screen composition remain pending their own design review. No component library or additional dependency is adopted.
+Rounded cards, soft shadows and pastel labels guide future proposals. The owner selected Dancing Script for main titles, section headings and Kanban column headings, and Handlee for body text, task titles/content, controls, navigation and other interface text. The current base-layout prototype uses provisional drawer rounding, shadow and sidebar proportions for review. Card styling, illustrations, animations and detailed screen composition remain pending their own design review. No component library or additional dependency is adopted.
+
+### Typography
+
+The two fonts are loaded once through `next/font/google` in the root layout and shared across routes. Dancing Script uses its variable 400–700 range, with 700 for main titles and 600 for section/column headings. Handlee provides only 400; body and control text must use that real weight rather than simulated bold or italic.
+
+The default body size is 16px with a 1.6 line height. Section and column headings use 24px; task titles use Handlee at 18px. Existing main-title sizes remain responsive, starting at 30px. Secondary text may use 14px; task metadata and column counts no longer use 12px. CSS/Tailwind variables centralize font roles, while semantic heading elements apply the heading family by default. Task titles explicitly retain the body family even when marked up as headings.
+
+This task changes typography only. The initial screen stays blank, the personal logo and layout remain unchanged, and no new navigation or functionality is introduced. Browser review of font appearance, long headings, accent coverage and mobile wrapping remains necessary before visual acceptance. See [development typography conventions](development.md#typography) for variables and future-component rules.
 
 ### Current base-layout prototype
 

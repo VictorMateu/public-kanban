@@ -61,7 +61,7 @@ Use semantic roles in new or reviewed UI instead of hex literals, arbitrary colo
 
 Use espresso text on the supplied light backgrounds. In particular, do not use white text on honey: its calculated contrast is approximately 1.85:1, while espresso on honey is approximately 6.00:1. These color-pair calculations are not a complete accessibility audit. Do not communicate task state or priority through color alone, or infer workflow states from the reference tint names.
 
-The current palette defines the supplied light appearance only. The base shell's geometry and shadows are provisional; dark mode, card and control treatments, fonts and illustrations require their own confirmed scope. See the [visual direction](product.md#shared-visual-direction) for the selected palette and boundaries.
+The current palette defines the supplied light appearance only. The base shell's geometry and shadows are provisional; dark mode, card and control treatments and illustrations require their own confirmed scope. Typography is selected below. See the [visual direction](product.md#shared-visual-direction) for the selected palette and boundaries.
 
 ### Base workspace shell
 
@@ -72,6 +72,39 @@ The current palette defines the supplied light appearance only. The base shell's
 The sidebar's brand is decorative text rather than a link. No menu, mobile toggle, project link, task control or example-image feature is implemented. The shell is a working visual prototype awaiting owner review, not final design acceptance.
 
 `public/brand/logo.svg` is copied unchanged from `victor-portfolio/public/brand/logo.svg`, the sibling personal website's green logo. Keep the original SVG artwork and brand color; it is an existing brand asset rather than a component-specific UI color. `AppShell` renders it at 32px alongside the application name with an empty `alt` because that adjacent text already identifies the brand, including its screen-reader-only mobile text. No navigation link or extra visible attribution is added to the blank prototype.
+
+## Typography
+
+`app/layout.tsx` is the only font-loading entry point. It imports `Dancing_Script` and `Handlee` from `next/font/google`, creates one instance of each at module scope and attaches their generated variable classes to `<html>`. Both select the Latin subset for preloading and use `display: "swap"`. Dancing Script is variable (400–700); Handlee loads only its available 400 weight. Next.js retrieves the font assets during development/build and serves them locally at runtime; no stylesheet import, browser-side Google Fonts link or font package is added.
+
+| Variable / utility | Responsibility |
+| --- | --- |
+| `--font-dancing-script` | Generated `next/font` family for Dancing Script; do not redefine it |
+| `--font-handlee` | Generated `next/font` family for Handlee; do not redefine it |
+| `--font-heading` / `font-heading` | Semantic heading family mapped to Dancing Script with a cursive fallback |
+| `--font-sans` / `font-sans` | Default UI/body family mapped to Handlee with a cursive fallback; retains Tailwind's primary-font convention |
+
+`app/globals.css` defines the mappings in `@theme inline`. Typography defaults live in `@layer base`, so Tailwind utilities can override a role deliberately without specificity workarounds. The body uses Handlee at normal weight and line-height 1.6. Headings `h1`–`h6` use Dancing Script at weight 600 and line-height 1.3; `h1` uses weight 700. Font synthesis is disabled to avoid inventing bold or italic faces for Handlee.
+
+| Role | Size convention | Weight |
+| --- | --- | --- |
+| Main title (`h1`) | `text-3xl` by default; existing responsive `text-4xl`–`text-6xl` variants remain available | Dancing Script 700 |
+| Section and column heading (`h2`, `h3`) | `text-2xl` | Dancing Script 600 |
+| Other heading (`h4`–`h6`) | `text-xl` by default | Dancing Script 600 |
+| Task title | `font-sans text-lg font-normal`, regardless of its heading tag | Handlee 400 |
+| Body, task description and controls | `text-base` | Handlee 400 |
+| Secondary text, form labels, task metadata and column counts | `text-sm`; avoid `text-xs` for the handwritten interface | Handlee 400 |
+
+For future components:
+
+- Inherit Handlee for text, links, buttons, navigation and form controls. Native form controls inherit the font through Tailwind's existing preflight; no extra font import is needed.
+- Use semantic headings for titles, sections and columns. Use `font-heading` only when a visual heading role cannot be represented by an appropriate heading element.
+- Keep task titles in Handlee using `font-sans font-normal`; an `h4` must not turn task content into display script accidentally.
+- Use the existing Tailwind size, weight and line-height tokens. Do not repeat font-family names in components or add inline family styles, new loaders, font packages, CSS `@import` or external font links.
+- Reserve `font-semibold`/`font-bold` for Dancing Script headings. Handlee has no 500/600/700 or italic face. Existing non-heading weight utilities were normalized to `font-normal`; heading tracking was loosened to the font's natural spacing.
+- Review long text, 200% zoom, mobile wrapping and English/Spanish/Catalan accents in a browser. Do not assume build or HTTP success establishes visual legibility.
+
+The global typography defaults also apply to the retained project routes/components in the combined working tree. Their data access, interaction behavior, colors and layout geometry are unchanged by this integration; home remains intentionally empty.
 
 ## Interface internationalization
 

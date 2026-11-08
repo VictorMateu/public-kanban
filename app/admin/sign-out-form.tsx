@@ -11,7 +11,7 @@ export function SignOutForm() {
     <form action={action} className="mt-8">
       <button
         type="submit" disabled={pending}
-        className="rounded-lg bg-indigo-700 px-4 py-3 font-medium text-white hover:bg-indigo-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 disabled:opacity-60"
+        className="rounded-lg bg-indigo-700 px-4 py-3 font-normal text-white hover:bg-indigo-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 disabled:opacity-60"
       >
         {pending ? t("signingOut") : t("signOut")}
       </button>

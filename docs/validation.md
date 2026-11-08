@@ -265,3 +265,31 @@ The selected index was exported into an ignored temporary directory and validate
 The seven HTTP tests include the personal logo in the shared sidebar, blank home, locale cookies, language selection on sign-in, invalid-sign-in feedback and authorization redirects. These checks created no database fixtures or users. No environment files were copied into the export or selected for Git. The temporary export produced Next.js multiple-lockfile warnings; no dependency or framework setting was changed to suppress them. Staged text was normalized to repository LF endings before the final diff review.
 
 Browser visual, responsive and keyboard-focus checks were not performed; the existing browser-access limitation remains. The selected diff was checked for unrelated files, generated artifacts, whitespace and credential patterns. The pending board work was preserved outside the commit, and no push was performed. Committing the prototype does not establish final visual acceptance.
+
+## Typography integration — 2026-11-08
+
+Dancing Script and Handlee are each instantiated once through `next/font/google` in `app/layout.tsx`. Their generated variables are attached to the root HTML element and mapped to semantic Tailwind families in `app/globals.css`. Dancing Script supplies headings, including section and Kanban column headings. Handlee supplies body text, controls, the sidebar brand and task content; task headings explicitly use the body family. Actual available weights are respected, with font synthesis disabled. Existing colors, layout geometry, routes, content and behavior were preserved; text-size and weight adjustments are limited to the selected typographic hierarchy.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 20 existing application tests passed in the combined working tree |
+| `npm run build` | Production build passed with both Google font families |
+| `KANBAN_TEST_URL=http://127.0.0.1:3001 node --test tests/i18n-http.test.mjs` | All seven HTTP tests passed |
+| Generated CSS and font HTTP inspection | Both semantic families, heading defaults and the task font override were present; four WOFF2 files returned HTTP 200 with WOFF2 signatures |
+| `git diff --check` | Passed; only line-ending conversion notices were reported |
+
+The compiled font faces declare Dancing Script's real 400–700 range and Handlee's real 400 weight, with `font-display: swap`. The four files comprise three Dancing Script Unicode subsets and one Handlee asset, rather than duplicate loader declarations. Font URLs in the delivered CSS point to local `/_next/static/media/` assets; no Google Fonts CSS/domain references remain in those stylesheets. This inspects generated CSS and HTTP responses, not browser-computed rendering.
+
+Type generation and build ran under the real Windows user for SWC's native cache. No new dependency, permanent test, database fixture, migration, authorization change, commit or push was introduced. The database-backed public-board HTTP suite and SQL tests were not rerun for this typography-only integration.
+
+Browser discovery reported the browser-access host unavailable. Visual legibility, actual accented-glyph rendering, 200% zoom, responsive text wrapping, focus rendering and hydration remain unverified. Heading semantics, source font assignments and inherited form-control typography were reviewed in code. The existing blank-home and data-view loading/empty/error behavior is unchanged. Typography conventions are documented in [Development](development.md#typography), with the selected design responsibilities in [Product](product.md#typography).
+
+### Isolated typography commit validation
+
+The typography-only index was exported to an ignored temporary directory before committing. The nine selected files contain the shared font loading, semantic CSS roles, typography changes to already-versioned UI components and the relevant documentation. Project/task component-specific adjustments remain with the uncommitted public-board implementation; their typography conventions are documented for later integration. No board routes, new board components, utility modules, package/script changes or board tests are included.
+
+For this isolated selection, `npm run lint`, `npm run typecheck`, `npm test` (15 tests), `npm run build` and `KANBAN_TEST_URL=http://127.0.0.1:3001 npm run test:public` (seven tests) all passed. The 20-test combined-working-tree results above include the pending board work and are separate evidence. Build/start used the existing public local configuration in process memory without copying environment files. Next.js reported multiple lockfiles due to the nested temporary export; no configuration or dependency workaround was introduced.
+
+The selected diff was reviewed for scope, whitespace, generated artifacts and credential patterns. Existing pending files were checked for preservation. No database fixtures, users, browser checks or remote operations were introduced during commit preparation. Visual acceptance remains pending, and no push was performed.

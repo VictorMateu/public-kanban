@@ -13,7 +13,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <aside aria-label={t("sidebar")} className="workspace-sidebar">
         <div className="flex items-center justify-center gap-3 md:justify-start">
           <Image src="/brand/logo.svg" alt="" width={32} height={32} className="size-8 shrink-0 object-contain" />
-          <p className="sr-only text-lg font-semibold tracking-tight md:not-sr-only">Portfolio Kanban</p>
+          <p className="sr-only text-lg font-normal md:not-sr-only">Portfolio Kanban</p>
         </div>
       </aside>
       <div className="workspace-content">{children}</div>
