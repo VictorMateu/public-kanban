@@ -53,3 +53,16 @@ The owner must create and authorize the account manually. Authorization changes 
 The owner has since requested individually hidden tasks and comments with selectable visibility. The policies recorded above implement project-level publication only. They do not implement those additional privacy rules. Reusable columns and automatic actual completion dates are also outside this migration's scope.
 
 Those changes require confirmed schema and security proposals, new migrations and access-policy tests before exposure. See [Product requirements](../product.md).
+
+## Transport hardening update — 2026-11-08
+
+- Status: accepted by the owner on 2026-11-08.
+- Scope: application transport configuration; no schema, RLS or user changes.
+
+The review found that the installed SSR cookie defaults did not force `Secure` and that configuration accepted remote HTTP Supabase origins. The owner approved both proposed hardening measures.
+
+The project now shares cookie options across the server, proxy and browser Auth clients, requiring `Secure` in production. Supabase URLs require HTTPS except for HTTP on the explicit loopback hosts `localhost`, `127.0.0.1` and `[::1]`. Existing origin-only validation remains.
+
+Retaining dependency defaults alone would allow production Auth cookies without `Secure`. Requiring HTTPS without an exception would prevent the existing local Supabase setup. The selected policy preserves local development while requiring HTTPS for production authentication. Browser-readable Auth cookies remain part of the existing Supabase SSR design; switching to a server-only cookie/session architecture was not selected.
+
+Consequences: use `npm run dev` for HTTP authentication on localhost; production builds require HTTPS for Auth cookie delivery even when tested locally. LAN HTTP Supabase configurations must move to HTTPS or an explicit loopback origin. Tests exercise cookie creation/deletion through the installed SSR adapter and reject non-loopback HTTP configuration. A real HTTPS deployment and successful owner login/session renewal still require environment-specific verification.

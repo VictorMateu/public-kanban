@@ -9,7 +9,16 @@ test("accepts the publishable key and a project origin", () => {
 });
 
 test("allows the local Supabase origin", () => {
-  assert.equal(getSupabaseConfig({ NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test-only" }).url, "http://127.0.0.1:54321");
+  for (const host of ["127.0.0.1", "localhost", "[::1]"]) {
+    const url = `http://${host}:54321`;
+    assert.equal(getSupabaseConfig({ NEXT_PUBLIC_SUPABASE_URL: url, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test-only" }).url, url);
+  }
+});
+
+test("rejects unencrypted non-loopback connections, including deceptive hostnames", () => {
+  for (const host of ["example.supabase.co", "192.168.1.10", "0.0.0.0", "localhost.example.com", "127.0.0.1.example.com", "[::ffff:192.168.1.10]"]) {
+    assert.throws(() => getSupabaseConfig({ NEXT_PUBLIC_SUPABASE_URL: `http://${host}:54321`, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test-only" }));
+  }
 });
 
 test("fails closed for missing configuration and privileged or legacy keys", () => {
