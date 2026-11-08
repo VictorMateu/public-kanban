@@ -60,7 +60,7 @@
   },
   "Auth": {
     "title": "Acceso del administrador",
-    "description": "Acceso exclusivo del propietario de Portfolio Kanban.",
+    "description": "Acceso exclusivo del propietario de {appName}.",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "signIn": "Iniciar sesión",

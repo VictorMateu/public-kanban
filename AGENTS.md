@@ -1,8 +1,8 @@
-# Agent instructions — Portfolio Kanban
+# Agent instructions — Project Garden
 
 ## Purpose and priorities
 
-Portfolio Kanban lets visitors explore the owner's projects, their
+Project Garden lets visitors explore the owner's projects, their
 current progress and supporting information. Only the owner administers
 the application.
 

@@ -60,7 +60,7 @@
   },
   "Auth": {
     "title": "Accés de l'administrador",
-    "description": "Accés exclusiu del propietari de Portfolio Kanban.",
+    "description": "Accés exclusiu del propietari de {appName}.",
     "email": "Correu electrònic",
     "password": "Contrasenya",
     "signIn": "Inicia la sessió",

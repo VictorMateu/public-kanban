@@ -22,7 +22,8 @@ const handlee = Handlee({
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
-  return { title: "Portfolio Kanban", description: t("description") };
+  const common = await getTranslations("Common");
+  return { title: common("appName"), description: t("description") };
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

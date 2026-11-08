@@ -1,6 +1,6 @@
-# Portfolio Kanban
+# Project Garden
 
-A public Kanban for exploring my projects, their progress and supporting information. Visitors can browse published content; only the owner can manage it. Portfolio Kanban will also be featured as a project on my personal website.
+A public Kanban for exploring my projects, their progress and supporting information. Visitors can browse published content; only the owner can manage it. Project Garden will also be featured as a project on my personal website.
 
 ## Status
 

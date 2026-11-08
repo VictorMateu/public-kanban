@@ -89,6 +89,7 @@ The sidebar's brand is decorative text rather than a link. No menu, mobile toggl
 | Role | Size convention | Weight |
 | --- | --- | --- |
 | Main title (`h1`) | `text-3xl` by default; existing responsive `text-4xl`–`text-6xl` variants remain available | Dancing Script 700 |
+| Sidebar application title | `font-heading text-2xl font-semibold`; keep the brand label separate from page-heading semantics | Dancing Script 600 |
 | Section and column heading (`h2`, `h3`) | `text-2xl` | Dancing Script 600 |
 | Other heading (`h4`–`h6`) | `text-xl` by default | Dancing Script 600 |
 | Task title | `font-sans text-lg font-normal`, regardless of its heading tag | Handlee 400 |
@@ -107,6 +108,8 @@ For future components:
 The global typography defaults also apply to the retained project routes/components in the combined working tree. Their data access, interaction behavior, colors and layout geometry are unchanged by this integration; home remains intentionally empty.
 
 ## Interface internationalization
+
+The displayed application name is sourced from `Common.appName` in `messages/en.json`. It is shared unchanged by all locales through the existing English fallback. Use that key for branding and metadata; localized messages interpolate it as `{appName}`. The legacy npm name, local Supabase project/container identifiers and `portfolio-kanban-locale` cookie are retained to preserve the existing local setup and saved preferences. Historical validation entries and ADRs retain the product name used at the time.
 
 The owner selected `next-intl` with English (`en`) as the default, Spanish (`es`) and Catalan (`ca`). Paths such as `/projects/[slug]` and `/admin/login` stay unchanged; no `[locale]` route segment or localization proxy is used. The existing Supabase proxy remains unchanged.
 

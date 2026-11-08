@@ -1,5 +1,6 @@
 {
   "Common": {
+    "appName": "Project Garden",
     "sidebar": "Workspace sidebar",
     "mainContent": "Main content",
     "skipContent": "Skip to content",
@@ -60,7 +61,7 @@
   },
   "Auth": {
     "title": "Administrator sign-in",
-    "description": "Exclusive access for the owner of Portfolio Kanban.",
+    "description": "Exclusive access for the owner of {appName}.",
     "email": "Email address",
     "password": "Password",
     "signIn": "Sign in",

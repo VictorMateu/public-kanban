@@ -293,3 +293,17 @@ The typography-only index was exported to an ignored temporary directory before 
 For this isolated selection, `npm run lint`, `npm run typecheck`, `npm test` (15 tests), `npm run build` and `KANBAN_TEST_URL=http://127.0.0.1:3001 npm run test:public` (seven tests) all passed. The 20-test combined-working-tree results above include the pending board work and are separate evidence. Build/start used the existing public local configuration in process memory without copying environment files. Next.js reported multiple lockfiles due to the nested temporary export; no configuration or dependency workaround was introduced.
 
 The selected diff was reviewed for scope, whitespace, generated artifacts and credential patterns. Existing pending files were checked for preservation. No database fixtures, users, browser checks or remote operations were introduced during commit preparation. Visual acceptance remains pending, and no push was performed.
+
+## Project Garden name and sidebar title — 2026-11-08
+
+The owner selected Project Garden as the application name and requested the heading font for the sidebar title. `Common.appName` in the English source catalog now supplies the shared name through the existing English fallback. The sidebar, application/admin/project metadata, sign-in description and retained project-list heading consume that key. Sign-in descriptions interpolate the name in all three languages. The sidebar title uses `font-heading text-2xl font-semibold` (Dancing Script at 24px/600); ordinary interface text remains Handlee.
+
+Current documentation and the project-name labels in the root instructions were updated. Historical ADR and validation wording was preserved. The npm name, locale cookie, Supabase project/container identifiers, routes, logo and local data were retained.
+
+Lint, type checking and all 20 application tests passed. The rename passed the seven existing i18n HTTP tests, and an additional HTTP check confirmed the new sidebar name and page titles on home/sign-in in English, Spanish and Catalan without old branding or unresolved interpolation placeholders. The production build passed again after the sidebar's font adjustment. No new tests, dependencies, database operations, commits or pushes were introduced. Browser visual review was not performed; the typography and layout remain pending visual acceptance.
+
+### Isolated Project Garden name commit
+
+Before committing the rename, the twelve selected files were exported to an ignored temporary directory. The selection contains the shared brand name, existing-route metadata/sign-in text, sidebar title treatment and relevant documentation/instruction labels. Uncommitted project routes, project-list/board components, utilities, package script changes and project-specific tests remain excluded.
+
+The isolated selection passed `npm run lint`, `npm run typecheck`, `npm test` (15 tests), `npm run build` and `KANBAN_TEST_URL=http://127.0.0.1:3001 npm run test:public` (seven tests). Public local configuration was loaded only in process memory; no environment file was copied or selected. Next.js reported multiple lockfiles because the verification export was nested below the repository. The selected diff was reviewed for scope, whitespace, credential patterns and generated files. Existing pending work was preserved, and no push was performed.

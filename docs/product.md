@@ -4,9 +4,11 @@ These requirements record the owner's product direction. They describe the inten
 
 ## Purpose and audience
 
+The owner selected Project Garden as the application's name. It is a brand name shared by all interface languages, with a single source in `Common.appName` in the English message catalog; other locales inherit it through the existing English fallback. The sidebar presents it as a visual title in Dancing Script at 24px and weight 600.
+
 Visitors should be able to understand the state of the owner's projects, explore their tasks and find supporting project information. The minimum experience is a conventional Kanban showing current progress. How to present changes over time remains undecided.
 
-Portfolio Kanban will be the first project featured in the projects section of the owner's personal website. Repository instructions, documentation and code use English to reach an international audience, including recruiters. The interface supports English (default), Spanish and Catalan from this initial stage, with progressive translation through `next-intl` message catalogs.
+Project Garden will be the first project featured in the projects section of the owner's personal website. Repository instructions, documentation and code use English to reach an international audience, including recruiters. The interface supports English (default), Spanish and Catalan from this initial stage, with progressive translation through `next-intl` message catalogs.
 
 Language preference is stored in a cookie while URLs remain unchanged. Without a valid preference, English is used regardless of browser-language headers. Localizing project or task content is outside this interface-only scope.
 
@@ -97,7 +99,7 @@ This task changes typography only. The initial screen stays blank, the personal 
 
 ### Current base-layout prototype
 
-The owner requested a shared cozy shell inspired by the reference, with a left sidebar and a blank initial content area. `/` intentionally renders no project listing, heading, cards, columns, menus, search, notifications, avatar, language form or visible navigation. The sidebar contains only the Portfolio Kanban brand and the owner's personal logo, copied unchanged from the sibling `victor-portfolio` project in its original green variant. A keyboard-only skip link targets the empty, accessibly named main landmark.
+The owner requested a shared cozy shell inspired by the reference, with a left sidebar and a blank initial content area. `/` intentionally renders no project listing, heading, cards, columns, menus, search, notifications, avatar, language form or visible navigation. The sidebar contains only the Project Garden brand and the owner's personal logo, copied unchanged from the sibling `victor-portfolio` project in its original green variant. A keyboard-only skip link targets the empty, accessibly named main landmark.
 
 The owner corrected the initial inset-panel prototype: the application must fill the viewport, preserve the warm ambient background and remove the cream content panel for now. The peach sidebar sits at the left edge with small top, bottom and left margins so its independent rounding and shadow remain visible. It occupies the viewport height minus those vertical margins and remains in view when retained content scrolls. The main content area is transparent over the shared background. On narrow viewports the sidebar remains on the left as a compact brand rail; its full brand text is visually hidden but available to assistive technology. Exact sidebar widths, spacing, radius, shadow and responsive treatment remain provisional for visual review.
 
