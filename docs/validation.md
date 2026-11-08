@@ -307,3 +307,70 @@ Lint, type checking and all 20 application tests passed. The rename passed the s
 Before committing the rename, the twelve selected files were exported to an ignored temporary directory. The selection contains the shared brand name, existing-route metadata/sign-in text, sidebar title treatment and relevant documentation/instruction labels. Uncommitted project routes, project-list/board components, utilities, package script changes and project-specific tests remain excluded.
 
 The isolated selection passed `npm run lint`, `npm run typecheck`, `npm test` (15 tests), `npm run build` and `KANBAN_TEST_URL=http://127.0.0.1:3001 npm run test:public` (seven tests). Public local configuration was loaded only in process memory; no environment file was copied or selected. Next.js reported multiple lockfiles because the verification export was nested below the repository. The selected diff was reviewed for scope, whitespace, credential patterns and generated files. Existing pending work was preserved, and no push was performed.
+
+## Structure, security and supporting-page review — 2026-11-08
+
+The Garden rename was committed separately as `824aa1b`. Subsequent review changes remain uncommitted. Two agents independently reviewed architecture and security in read-only mode; the primary agent applied the owner-requested UI work and small English-language comment/internal-error corrections. No architecture, authentication policy, database schema or dependency was replaced.
+
+### Implemented UI scope
+
+The owner explicitly selected Overview plus Projects, with the logo also linking home. The new `/projects` route mounts the existing published-project list, using its anonymous, session-independent queries and RLS. `SidebarNavigation` uses the pathname for translated active-page labels and `aria-current`; it has no auth or data access. The compact mobile rail retains accessible text labels and focus treatment. Overview content is still empty: no KPI definition, count query or sample value was invented.
+
+Login, generic 404, project-specific 404 and the error boundary now use shared palette/font roles and `shadow-panel`. `PageMessage` is a custom presentation component reused for the message pages, including error announcements. The login form retains its labels, autocomplete, pending/disabled behavior and Server Action. No language selector is rendered. Existing locale cookies and translated responses still work. The prior language-form submission HTTP case was replaced by a selector-absence/read-only-cookie case because that form is no longer mounted; it is not evidence of a current language-selection UI.
+
+### Final application checks
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 20 application tests passed |
+| `npm run build` | Production build passed, including `/projects` |
+| `KANBAN_TEST_URL=http://127.0.0.1:3001 npm run test:public` | All 20 HTTP tests passed against local production Next.js and real local Supabase |
+| `git diff --check` | Passed; only line-ending conversion notices were reported |
+
+The HTTP suite now verifies Overview's empty content, the real published-project listing and its ordering/privacy, listing empty state, translated navigation and current-page semantics, retained boards, escaping, publication changes, missing/private projects, locale isolation and invalid-sign-in feedback. Fixture cleanup uses only the run's UUIDs and verifies matching population counts, including existing users and administrator authorization. The suite created no users and changed no existing authorization. These are HTTP/markup checks, not browser interaction or screenshot comparisons.
+
+### Security checks and open findings
+
+- `node --test tests/auth.test.ts tests/env.test.ts`: all 11 focused tests passed; they are a subset of the application suite and use client doubles for auth logic.
+- `npm audit --omit=dev --json`: zero known production dependency vulnerabilities. The first sandbox attempt failed on network/cache restrictions; the real-user retry succeeded without installing/updating dependencies.
+- Read-only local SQL in `BEGIN READ ONLY`/`ROLLBACK` confirmed RLS on projects, columns, tasks and the private administrator table; installed policies matched the migrations. Anonymous insertion is denied; application roles cannot create objects in `public` or access `private`; `is_admin` is restricted to authenticated execution, uses `SECURITY DEFINER` and has an empty search path. No records were changed by this inspection.
+
+| Priority / scope | Finding and next proposal |
+| --- | --- |
+| P2 before deployment | Auth clients do not force `Secure` cookies; propose coherent deployed-HTTPS cookie options across server/proxy/browser, preserving local development. Browser-readable cookies are part of the current Supabase SSR design and were not changed automatically. |
+| P2 configuration hardening | Supabase URL validation accepts non-loopback HTTP. Propose HTTPS with an explicit loopback development exception and validation tests. This requires unsafe deployment configuration; it is not a request-controlled URL bypass. |
+| P2 at scale | The Data API caps responses at 1,000 rows while retained list queries do not paginate; large boards may be partial. Use exact counts for future KPIs and confirm pagination or a product limit. No current truncation was demonstrated. |
+| P2 rendering/accessibility | Project-specific 404 still returns its heading only in RSC, not initial HTML. A fresh HTTP inspection reproduced this; the generic 404 and login do have initial HTML headings. Styling does not resolve the limitation. |
+| Future admin scope | Session refresh currently matches `/admin/:path*`. Confirm coverage and server checks before adding owner-only controls/private counts to Overview or Projects. Current public reads ignore admin cookies. |
+
+No administrator bypass or private-project exposure was found in the inspected code, installed policies or exercised public cases. This is not a complete security certification. A real successful owner login, renewal and revocation were not re-exercised; their earlier evidence remains historical. The SQL suite that requires an empty database was not run. No remote environment, production TLS/headers or live rate limits were validated. Proposed policy/transport changes require owner confirmation before implementation under the repository's existing rules.
+
+### Visual verification and acceptance
+
+Native Computer Use discovered Chrome but stopped before UI inspection because it could not determine the current browser URL confidently enough to enforce policy. No other browser-control path was used after that stop. Consequently, responsive appearance, actual keyboard focus, font rendering and hydration remain unverified; source semantics/focus styles were reviewed. The navigation structure is owner-selected, but visual acceptance and KPI definitions remain pending. The temporary test server is stopped after validation. No commit after the Garden rename, push, deployment, migration or user/administrator change was made.
+
+## Approved transport hardening and larger sidebar — 2026-11-08
+
+The owner approved the two security proposals and requested commits separated by responsibility. The server, proxy and browser clients now share Auth cookie options requiring `Secure` in production. Development/test retain HTTP cookie support. Supabase configuration now accepts HTTPS origins or HTTP on explicit loopback hosts (`localhost`, `127.0.0.1`, `[::1]`); remote/LAN HTTP and deceptive hostname suffixes are rejected. ADR 0002 records the subsequent approved transport decision without changing the historical RLS decision.
+
+Six new adapter tests exercise cookie creation and deletion in the installed Supabase SSR server/browser clients for production, development and test. Auth responses are explicit test doubles; they do not create users or contact a real Auth service. They assert the secure flag and preserved path, SameSite and browser-readable defaults. URL tests cover each allowed loopback host and rejected unencrypted destinations. These are configuration/adapter checks, not proof of browser cookie delivery or a successful real owner session.
+
+The enlarged sidebar uses a 19rem desktop width and 5rem mobile rail, retaining the 48rem breakpoint, full-height placement and ambient background. Its logo is 40px, brand title 30px, navigation text 20px and icons 24px; spacing and link areas are larger. Proportions remain provisional for owner visual review. The board's existing "All projects" action now returns to `/projects`, matching the selected navigation; the HTTP suite checks that actual action destination separately from the sidebar link.
+
+| Final check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 27 application tests passed |
+| `npm run build` | Production build passed, including both project routes |
+| `KANBAN_TEST_URL=http://127.0.0.1:3001 npm run test:public` | All 20 HTTP tests passed with real local Supabase |
+
+The first type check of the new test rejected a union of overloaded client factories; explicit factory calls corrected the test typing. The added return-link assertion initially included the decorative arrow in its text match; it was corrected to exclude the `aria-hidden` span, then all HTTP cases passed. These were test implementation issues, not skipped failures. The production server was restarted after the final application build and stopped after validation.
+
+HTTP fixtures are identified by this run's UUIDs and cleanup removes only those records. Population checks passed for projects, columns, tasks, users and administrator authorization; no users or existing authorization were changed. No migration, dependency installation, remote connection, deployment or push was performed. The empty-database SQL suite and a successful real owner login/renewal were not run. Production authentication requires HTTPS; local production HTTP checks exercise public pages and invalid-input feedback only.
+
+Responsive layout, semantics, accessible labels and focus utilities were reviewed in source and HTTP markup. No new browser inspection was attempted after the recorded Computer Use policy stop, so visual appearance, actual keyboard behavior and hydration remain unverified. The project-specific 404 initial-HTML issue and response pagination limit remain open; no unrelated architecture or rendering workaround was introduced. KPI definitions and final visual acceptance remain pending.
+
+The approved changes were committed by responsibility: `c09cb54` for transport security, `07c7b22` for internal English comments/errors and `8eee801` for navigation, public project views and supporting-page/sidebar UI. The related product, development and verification records are kept in a separate documentation commit. Staged diffs were reviewed for scope, whitespace, credentials, environment files and generated artifacts. No push was requested or performed.

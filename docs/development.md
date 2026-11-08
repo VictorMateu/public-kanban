@@ -65,13 +65,13 @@ The current palette defines the supplied light appearance only. The base shell's
 
 ### Base workspace shell
 
-`components/app-shell.tsx` is a Server Component mounted by `app/layout.tsx`. It supplies the decorative brand/sidebar and keyboard skip link. `.workspace-stage` in `app/globals.css` is a full-width grid with a minimum height of `100svh` and the palette-derived ambient background; no centered shell, width cap or cream content panel is rendered. The sidebar is provisionally 16.5rem wide from 48rem viewports upwards, and a 4.5rem brand rail below that breakpoint. Its small top, bottom and left margins use `--workspace-inset` (0.5rem–1rem); the drawer height subtracts twice that inset from the viewport. The sidebar is sticky with its own rounded border and shadow. Content is transparent and uses `minmax(0, 1fr)` and `min-width: 0` so retained boards can manage their own horizontal scrolling.
+`components/app-shell.tsx` is a Server Component mounted by `app/layout.tsx`. It supplies the brand/home link, sidebar and keyboard skip link. Its small `SidebarNavigation` Client Component uses `usePathname` only to mark the selected Overview/Projects destination; it does not read a session or query data. `.workspace-stage` in `app/globals.css` is a full-width grid with a minimum height of `100svh` and the palette-derived ambient background; no centered shell, width cap or cream content panel is rendered. The sidebar is provisionally 19rem wide from 48rem viewports upwards, and a 5rem brand rail below that breakpoint. Its small top, bottom and left margins use `--workspace-inset` (0.5rem–1rem); the drawer height subtracts twice that inset from the viewport. The sidebar is sticky with its own rounded border and shadow. Content is transparent and uses `minmax(0, 1fr)` and `min-width: 0` so retained boards can manage their own horizontal scrolling.
 
-`app/page.tsx` renders only an empty, localized main landmark that can receive skip-link focus. It performs no project query and renders no content, visible navigation or language selector. The former home implementation is preserved as `ProjectList` in `components/project-list.tsx`, without mounting it elsewhere or adding a route. `/admin/login` retains the native language form and its existing sign-in behavior. The old shared header and footer are not rendered by the shell.
+`app/page.tsx` renders an empty, localized Overview main landmark that can receive skip-link focus; no KPI query or sample metric is added. The owner-selected `/projects` route mounts `ProjectList` using the existing session-free published-data queries and dynamic rendering. Its cards and loading/empty states now use the shared palette. `/admin/login` retains its sign-in behavior and now shares the palette-based supporting-page treatment; no language selector is rendered. The old shared header and footer are not rendered by the shell.
 
-The sidebar's brand is decorative text rather than a link. No menu, mobile toggle, project link, task control or example-image feature is implemented. The shell is a working visual prototype awaiting owner review, not final design acceptance.
+The enlarged sidebar uses a 40px logo, 30px heading-font brand title, 20px navigation labels, 24px icons and increased link padding/spacing. The brand links home, and the sidebar has two translated entries with `aria-current="page"` and visible keyboard-focus treatment. The Projects entry remains active on its detail routes. Mobile labels are visually hidden but available to assistive technology; no modal drawer or focus trap is added. No extra menu item, task control or example-image feature is implemented. The shell is a working visual prototype awaiting owner review, not final design acceptance.
 
-`public/brand/logo.svg` is copied unchanged from `victor-portfolio/public/brand/logo.svg`, the sibling personal website's green logo. Keep the original SVG artwork and brand color; it is an existing brand asset rather than a component-specific UI color. `AppShell` renders it at 32px alongside the application name with an empty `alt` because that adjacent text already identifies the brand, including its screen-reader-only mobile text. No navigation link or extra visible attribution is added to the blank prototype.
+`public/brand/logo.svg` is copied unchanged from `victor-portfolio/public/brand/logo.svg`, the sibling personal website's green logo. Keep the original SVG artwork and brand color; it is an existing brand asset rather than a component-specific UI color. `AppShell` renders it at 40px alongside the application name with an empty `alt` because that adjacent text already identifies the brand, including its screen-reader-only mobile text. The combined brand links to Overview.
 
 ## Typography
 
@@ -89,7 +89,7 @@ The sidebar's brand is decorative text rather than a link. No menu, mobile toggl
 | Role | Size convention | Weight |
 | --- | --- | --- |
 | Main title (`h1`) | `text-3xl` by default; existing responsive `text-4xl`–`text-6xl` variants remain available | Dancing Script 700 |
-| Sidebar application title | `font-heading text-2xl font-semibold`; keep the brand label separate from page-heading semantics | Dancing Script 600 |
+| Sidebar application title | `font-heading text-3xl font-semibold`; keep the brand label separate from page-heading semantics | Dancing Script 600 |
 | Section and column heading (`h2`, `h3`) | `text-2xl` | Dancing Script 600 |
 | Other heading (`h4`–`h6`) | `text-xl` by default | Dancing Script 600 |
 | Task title | `font-sans text-lg font-normal`, regardless of its heading tag | Handlee 400 |
@@ -111,7 +111,7 @@ The global typography defaults also apply to the retained project routes/compone
 
 The displayed application name is sourced from `Common.appName` in `messages/en.json`. It is shared unchanged by all locales through the existing English fallback. Use that key for branding and metadata; localized messages interpolate it as `{appName}`. The legacy npm name, local Supabase project/container identifiers and `portfolio-kanban-locale` cookie are retained to preserve the existing local setup and saved preferences. Historical validation entries and ADRs retain the product name used at the time.
 
-The owner selected `next-intl` with English (`en`) as the default, Spanish (`es`) and Catalan (`ca`). Paths such as `/projects/[slug]` and `/admin/login` stay unchanged; no `[locale]` route segment or localization proxy is used. The existing Supabase proxy remains unchanged.
+The owner selected `next-intl` with English (`en`) as the default, Spanish (`es`) and Catalan (`ca`). Paths such as `/projects/[slug]` and `/admin/login` stay unchanged; no `[locale]` route segment or localization proxy is used. The existing Supabase proxy route matcher remains unchanged.
 
 - `messages/en.json` is the source catalog; `messages/es.json` and `messages/ca.json` hold translations.
 - Catalogs use two levels: a namespace containing string messages. `i18n/messages.ts` merges missing translations from English, allowing progressive translation.
@@ -122,7 +122,7 @@ The owner selected `next-intl` with English (`en`) as the default, Spanish (`es`
 
 Use `getTranslations` in async Server Components and `useTranslations` in synchronous or client components. Keep new UI text, metadata, accessible labels and user-facing errors in the catalogs. ICU messages handle task-count plurals. Authentication actions return stable error codes; the client translates them in the current locale.
 
-The native language form is available once on the sign-in page; the initial screen remains blank without visible controls. Its Server Action validates the submitted locale, writes `portfolio-kanban-locale` and revalidates the root layout. The preference lasts one year and uses `Path=/`, `SameSite=Lax`, `HttpOnly` and `Secure` in production. The cookie contains only `en`, `es` or `ca`; visiting without a preference does not create it. Invalid or missing values use English, without browser-language detection. Authentication cookies and authorization are independent of this preference.
+No language selector is currently mounted, as requested by the owner. Existing validated locale cookies still determine the language. The preserved native form and its Server Action can be reviewed for later use: the action validates the locale, writes `portfolio-kanban-locale` and revalidates the root layout. Its preference lasts one year and uses `Path=/`, `SameSite=Lax`, `HttpOnly` and `Secure` in production. Reading a page does not create that preference cookie. Invalid or missing values use English, without browser-language detection. Authentication cookies and authorization are independent of this preference. The HTTP suite currently checks cookie-based rendering and the selector's absence, rather than submitting a form that is no longer rendered.
 
 The existing interface has translations in all three languages. Project names, descriptions, columns and task content remain owner-authored data and are not automatically translated. Date-only values retain their calendar day through UTC while their display follows the chosen locale.
 
@@ -132,11 +132,9 @@ See [ADR 0003](adr/0003-interface-internationalization.md) for the decision and 
 
 ## Existing public implementation — acceptance pending
 
-This section also describes the preserved uncommitted public-board work in the combined working tree. Those project pages, components, utilities and database-backed HTTP tests are excluded from the base-layout commit.
-
 The following describes the preserved phase 3 navigation and visual design, which remain pending acceptance. Its interface text now uses the internationalization configuration above. Review [Product requirements](product.md) before changing the product experience.
 
-`/` currently presents the blank base-layout prototype described above. The previous ordered listing is preserved in the unmounted `ProjectList` component. `/projects/[slug]` still shows a project's description, columns and tasks, including priority and a due date when present, when opened directly. Columns and tasks follow `position, id` ordering, and the board supports horizontal scrolling using the keyboard and touch input.
+`/` is the Overview destination with empty content until KPIs are defined. `/projects` renders the ordered published-project listing through `ProjectList`. `/projects/[slug]` shows a project's description, columns and tasks, including priority and a due date when present. Columns and tasks follow `position, id` ordering, and the board supports horizontal scrolling using the keyboard and touch input.
 
 The routes use dynamically rendered Server Components. Queries use the anonymous client and do not persist responses in a shared cache. `React.cache` shares the project query between metadata and the page only within a request. Private and nonexistent projects return the same generic 404, including metadata.
 
@@ -154,9 +152,9 @@ After starting local Supabase, building and serving the application, run in anot
 npm run test:public
 ```
 
-At this commit, the command runs `tests/i18n-http.test.mjs`: locale cookies, unchanged URLs, English fallback, request isolation and localized invalid-sign-in feedback. It requires the application running with the documented local Supabase configuration; it does not create users or database fixtures. Only an HTTP origin on `localhost` or `127.0.0.1` is accepted, defaulting to port 3000. `KANBAN_TEST_URL` selects another local HTTP origin.
+The command requires Docker and the `supabase_db_portfolio-kanban` container. It accepts only an HTTP server on `localhost` or `127.0.0.1`, defaulting to port 3000. Set `KANBAN_TEST_URL` to use a different local HTTP origin.
 
-The public-board implementation and its separate integration suite remain uncommitted working-tree changes pending review. The recorded combined-working-tree results in [Validation](validation.md) include that additional suite.
+The command runs both `tests/public-http.test.mjs` and `tests/i18n-http.test.mjs`. The tests create only temporary projects, columns and tasks in the local database and delete their own specific UUIDs during cleanup. They do not create users or change administrator authorization. They check ordering, drafts, 404 responses, empty states, text escaping, dates, priorities, unpublishing, all three locales, invalid-sign-in feedback and the absence of a language selector. Cookie-based locale rendering is tested; submitting the unmounted language form is not. They preserve the owner's existing local account. The phase 2 SQL suite instead requires an empty test instance.
 
 ## Environment variables
 
@@ -164,7 +162,7 @@ Copy `.env.example` to `.env.local` and configure only:
 
 | Variable | Value |
 | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | The project's HTTP or HTTPS origin |
+| `NEXT_PUBLIC_SUPABASE_URL` | The project's HTTPS origin; HTTP is accepted only for `localhost`, `127.0.0.1` or `[::1]` |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | An `sb_publishable_...` key from the same project |
 
 Do not add `sb_secret_...` keys, `service_role` keys, legacy JWT keys, passwords or tokens. This application requires the new publishable keys. There is no administrator environment variable: authorization is resolved in the database.
@@ -268,6 +266,40 @@ Current organization:
 - `i18n/` and `messages/`: interface locale configuration, selection action, types and translation catalogs.
 
 Generated Next.js and TypeScript files are ignored by Git. This inventory describes the preserved implementation; it does not authorize new layers or settle future structure choices.
+
+### Components and UI tooling
+
+The UI components are custom React components styled with Tailwind and the shared CSS color/font roles. The project does not install or generate shadcn/ui, Radix primitives or a separate component system. Its future adoption remains an owner decision; it is not needed to style the current pages.
+
+| Component | Responsibility and rendering |
+| --- | --- |
+| `AppShell` | Server Component supplying the brand/home link, drawer, background and skip link |
+| `SidebarNavigation` | Small Client Component using the current pathname for active Overview/Projects links; no session or data access |
+| `PageMessage` | Typed presentation shared by both 404s and the error boundary; no data access or hooks; preserves alert announcements when requested |
+| `ProjectList`, `ProjectBoard` | Async Server Components coordinating the public queries and presentation; listing is mounted at `/projects` |
+| `ProjectCard`, `TaskCard`, `EmptyState` | Custom presentation for the retained project work; no browser database session |
+| `LoginForm`, `SignOutForm` | Client Components for `useActionState`, pending states and translated feedback; Server Actions perform authentication |
+| `LanguageSwitcher` | Preserved native Server Action form, currently unmounted |
+| `app/error.tsx` | Client error recovery using `PageMessage`; retry behavior is preserved |
+
+Login and supporting pages use the existing cream/honey/espresso roles, the central `shadow-panel` token and shared fonts. Inputs retain labels, autocomplete and focus outlines; fields/actions retain minimum touch height. `PageMessage` avoids repeating the page/heading/action structure across three states. These are provisional styles awaiting visual review, not a new library layer.
+
+### Architecture and security review — 2026-11-08
+
+The current Next.js/Supabase baseline remains appropriate. No additional backend, ORM, generic repository layer or dependency is justified by this review. The English-language convention was applied to existing internal comments and query/configuration error strings without changing control flow.
+
+The owner approved the transport-hardening proposals on 2026-11-08:
+
+- **Auth cookie transport:** `lib/supabase/cookie-options.ts` supplies the same `cookieOptions` to the server, proxy and browser clients. `Secure` is enabled when `NODE_ENV` is `production`, including production builds served locally. Use `npm run dev` for local HTTP authentication; use HTTPS for production authentication. Supabase SSR's existing `SameSite=Lax`, root path and browser-readable cookie defaults are preserved. Cookies remain browser-readable because the existing SSR design uses a browser client.
+- **Supabase transport configuration:** `getSupabaseConfig` requires HTTPS, with HTTP allowed only for the explicit loopback hosts `localhost`, `127.0.0.1` and `[::1]`. LAN and remote HTTP origins are rejected. Origin-only validation and publishable-key restrictions remain in force. This does not prove TLS configuration or the identity of a remote deployment.
+
+The following findings remain outside the current implementation:
+
+- **Future inline administration:** session refresh currently matches `/admin/:path*`. Public data reads remain independent of that session. Before introducing owner-only data/actions in home or projects, confirm refresh coverage and server authorization requirements; public KPIs must not contain private counts.
+- **Response limits:** local Data API responses are capped at 1,000 rows, and the retained list queries do not paginate. A board exceeding that number of tasks can be incomplete. Propose pagination or an explicit product limit before that scale; use exact server counts for KPIs.
+- **Project 404:** the localized heading is still absent from initial HTML, although the response is HTTP 404 and contains the heading in RSC. Current HTTP checks do not prove visual hydration or no-JavaScript behavior. Do not claim that styling closes this limitation.
+
+Production dependency-audit and local read-only policy inspection evidence is recorded in [Validation](validation.md#structure-security-and-supporting-page-review--2026-11-08). The subsequent transport decision is recorded in [ADR 0002](adr/0002-single-administrator-and-rls.md#transport-hardening-update--2026-11-08). Further security, schema and dependency decisions still require owner confirmation.
 
 ## Documentation and comments
 

@@ -6,7 +6,7 @@ A public Kanban for exploring my projects, their progress and supporting informa
 
 - **Phase 1 complete:** Next.js App Router, strict TypeScript, Tailwind CSS and ESLint.
 - **Phase 2 validated locally:** Supabase schema, password authentication, single-administrator authorization and RLS.
-- **Phase 3 visual prototype; acceptance pending:** a cozy layout fills the viewport with a detached left sidebar and an intentionally blank, transparent home area without navigation. Project-list and board work remains uncommitted and outside the base-layout scope.
+- **Phase 3 visual prototype; acceptance pending:** a cozy full-viewport layout provides Overview/Projects navigation and a public project listing. Overview KPIs await definition; login and 404 pages share the visual direction without a language selector.
 - The interface supports English (default), Spanish and Catalan through `next-intl`, with a cookie preference and unchanged URLs.
 - Administration CRUD and the additional [product requirements](docs/product.md) are not implemented. No remote services are connected or deployments made.
 
@@ -41,7 +41,7 @@ Open [localhost:3000](http://localhost:3000). The blank base-layout screen works
 - [ADR 0002: Single administrator and RLS](docs/adr/0002-single-administrator-and-rls.md)
 - [ADR 0003: Interface internationalization](docs/adr/0003-interface-internationalization.md)
 
-The next step is to review the base layout before defining navigation or home-page content. Each implementation scope and phase transition requires the owner's confirmation.
+The next step is to review the UI visually, define public Overview KPIs and verify authentication in the eventual HTTPS deployment. Each implementation scope and phase transition requires the owner's confirmation.
 
 ## License
 

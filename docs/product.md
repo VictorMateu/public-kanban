@@ -4,7 +4,7 @@ These requirements record the owner's product direction. They describe the inten
 
 ## Purpose and audience
 
-The owner selected Project Garden as the application's name. It is a brand name shared by all interface languages, with a single source in `Common.appName` in the English message catalog; other locales inherit it through the existing English fallback. The sidebar presents it as a visual title in Dancing Script at 24px and weight 600.
+The owner selected Project Garden as the application's name. It is a brand name shared by all interface languages, with a single source in `Common.appName` in the English message catalog; other locales inherit it through the existing English fallback. The sidebar presents it as a visual title in Dancing Script at 30px and weight 600.
 
 Visitors should be able to understand the state of the owner's projects, explore their tasks and find supporting project information. The minimum experience is a conventional Kanban showing current progress. How to present changes over time remains undecided.
 
@@ -95,15 +95,33 @@ The two fonts are loaded once through `next/font/google` in the root layout and 
 
 The default body size is 16px with a 1.6 line height. Section and column headings use 24px; task titles use Handlee at 18px. Existing main-title sizes remain responsive, starting at 30px. Secondary text may use 14px; task metadata and column counts no longer use 12px. CSS/Tailwind variables centralize font roles, while semantic heading elements apply the heading family by default. Task titles explicitly retain the body family even when marked up as headings.
 
-This task changes typography only. The initial screen stays blank, the personal logo and layout remain unchanged, and no new navigation or functionality is introduced. Browser review of font appearance, long headings, accent coverage and mobile wrapping remains necessary before visual acceptance. See [development typography conventions](development.md#typography) for variables and future-component rules.
+The typography choices do not themselves define navigation or functionality; those decisions are described below. Browser review of font appearance, long headings, accent coverage and mobile wrapping remains necessary before visual acceptance. See [development typography conventions](development.md#typography) for variables and future-component rules.
 
 ### Current base-layout prototype
 
-The owner requested a shared cozy shell inspired by the reference, with a left sidebar and a blank initial content area. `/` intentionally renders no project listing, heading, cards, columns, menus, search, notifications, avatar, language form or visible navigation. The sidebar contains only the Project Garden brand and the owner's personal logo, copied unchanged from the sibling `victor-portfolio` project in its original green variant. A keyboard-only skip link targets the empty, accessibly named main landmark.
+The owner requested a shared cozy shell inspired by the reference, with a left sidebar. The sidebar now includes the Project Garden brand, the owner's unchanged personal logo from the sibling `victor-portfolio` project, and the selected Overview/Projects navigation. The logo links home. `/` retains an empty, accessibly named main area while KPI definitions are pending; it renders no project data, sample metrics, search, notifications, avatar or language form. A keyboard-only skip link targets the main landmark.
 
 The owner corrected the initial inset-panel prototype: the application must fill the viewport, preserve the warm ambient background and remove the cream content panel for now. The peach sidebar sits at the left edge with small top, bottom and left margins so its independent rounding and shadow remain visible. It occupies the viewport height minus those vertical margins and remains in view when retained content scrolls. The main content area is transparent over the shared background. On narrow viewports the sidebar remains on the left as a compact brand rail; its full brand text is visually hidden but available to assistive technology. Exact sidebar widths, spacing, radius, shadow and responsive treatment remain provisional for visual review.
 
-The earlier project-list and board implementation remains uncommitted and outside the base-layout commit. In the combined working tree, the former home listing is preserved in `components/project-list.tsx` and is not mounted on any route. Existing `/projects/[slug]` routes and authentication behavior are preserved. The native language selector remains available on `/admin/login`; its absence on the blank initial screen does not remove cookie-based localization. Navigation and further content require a separate confirmed scope.
+The owner subsequently requested larger sidebar elements. The working prototype now uses a 304px desktop drawer, a 40px logo, 30px brand title, 20px navigation text and 24px navigation icons, with increased link padding and spacing. Below the existing 48rem breakpoint, an 80px icon rail preserves space for the main content and retains accessible text labels. These proportions await visual review rather than constituting final design acceptance.
+
+The former home listing in `components/project-list.tsx` is now mounted at `/projects` and adapted to the shared palette. Existing `/projects/[slug]` routes and authentication behavior are preserved. No language selector is rendered for now; validated existing locale cookies still select translations. Further content requires a separate confirmed scope.
+
+### First-version navigation — selected; KPI definitions pending
+
+The owner selected two primary entries: **Overview** at `/` and **Projects** at `/projects`, with the logo also linking home. An explicit Overview entry makes the destination easier to discover than relying only on the logo. The logo-only alternative was considered. The selected navigation is implemented with translated labels, active-page indication and accessible names on the compact mobile rail; visual acceptance remains pending.
+
+The Projects page reuses the preserved public listing and its anonymous Supabase queries. Initial KPI candidates are exact counts of published projects and publicly readable tasks, obtained from server-side counts through the public client/RLS. Existing list lengths must not be used as totals because the Data API caps responses at 1,000 rows. No KPIs or sample values have been added.
+
+Completion percentages, completed/in-progress counts and historical trends require definitions and potentially schema changes: current columns are arbitrary per project, and completion semantics are still undecided. These metrics must not be inferred from column names or include private owner totals. Future inline administration also requires a confirmed session-refresh and authorization plan for the public routes.
+
+No additional primary entry is recommended for the first version until it has defined content. Owner sign-in could be a small secondary drawer link to the existing route if selected; updates/history can be considered later under the already-open product decisions. These are proposals, not implementation authorization.
+
+### Current supporting-page review
+
+The owner requested login, generic 404 and project-specific 404 to follow the cozy palette and typography, without a language selector for now. These pages now use palette-based surfaces, borders, action styles and visible focus treatment. A shared custom `PageMessage` also supplies generic error-page presentation. The language selector is unmounted; existing locale-cookie behavior is preserved.
+
+The Overview content remains blank pending KPI definitions. The known project-404 initial-HTML limitation remains open despite the updated presentation. Styling and passing HTTP assertions do not establish hydration, responsive visual correctness or final design acceptance.
 
 ### Existing boundaries
 
@@ -117,13 +135,11 @@ The earlier project-list and board implementation remains uncommitted and outsid
 
 ## Implementation and acceptance status
 
-This inventory also describes preserved uncommitted board work. The base-layout commit contains the blank home, shared shell and existing authentication routes; it excludes the project-list and board implementation.
-
 | Area | Current state |
 | --- | --- |
 | Project foundation | Phase 1 complete |
 | Supabase integration, Auth and initial RLS | Phase 2 validated locally; owner account manually authorized locally |
-| Public project listing and read-only boards | Former listing preserved as an unmounted component; existing board routes remain available directly; home is intentionally blank during base-layout review |
+| Public project listing and read-only boards | Listing available at `/projects`; existing board routes preserved; Overview content remains empty until KPIs are defined |
 | Administration | Sign-in, authorization and sign-out exist; administration CRUD is not implemented |
 | Project information | Existing schema has name, slug, description, publication, ordering and timestamps; objectives and repository link are not implemented |
 | Columns | Currently stored per project; reusable definitions and propagation choices are not implemented |
@@ -152,6 +168,6 @@ Project 404 responses currently deliver localized content through the React payl
 
 Interface internationalization is implemented. The owner subsequently approved removing the `(public)` route group and sharing the root layout with the sign-in page, keeping existing URLs and authentication behavior. This structure decision does not accept the remaining phase 3 navigation or visual design. The language selector is a provisional native form; shadcn/ui adoption, administration CRUD, role-aware board queries and database changes remain outside this adjustment. The existing `/admin` authorization placeholder is preserved until inline administration is implemented. Further UI work requires its own confirmed scope.
 
-The cozy palette foundation is committed. The owner has now requested the base sidebar layout above, with the initial screen kept blank and without navigation. This task implements that provisional shell, preserves the previous listing outside the active home route and moves language selection to the existing sign-in page. It does not redesign the board, add navigation, change authentication or implement administration CRUD. The layout remains pending visual acceptance.
+The name, base layout and typography are committed. The current iteration reviews code structure and security, implements the owner-selected sidebar and Projects page, enlarges the sidebar elements, adapts login/404/error presentation and removes the visible language selector. The owner authorized committing this work by responsibility and approved production-secure Auth cookies plus HTTPS Supabase origins with explicit local HTTP exceptions. No schema, dependency or administration-CRUD change is included. KPI definitions and visual acceptance remain pending.
 
 Successful tests do not imply acceptance of provisional product or design decisions. Phase 3 remains pending acceptance until the owner reviews those decisions. Future phases, deployments and remote operations require explicit confirmation.
