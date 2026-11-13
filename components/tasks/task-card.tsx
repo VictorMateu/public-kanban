@@ -1,6 +1,6 @@
 import { useLocale, useTranslations } from "next-intl";
-import type { Task } from "../lib/tasks/queries";
-import { formatDueDate } from "../lib/tasks/due-date";
+import type { Task } from "../../lib/tasks/queries";
+import { formatDueDate } from "../../lib/tasks/due-date";
 
 const priorities = {
   low: { color: "border-slate-200 bg-slate-50 text-slate-700" },

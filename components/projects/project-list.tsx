@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import { EmptyState } from "./empty-state";
+import { EmptyState } from "../shared/empty-state";
 import { ProjectCard } from "./project-card";
-import { listPublishedProjects } from "../lib/projects/queries";
-import { isSupabaseConfigured } from "../lib/supabase/env";
+import { listPublishedProjects } from "../../lib/projects/queries";
+import { isSupabaseConfigured } from "../../lib/supabase/env";
 
 async function PublishedProjects() {
   const t = await getTranslations("Home");

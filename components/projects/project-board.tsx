@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
-import { listPublishedColumns } from "../lib/columns/queries";
-import { listPublishedTasks } from "../lib/tasks/queries";
-import { EmptyState } from "./empty-state";
-import { TaskCard } from "./task-card";
+import { listPublishedColumns } from "../../lib/columns/queries";
+import { listPublishedTasks } from "../../lib/tasks/queries";
+import { EmptyState } from "../shared/empty-state";
+import { TaskCard } from "../tasks/task-card";
 
 export async function ProjectBoard({ projectId }: { projectId: string }) {
   const t = await getTranslations("Board");

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache, Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import { ProjectBoard } from "../../../components/project-board";
+import { ProjectBoard } from "../../../components/projects/project-board";
 import { getPublishedProjectBySlug } from "../../../lib/projects/queries";
 import { isProjectSlug } from "../../../lib/projects/slug";
 import { isSupabaseConfigured } from "../../../lib/supabase/env";

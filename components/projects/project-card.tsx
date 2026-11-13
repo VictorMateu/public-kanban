@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import type { Project } from "../lib/projects/queries";
+import type { Project } from "../../lib/projects/queries";
 
 export function ProjectCard({ project }: { project: Project }) {
   const t = useTranslations("Common");

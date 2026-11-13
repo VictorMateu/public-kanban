@@ -3,7 +3,7 @@ import { Dancing_Script, Handlee } from "next/font/google";
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
-import { AppShell } from "../components/app-shell";
+import { AppShell } from "../components/layout/app-shell";
 import "./globals.css";
 
 const dancingScript = Dancing_Script({

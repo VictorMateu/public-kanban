@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { PageMessage } from "../components/page-message";
+import { PageMessage } from "../components/shared/page-message";
 
 export default function Error() {
   const t = useTranslations("Error");

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { PageMessage } from "../components/page-message";
+import { PageMessage } from "../components/shared/page-message";
 
 export default async function NotFound() {
   const t = await getTranslations("NotFound");
