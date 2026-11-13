@@ -374,3 +374,123 @@ HTTP fixtures are identified by this run's UUIDs and cleanup removes only those 
 Responsive layout, semantics, accessible labels and focus utilities were reviewed in source and HTTP markup. No new browser inspection was attempted after the recorded Computer Use policy stop, so visual appearance, actual keyboard behavior and hydration remain unverified. The project-specific 404 initial-HTML issue and response pagination limit remain open; no unrelated architecture or rendering workaround was introduced. KPI definitions and final visual acceptance remain pending.
 
 The approved changes were committed by responsibility: `c09cb54` for transport security, `07c7b22` for internal English comments/errors and `8eee801` for navigation, public project views and supporting-page/sidebar UI. The related product, development and verification records are kept in a separate documentation commit. Staged diffs were reviewed for scope, whitespace, credentials, environment files and generated artifacts. No push was requested or performed.
+
+## Sidebar cartoon prototype — 2026-11-08
+
+The owner requested a looping cartoon at the bottom of the drawer before moving to task CRUD. The built-in image tool generated eight aligned working/sipping poses from the personal portfolio portraits. A subsequent owner correction removed the visible chocolate/stains and added subtle steam. The selected transparent sheet is served from `public/illustrations/sidebar-working-v1.webp` (1774×887, 275,674 bytes). The final edit prompt and implementation conventions are recorded in Development.
+
+`SidebarIllustration` selects sprite cells through a 12-second discrete CSS loop, with a translated pause/resume button. Reduced-motion preferences produce a still frame with no animation control. The decoration/control are hidden on compact-width and short-height layouts, and the drawer can scroll vertically when needed. The illustration is excluded from the accessibility tree; its control retains an accessible name and focus outline. Geometry, frame pacing and resemblance are provisional until owner review.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 27 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3001 node --test tests/i18n-http.test.mjs` | All seven HTTP tests passed |
+| Ad hoc asset/CSS HTTP check | Asset returned 200 with WebP content type and alpha; compiled CSS contains sprite timing, pause state and reduced-motion treatment |
+
+The HTTP assertions allow the new sidebar button while preserving the empty main content and verifying the control's initial translated accessible label. The Catalan assertion initially failed because its apostrophe was HTML-escaped; escaping the expected label corrected the test, and the suite then passed. Initial markup assertions do not establish that clicking or keyboard activation actually pauses/resumes the animation. No tests mirroring the static sprite keyframe positions were added.
+
+The browser integration reported that its access host was unavailable. Browser visual review, actual pause/resume interaction, reduced-motion emulation and responsive screenshots have not been completed. Source and compiled-CSS checks are distinct from browser verification. The database-fixture HTTP suite and SQL suite were not rerun for this decorative change; no users or database records were created or changed. The temporary production server was stopped. No dependencies, commits, push, deployment or CRUD implementation were introduced; branch/design acceptance remains pending owner review.
+
+### Sidebar placement follow-up
+
+Following owner feedback, the brand and navigation now form one non-shrinking top group, with the illustration separated at the bottom of the flex drawer. Desktop bottom padding was reduced from 3rem to 1rem, and the pause control stays inside the scene rather than extending below it. This is a source-level placement correction awaiting visual confirmation.
+
+`npm run lint`, `npm run typecheck`, `npm test` (27 tests), `npm run build` and `KANBAN_TEST_URL=http://127.0.0.1:3001 node --test tests/i18n-http.test.mjs` (seven tests) passed after the correction. The temporary server was stopped. No database suites, native/browser automation, dependencies, commits or remote operations were added in this follow-up.
+
+The owner asked about pause requirements and continuous motion. WCAG 2.2.2 was checked against the W3C explanation: this nonessential automatic loop lasts over five seconds alongside other content, so a pause/stop/hide mechanism is appropriate; reduced-motion handling is separate. Tool discovery found image generation but no video generation. Layered continuous animation versus a separately sourced video clip has been presented for owner choice. The current sprite animation remains unchanged; no improvement in motion smoothness or video generation is claimed.
+
+## Calmer sidebar animation and edge treatment — 2026-11-13
+
+The preserved intermediate-frame work introduces a reusable canvas-based `SpriteAnimation` and a tested timeline for typing/drinking. The original eight-pose reference remains in the tree. The image tool produced a 16-cell typing sheet and a 32-cell reach/lift/sip sheet; these are generated poses, not optical-flow interpolation or proof of perfect temporal consistency. The drinking clip retraces the reach/lift path to return the mug, and both clips render the same separate poster at their boundary. Five timeline tests cover boundary-only switching, randomized rescheduling, frame-rate-independent progression, stationary clocks and invalid timing. These tests do not exercise browser rendering or judge pose quality.
+
+The owner then requested no square lines, a subtler cozy appearance, less keyboard movement and a video comparison. Inspection found nontransparent pixels at several atlas-cell edges, which can contribute to visible sampling seams. The canvas now samples 1.5px inside each cell, while a spatial alpha mask softens only the scene perimeter. There is no temporal crossfade. The scene is capped at 15rem and the pause control no longer has a filled circular background at rest; its target and visible focus treatment remain.
+
+Typing now uses four small poses, with two brief bursts separated by 4-, 3- and 4-second rests. Drinking targets 35–65 seconds of active typing and waits for a loop boundary; its sip hold is 1.25 seconds. Repeated cells are not repainted. The unused twelve typing poses were removed from the active atlas, preserving the larger sheet as a reference. Active files retain alpha and total 490,062 bytes, down from 668,914 bytes. No browser CPU/battery improvement or video-size comparison is claimed from those byte counts alone.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 32 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3002 node --test tests/i18n-http.test.mjs` | All seven HTTP cases passed |
+| Ad hoc HTTP asset/CSS check | All three active assets returned 200, with expected dimensions and alpha; the compiled edge mask and reduced-motion CSS were present |
+| `git diff --check` | Passed with line-ending conversion notices only |
+
+The browser integration again reported an unavailable access host. Visual edge removal, perceived calmness, actual pause interaction and responsive appearance remain unverified in a browser; source/HTTP checks are not screenshot acceptance. The temporary test server on port 3002 was stopped. Its project-list requests logged `ECONNREFUSED` because local Supabase on port 54321 was unavailable. The seven interface/i18n cases still passed, but they do not establish successful database-backed project rendering. Database-fixture and SQL suites were not rerun with that prerequisite unavailable. No users, database records, dependencies, commits, push, external video service or CRUD functionality were changed.
+
+For more natural human motion, a newly generated temporally consistent short clip is a candidate for a later visual comparison. Converting the same generated drawings to video would preserve their inconsistencies. No video exists in this repository to compare size, playback cost, transparency or loop quality; no video-performance claim is made.
+
+## Native video conversion and playback revision — 2026-11-13
+
+The owner reported no animation and explicitly requested video conversion and testing. The prior source spent over 90% of each typing cycle at rest and delayed its first gesture by four seconds; that explains an apparently stationary interval but was not established as the only issue in the owner's browser. The old reduced-motion CSS also hid the manual playback control. The new native player repeats a moving typing clip and leaves manual play available when motion preferences or autoplay restrictions suppress automatic playback.
+
+The canvas player, its frame clock and five associated tests were replaced by `VideoIllustration`, `video-sequence.ts` and three native-cycle sequencing tests. Two muted inline videos remain mounted, with one visible at a time. Native completion events repeat typing or trigger a drink after 15–30 seconds of completed typing playback; drinking completion returns to typing. Manual pause, tab visibility and viewport visibility control playback. Reduced-motion preferences suppress automatic movement until explicit opt-in. The shared transparent poster is retained on media errors. No frame-by-frame React updates or custom canvas animation remain in the active path.
+
+No installed FFmpeg was found, and the Windows Python launcher could not execute during tool discovery. A portable FFmpeg 9.0.2 package from gyan.dev, linked by ffmpeg.org, was downloaded into ignored `build/video-tools/` and checked against the publisher's SHA-256. An initially slow ZIP download was cancelled; the smaller verified 7z archive was used. No package.json, lockfile, system installation or external video-generation service was added.
+
+Source PNG sequences were sampled at 16fps, with a common starting/ending pose. Original alpha masks were merged with palette-matted color planes, then motion-compensated to 48fps using FFmpeg `minterpolate` in `mci` mode and encoded as WebM/VP9 with alpha and no audio. This is estimated motion interpolation, not a generative-video model or a guarantee against facial/hand warping. The decoded quarter-second stills were inspected; full-motion naturalness remains a separate visual check.
+
+| Encoded file | Duration | Decoded frames | Distinct decoded frames | Bytes |
+| --- | --- | --- | --- | --- |
+| `typing-v4.webm` | 2.209s | 106 | 95 | 107,186 |
+| `drinking-v4.webm` | 5.459s | 262 | 222 | 264,560 |
+
+Both streams are 224×224 at 48fps. Complete libvpx decoding succeeded, with alpha spanning 0–255. Compared with each first frame, the quarter-second frame changed 14,244 and 7,672 visible pixels respectively under the ad hoc threshold, confirming that the encoded media contains early movement. These are decoder/pixel assertions, not proof that a particular browser is playing. Active videos plus the poster total 384,516 bytes, versus 490,062 bytes for the prior selection; CPU and battery usage were not benchmarked.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 30 tests passed, including three video-sequence cases |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3002 node --test tests/i18n-http.test.mjs` | All seven cases passed with native video markup and initial play labels |
+| Full FFmpeg/ffprobe validation | Both clips fully decoded; codec, frame rate, dimensions, audio absence, alpha and early changes passed |
+| HTTP media checks | Both files returned 200 as `video/webm`, had valid WebM headers and supported 32-byte requests with HTTP 206 |
+
+The browser inventory and an in-app browser attempt both reported an unavailable browser access host. Actual browser `currentTime` progression, pause interaction, perceived fluidity and cross-browser alpha handling have not been verified. Source review and decoded stills do not constitute full-motion visual acceptance. VP9 alpha compatibility requires review in target browsers; errors retain the poster rather than claiming successful animation.
+
+Local Supabase remained unavailable, so the interface suite's passing cases are not evidence of database-backed project rendering. No database suites, fixtures or users were introduced. The temporary production server was stopped. Existing sprite sheets were preserved as references. No commit, push, deployment or CRUD implementation was performed.
+
+## Sidebar loop and hand correction — 2026-11-13
+
+The owner continued to see a cut after the native-loop playback revision. The owner-requested Chrome DevTools MCP connection subsequently became available, allowing direct checks of the local production page. Chrome telemetry confirmed actual typing, drinking and return playback, with roughly 2–3ms seeking/waiting events on native typing wraps in the initial sample. This did not establish the cause of the perceived cut. Decoded frames also showed whole-body alignment changes and a nearly stationary tail in the preceding typing asset.
+
+The typing candidate was re-encoded as a three-second cyclic sequence, interpolating three repeated pose cycles and retaining the middle one so both ends have real temporal context. A shared resting drawing stabilizes the head, torso and desk. The first spatial-mask candidate (`typing-v5.webm`) left part of the original hand visible and admitted laptop movement; the owner correctly identified a doubled hand and stretched computer. It was superseded by `typing-v6.webm`, whose opaque hand region covers the complete resting hand, with feathering outside its silhouette and an explicit screen/keyboard exclusion. Enlarged browser frame comparisons at 0, 0.1, 0.2, 0.4 and 0.8 seconds were inspected before selecting v6. These comparisons address the reported duplicated contour; they are not proof that every intermediate frame is artifact-free.
+
+The selected typing asset is 49,382 bytes, 224×224, 48fps, 144 frames and three seconds long, with no audio. Full decoding succeeded and alpha spans 0–255. An ad hoc premultiplied-RGB difference check measured a mean difference of 0.725 across the wrap versus a maximum adjacent-frame difference of 0.839 within the clip (0–255 channel scale). Thus the encoded wrap was not an exceptional frame jump in that check; it does not quantify perceived naturalness. Sampled fixed-screen and keyboard regions changed by at most 0.125 and 1.937 mean channel levels from their initial decoded image, respectively, including codec variation. The full drinking asset remains unchanged. Active videos plus poster total 326,712 bytes; older assets remain as references and are not loaded by the component.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3002 node --test tests/i18n-http.test.mjs` | All seven cases passed against the final v6 selection |
+| Chrome desktop, 1440×900 | Actual component changed typing → drinking → typing; manual pause held `currentTime` stable |
+| Keyboard | Five Tab presses reached the pause control with a visible solid outline; Enter paused both videos and updated the accessible label; target was 44×44px |
+| Reduced motion | Reload with the preference enabled kept playback paused at zero; explicit play advanced the video and updated the label |
+| Chrome mobile, 390×844 | Screenshot inspected; illustration/control hidden, both videos paused, document width equalled viewport width, and navigation retained accessible labels |
+
+Chrome screenshots and enlarged frame comparisons were inspected. The inspection tools expose stills and playback telemetry rather than continuous visual perception; owner review of naturalness, anatomy and the revised loop remains pending. Other browsers and battery/CPU usage were not tested. The interface suite again logged local Supabase connection failures, so it does not validate database-backed project rendering. No database suites, users, records, application dependencies, commits or remote operations were added. The local production preview on port 3002 is left running for owner review.
+
+## Animation resource cleanup — 2026-11-13
+
+The owner requested keeping only important animation resources and explicitly preserving the image sequences used to create the videos. `public/illustrations/` now contains only the two active videos and their fallback poster. Four source sheets were moved unchanged to `assets/sidebar-illustration/`. All 228 original color/alpha PNG inputs remain in the existing ignored `build/video-input/typing/` and `build/video-input/drinking/` directories, with the shared anchor and encoding recipes also retained locally. SHA-256 comparisons before and after cleanup confirmed that every source sheet and input PNG remained unchanged. The source sheets are available for Git tracking; ignored local inputs are not included by a normal commit.
+
+Removed only discarded typing videos, diagnostic decoded stills, repeated copies of the cyclic typing inputs, an obsolete verification script, FFmpeg download archives and extracted temporary binaries. Removed files totalled 396,329,473 bytes. Playback components, sequence logic, tests, selected assets and animation timing were unchanged. This cleanup does not constitute visual acceptance of the animation.
+
+`npm run lint`, `npm run typecheck`, `npm test` (34 tests) and `npm run build` passed after cleanup. A local production HTTP check confirmed all three active assets returned 200 with their expected MIME types and exact byte lengths, a video byte-range request returned 206 with 32 bytes, and all six obsolete/moved public URLs returned 404. No additional browser visual pass or database suites were run for this file-only cleanup. `git diff --check` passed with line-ending conversion notices only. The local production preview on port 3002 was restarted and remains available for review. No commit was made.
+
+## Component folder organization — 2026-11-13
+
+At the owner's request, the 13 component/CSS files were grouped into `layout`, `illustrations`, `projects`, `tasks` and `shared` folders. Relative imports and current documentation paths were updated; CSS modules remain beside their components. Rendering, Server/Client Component boundaries, navigation, styles, video sources and sequence logic were preserved. No barrel exports, wrappers or dependencies were introduced.
+
+`npm run lint`, `npm run typecheck`, `npm test` (34 tests), `npm run build`, `KANBAN_TEST_URL=http://127.0.0.1:3002 node --test tests/i18n-http.test.mjs` (seven tests) and `git diff --check` passed. A Chrome desktop screenshot was inspected after reload; browser checks confirmed one sidebar/navigation, its 304px width, both video elements, visible typing playback advancing and the pause label. Responsive, keyboard and reduced-motion checks from the preceding revision were not repeated for this file-only reorganization. Local Supabase remains unavailable, so the HTTP results do not establish database-backed rendering; database suites were not run. The production preview on port 3002 was restarted for review. No commit was made.
+
+### Commit handoff
+
+The owner subsequently authorized committing the pending work by responsibility: `f075749` contains component organization and import updates; `f4734ed` contains the sidebar animation, source sheets, runtime media, controls, translations and tests. The related development, product and validation documentation is recorded in a separate commit. Staged diffs were reviewed for scope, whitespace, credentials and generated/environment files; the animation CSS's redundant final blank line was removed. Ignored local source PNGs and encoding recipes remain outside Git and were preserved. No push was requested or performed. Visual acceptance remains pending owner review.
