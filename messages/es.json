@@ -17,6 +17,10 @@
     "overview": "Resumen",
     "projects": "Proyectos"
   },
+  "SidebarIllustration": {
+    "pause": "Pausar animación de la barra lateral",
+    "resume": "Reanudar animación de la barra lateral"
+  },
   "Language": {
     "label": "Idioma de la interfaz",
     "apply": "Aplicar"

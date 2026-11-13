@@ -1,0 +1,32 @@
+.illustration {
+  display: none;
+  position: relative;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 2rem;
+  width: 100%;
+  max-width: 15rem;
+  margin-inline: auto;
+}
+
+.scene {
+  width: 100%;
+  aspect-ratio: 1;
+  /* Feather only the perimeter; the portrait stays opaque and the canvas has no box. */
+  mask-image:
+    linear-gradient(to right, transparent, black 4%, black 96%, transparent),
+    linear-gradient(to bottom, transparent, black 3%, black 94%, transparent);
+  mask-composite: intersect;
+}
+
+.toggle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+@media (width >= 48rem) and (height >= 42rem) {
+  .illustration {
+    display: block;
+  }
+}

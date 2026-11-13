@@ -70,7 +70,7 @@ test("public project pages use real local data and preserve existing users", asy
       const result = await page("/");
       assert.equal(result.status, 200);
       for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "The blank home must not serialize project data");
-      assert.doesNotMatch(result.renderedHtml, /<(form|button|input|select)\b/);
+      assert.doesNotMatch(result.renderedHtml, /<(form|input|select)\b/);
       assert.doesNotMatch(result.renderedHtml, /href="\/projects\//);
       assert.match(result.renderedHtml, /<main\b[^>]*>\s*<\/main>/);
     });

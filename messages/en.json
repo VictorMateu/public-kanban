@@ -18,6 +18,10 @@
     "overview": "Overview",
     "projects": "Projects"
   },
+  "SidebarIllustration": {
+    "pause": "Pause sidebar animation",
+    "resume": "Resume sidebar animation"
+  },
   "Language": {
     "label": "Interface language",
     "apply": "Apply"

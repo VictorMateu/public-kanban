@@ -49,7 +49,17 @@ for (const locale of ["en", "es", "ca"]) {
     assert.ok(main, "The blank home should have a main landmark");
     assert.equal(main[1].trim(), "", "The initial content area must remain empty");
     assert.ok(home.renderedHtml.includes(`aria-label="${catalogs[locale].Common.mainContent}"`));
-    assert.doesNotMatch(home.renderedHtml, /<(form|button|input|select)\b/);
+    assert.doesNotMatch(home.renderedHtml, /<(form|input|select)\b/);
+    const sidebar = home.renderedHtml.match(/<aside\b[^>]*>([\s\S]*?)<\/aside>/)?.[1];
+    assert.ok(sidebar, "The shared sidebar should contain the decorative animation control");
+    assert.match(sidebar, /id="sidebar-illustration-[^"]+"[^>]*aria-hidden="true"/);
+    assert.ok(sidebar.includes(`aria-label="${catalogs[locale].SidebarIllustration.resume.replaceAll("'", "&#x27;")}"`));
+    assert.equal((sidebar.match(/<video\b/g) ?? []).length, 2, "Both native video sequences should be mounted");
+    assert.match(sidebar, /src="\/illustrations\/typing-v6\.webm"/);
+    assert.match(sidebar, /<video\b(?=[^>]*src="\/illustrations\/typing-v6\.webm")(?=[^>]*loop="")[^>]*>/);
+    assert.match(sidebar, /src="\/illustrations\/drinking-v4\.webm"/);
+    assert.doesNotMatch(sidebar, /<video\b(?=[^>]*src="\/illustrations\/drinking-v4\.webm")(?=[^>]*loop="")[^>]*>/);
+    assert.equal((home.renderedHtml.match(/<button\b/g) ?? []).length, 1, "Only the sidebar animation control is added to the blank home");
     assert.doesNotMatch(home.renderedHtml, /href="\/projects\//);
     assert.match(home.renderedHtml, /<a\b(?=[^>]*href="\/")(?=[^>]*aria-current="page")[^>]*>/);
     assert.ok(!home.response.headers.has("set-cookie"), "Reading a page must not create a preference cookie");
