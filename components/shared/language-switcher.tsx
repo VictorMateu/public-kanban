@@ -1,21 +1,36 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { setLocale } from "../../i18n/actions";
 
+const languages = [
+  { locale: "en", label: "english" },
+  { locale: "es", label: "spanish" },
+  { locale: "ca", label: "catalan" },
+] as const;
+
 export async function LanguageSwitcher() {
   const locale = await getLocale();
   const t = await getTranslations("Language");
 
   return (
-    <form action={setLocale} className="flex items-center gap-2">
-      <label>
-        <span className="sr-only">{t("label")}</span>
-        <select name="locale" defaultValue={locale} className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-700">
-          <option value="en" lang="en">English</option>
-          <option value="es" lang="es">Español</option>
-          <option value="ca" lang="ca">Català</option>
-        </select>
-      </label>
-      <button type="submit" className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-base font-normal text-slate-700 hover:border-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-700">{t("apply")}</button>
+    <form action={setLocale} aria-label={t("label")} className="flex w-fit max-w-full gap-1 self-center rounded-full border border-border/15 bg-surface/70 p-1">
+      {languages.map((language) => {
+        const active = locale === language.locale;
+        return (
+          <button
+            key={language.locale}
+            type="submit"
+            name="locale"
+            value={language.locale}
+            lang={language.locale}
+            aria-label={t(language.label)}
+            aria-pressed={active}
+            title={t(language.label)}
+            className={`flex min-h-11 min-w-14 items-center justify-center rounded-full px-3 py-1 text-base text-foreground transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${active ? "bg-accent" : "hover:bg-surface-warm"}`}
+          >
+            <span>{language.locale.toUpperCase()}</span>
+          </button>
+        );
+      })}
     </form>
   );
 }

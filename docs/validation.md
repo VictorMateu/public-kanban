@@ -1,5 +1,207 @@
 # Local validation
 
+## Desktop summary top spacing - 2026-11-14
+
+The owner approved the current interface proportions and requested more space above the summary. `overview.module.css` now uses `padding-top: clamp(1.5rem, 4svh, 3rem)` for desktop viewports at least 64rem wide and 50rem tall. This moves the summary down while keeping its established scale, widths and internal spacing. Mobile and short windows retain their previous spacing. The new top spacing remains pending visual review; the owner's approval covers the preceding proportions only.
+
+`npm run lint`, `npm run typecheck`, all 41 `npm test` cases and `npm run build` passed. The initial browser regression caught vertical overflow in the Catalan 1280x720 case when the extra padding also applied to short windows. Restricting the additional padding to sufficiently tall desktop windows resolved that failure. The rebuilt production version then passed all 35 viewport/locale cases in `KANBAN_TEST_URL=http://127.0.0.1:3004 node work/overview-proportions-qa.mjs`, including explicit desktop top-padding and unchanged phone-spacing assertions, compact desktop fit, keyboard/menu checks, client navigation and 200% text reflow. A large-desktop screenshot was visually inspected. No browser exceptions or console errors were observed. `git diff --check` passed.
+
+The desktop matrix reserves space with a layout-only account-row fixture; live administrator authentication was not tested. The previous entry's limitations for populated data pages remain. QA scripts/screenshots stay untracked under `work/`. No new dependencies, queries, database operations, commits or pushes were introduced. The temporary production server was stopped and the development preview remains on port 3003.
+
+## Proportional large-screen scaling and mobile preview inspection - 2026-11-14
+
+The owner clarified that larger screens should enlarge the entire interface, including width, typography and controls. The provisional layout now scales the rem-based shell and summary together only when both viewport dimensions allow it. Root sizing is bounded between 100% and 200% of the browser font preference; the summary is bounded at 88rem. The wide panel row remains bounded at 28rem of the current scale. This supersedes the preceding default-size desktop limit: panels no longer grow only vertically while their text, controls and width stay small. Narrow/short viewports retain the base scale and normal document scrolling. Mobile main/card padding, heading sizes, stacked sections and hidden illustration remain in place; activity labels do not split inside words.
+
+The shared development preview was inspected before and after updates. Its accessible automation snapshot timed out twice, so visual captures used isolated Chrome after reporting that limitation. Direct evaluation in the shared preview observed an old global stylesheet while the updated CSS module was already loaded; full navigation loaded the current stylesheet. After navigation, the 390px shared preview had 16px main gutters, 12px project-card padding, 28px section headings, no repeated application eyebrow and no horizontal overflow. The exact missing-server-component-style state shown in the owner's screenshot could not be reproduced. Stale development styles are an observed preview issue, not a proven complete explanation of that screenshot; no CSS Module workaround or toolchain/dependency change was introduced.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Passed |
+| `npm test` | All 41 tests passed |
+| `npm run build` | Passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Eight production HTTP tests passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node work/overview-proportions-qa.mjs` | 35 production viewport/locale cases, client navigation, keyboard, menu and enlarged-text assertions passed |
+| `git diff --check` | Passed |
+
+The browser matrix covered English, Spanish and Catalan with widths from 320px through 3840px, including the supplied 534px mobile size. At 1920x1080, 2560x1440 and 3840x2160, root sizing was approximately 18.29px, 24.38px and 32px, and main width was approximately 1554px, 2072px and 2816px. Compact 1366x768 and 1280x720 windows retained the 16px base. Assertions verified proportional width/type growth, the scale-aware panel cap, desktop alignment, mobile spacing/order, main/card padding, no clipped text or horizontal overflow, eight pending values, 44px-minimum filter targets and no decorative media below 1024px. The tested desktop/tablet summary sizes fit their viewport; narrow/short screens scroll. Desktop sizing used a layout-only 3.75rem account-row fixture, which does not authenticate an administrator.
+
+Production screenshots at 2560px and 390/534px mobile widths were visually inspected. Client navigation from Overview to Projects and back retained mobile padding. Keyboard filter activation, visible focus, menu overlay geometry, Escape focus restoration, outside dismissal, reduced motion and absence of filter data requests passed. At 200% root text in a short window, content reflowed without horizontal scrolling and the final status remained reachable. No browser exceptions or console errors were observed. The local QA scripts/screenshots remain untracked under `work/`; they are not committed application tests. The temporary production server was stopped after checks; the development preview remains on port 3003. Live administrator authentication and populated project/board appearance at the new desktop scale remain unverified. No database suites, users, migrations, remote operations, dependencies, commits or pushes were introduced. Visual acceptance remains pending owner review.
+
+## Bounded desktop proportions and mobile summary composition - 2026-11-14
+
+The owner reported that large displays stretched the activity/task panels excessively and rejected the mobile presentation. The wide panel row is now capped at 28rem (448px at the default root size), retaining the compact desktop proportions instead of consuming arbitrary viewport height. Mobile uses 1rem side gutters and 1.25rem section gaps, a smaller heading/description and no repeated application eyebrow. Project/task metrics appear before activity in the DOM and mobile layout; CSS grid areas preserve the desktop activity-left/task-right arrangement. From 20rem to below 34rem of content width, metric labels and pending values share a row, with a stacked fallback for narrow cells. Activity controls form full-width rows on narrow phones and two equal groups from 22rem. Button sizing accounts for longer translated labels. The mobile plot has a 7.5rem minimum and the section stack no longer flex-grows. No data logic, dependencies, authentication or schema changes were added. These visual adjustments remain pending owner review and supersede the previous unbounded panel growth/mobile composition.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed after removing unused helpers from the local diagnostic script |
+| `npm run typecheck` | Passed |
+| `npm test` | 41 tests passed |
+| `npm run build` | Passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Eight production HTTP tests passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node work/overview-proportions-qa.mjs` | 34 production browser viewport/locale cases plus client-navigation, keyboard and enlarged-text assertions passed |
+| `git diff --check` | Passed |
+
+The isolated Chrome matrix covered 320-2560px widths and English, Spanish and Catalan. It added 534x796 cases matching the supplied mobile capture, common 360/375/390/430px phone widths and 1920x1080/2560x1440 displays. Assertions verified the 448px wide-panel height cap, desktop panel alignment, mobile metric-before-activity order and section spacing, main/card padding, compact mobile plot, no clipped text or horizontal overflow, all pending values, 44px filter buttons and no decorative media below the navigation breakpoint. Existing one-screen sizing assertions still passed for the tested desktop/tablet sizes. Desktop sizing reserved a layout-only 60px account row; it did not authenticate an administrator. Production screenshots at large desktop and 390/534px mobile sizes were visually inspected.
+
+A mobile client-side round trip from Overview to Projects and back retained main/card padding. Keyboard filters, visible focus, no filter fetches, menu overlay geometry/Escape/outside dismissal and reduced motion passed. The 200% root-text check retained reflow and access to the final status. The initial local diagnostic script triggered lint warnings for unused helper functions; they were removed and lint passed on rerun. No browser exceptions or console errors were observed. Local QA scripts and screenshots remain untracked under `work/`, outside the committed test suite. Narrow/short screens retain normal document scrolling. Live administrator session behavior was not tested in this visual-only follow-up. No database suite or remote operation ran. The temporary production server was stopped, and the development preview remains on port 3003.
+
+## Viewport-aware Overview and tablet navigation - 2026-11-14
+
+The owner requested that the UI adapt to screen dimensions and avoid scrolling down to read the current summary. Overview now uses bounded viewport-height spacing, card padding, headings/values and chart minimum height. Its activity/task panels grow into available space. At 34rem of available content width, project metrics use four columns, task metrics form a vertical list and the personal link sits beside the introduction. Below that width, sections stack with two-column metrics. The existing top-bar disclosure now applies below 64rem of viewport width; the shared shell, session controls and illustration visibility/mount query use the same threshold. This supersedes the 48rem threshold in earlier validation entries. No scroll lock, clipping, simulated observations, database logic or dependency was introduced. Short windows, narrow phones, enlarged text and future growing lists may still scroll normally. The revised proportions and tablet breakpoint remain pending owner visual review.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed |
+| `npm run typecheck` | Passed |
+| `npm test` | 41 tests passed |
+| `npm run build` | Passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Eight production HTTP tests passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node work/overview-viewport-qa.mjs` | 25 production browser viewport/locale cases plus keyboard/reflow checks passed |
+| `node work/mobile-session-qa.mjs` | Seven isolated account/sidebar component viewport/locale cases plus desktop interaction checks passed |
+| `git diff --check` | Passed |
+
+Isolated headless Chrome checked the actual anonymous production Overview from 320px to 1900px wide, including the 1023/1024px navigation boundary and English, Spanish and Catalan. Desktop sizing assertions additionally inserted a layout-only 60px account row to reserve the same space as authenticated controls; this did not authenticate a user or change application authorization. The complete summary fitted 1900x905, 1440x900, 1366x768, 1280x720 and 1024x768 in the tested locale combinations. The latter three sizes were checked in all three languages. The tablet summary also fitted 768x1024 in all languages, plus 820x1180 and 1023x768 in the tested locales. Assertions found no horizontal page overflow or clipped text, retained all eight pending values and 44px activity-filter targets, and observed no illustration asset requests below 1024px. Screenshots at desktop, compact desktop and tablet sizes were visually inspected. Small-phone and short landscape cases retained document scrolling. A 640x360 layout with root text enlarged to 200% reflowed without horizontal scrolling, and its final status remained reachable.
+
+Keyboard entity/period selection, visible focus, no filter data requests, menu overlay geometry, Escape focus restoration, outside dismissal and reduced motion passed. The separate component fixture used actual sidebar/account components and an intentionally failing logout action: static top-bar status/menu logout passed at 320, 360, 390, 768 and 1023px; desktop account behavior passed at 1024 and 1440px. It also checked pending/error feedback and retry focus. No browser exceptions or console errors were observed. The local `work/` QA scripts/screenshots remain untracked and are not part of the committed test suite. Live administrator cookie round-trip and authenticated server rendering were not tested. No database suites, user creation, schema changes or remote operations were performed. The temporary production server on port 3004 was stopped; the owner's development preview on port 3003 remains running.
+
+## Mobile session indicator and navigation logout correction - 2026-11-14
+
+The owner rejected the separate mobile account dropdown and requested a static session sphere in the top bar with sign-out inside the main navigation disclosure. Below 48rem, the server-verified shell now supplies the noninteractive indicator beside the navigation toggle and the shared sign-out form below the language selector. The external account row is hidden, so it adds no mobile content spacing. From 48rem upwards the previous account dropdown remains available, while the mobile status and logout are hidden. The brand scales down below 360px to accommodate the controls. A shared account icon avoids duplicate artwork; session/authorization and redirect behavior are unchanged.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Passed |
+| `npm test` | All 41 tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | All eight cases passed, including absence of account controls and the static mobile indicator for anonymous visitors |
+| `node work/mobile-session-qa.mjs` | Isolated responsive component fixture passed |
+| `node work/overview-qa.mjs` | Anonymous Overview/sidebar regression matrix passed |
+| `git diff --check` | Passed |
+
+The focused Chrome fixture bundles the actual sidebar, account icon, desktop account disclosure and shared logout form, with real catalogs/styles and a deliberately failing logout action. Mobile checks passed at 320px (English), 360px (Spanish) and 390px (Catalan): no horizontal overflow or brand/status overlap, static indicator outside buttons/links and keyboard order, no action on indicator activation, no visible external account trigger, touch opening without moving content, a visible 44px-minimum logout target, pending/error feedback, retry focus and Escape focus restoration. A mobile screenshot was visually inspected. Desktop checks at 768px and 1440px retained account opening, keyboard focus, hover continuity, click pin/unpin, outside dismissal, reduced motion and logout failure handling. No browser exceptions or console errors were observed. These local fixture scripts are not part of the committed test suite and do not establish live administrator authentication or logout.
+
+No database records, users, dependencies or schema changes were introduced. Live owner-session verification and visual acceptance of this corrected mobile arrangement remain pending. The earlier account-disclosure evidence below records the prior mobile design and is superseded by this correction for placement and interaction only.
+
+## Overview authentication landing and account disclosure - 2026-11-14
+
+The owner requested returning to Overview after sign-in and a cozy administrator-only account disclosure with sign-out, including touch access on mobile. Successful sign-in and sign-out now revalidate the shared root layout and redirect to `/`. Already-authorized requests to the login page and legacy `/admin` route also redirect to Overview; the legacy route still requires administrator authorization. The existing sign-out form moved into `components/auth` and is mounted through the server-verified shared shell. No settings feature, dependencies, schema changes or session-refresh matcher changes are included. Settings placement is documented as deferred work in the existing product/ideas documents.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Passed |
+| `npm test` | All 41 tests passed, including seven new action-flow cases |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | All eight production HTTP cases passed |
+| `node work/account-menu-qa.mjs` | Isolated component browser fixture assertions passed |
+| `node work/overview-qa.mjs` | Existing anonymous Overview/sidebar responsive assertions passed |
+| `git diff --check` | Passed |
+
+The action tests execute the actual action module using the installed TypeScript compiler with framework and Supabase-client adapters replaced in memory. They retain the real credential/administrator-authentication function. They verify successful owner sign-in and sign-out refresh the layout before redirecting to Overview; non-administrator sign-in cleans up its session; failed/unavailable authentication does not redirect; and failed/unavailable logout reports an error instead of claiming a public session. These are isolated unit assertions, not live Auth or cookie round-trip tests.
+
+The account browser fixture bundles the actual account disclosure and sign-out components with the installed tooling, real message catalogs and styles, a temporary isolated Chrome profile and a deliberately failing test action. It adds no application route or authorization bypass. Checks passed at 320px (English), 390px (Spanish), 768px (Catalan) and 1440px (English): touch/click opening, viewport bounds, 44px minimum logout target, unchanged content geometry, keyboard activation/Tab order, visible focus, Escape and focus restoration. Desktop checks covered hover opening, pointer travel into the panel, hover dismissal, click pin/unpin, outside dismissal, reduced motion and pending/error/retry-focus behavior. Disabling the submit button initially caused focus loss to close the panel; the implementation now keeps feedback visible for that specific blur and restores focus after a failure. No browser exceptions or console errors were observed. Mobile and desktop fixture screenshots were visually inspected. The local browser scripts/artifacts under `work/` remain outside the committed test suite.
+
+The HTTP cases verify anonymous visitors receive no account controls on Overview or login and retain localized invalid-sign-in handling, locale isolation and protected-route redirects. The anonymous Overview/sidebar matrix again passed at 320-1440px across the three locales. Local Supabase was available, but no real administrator session or successful end-to-end login/logout was used: live cookie changes, authorized HTML, the already-authorized login redirect and the authorized legacy-route redirect remain pending a manual owner-session check. No users, fixture records, migrations or administrator assignments were created. The database-backed public fixture suite was not run. Visual acceptance of this disclosure remains pending the owner's review.
+
+## Responsive presentation-only Overview - 2026-11-14
+
+The owner approved the first Overview implementation while another thread defines the database. The page now contains an introduction and personal website link, four project metrics, four task metrics, and an activity panel with entity and month/day controls. Every metric remains an em dash with an accessible pending label. The activity area has no sample values, chart marks, dates or numeric axes. The server-only Overview query returns only a pending status and records future data work as TODOs; it does not access Supabase.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings, including the final local browser harness |
+| `npm run typecheck` | Passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | All eight HTTP tests passed against the production build |
+| `node work/overview-qa.mjs` | Isolated headless Chrome responsive and keyboard assertions passed |
+| `git diff --check` | Passed |
+
+The browser matrix covered English at 320, 360, 390, 768, 1024 and 1440 CSS pixels, plus Spanish and Catalan at 320, 390 and 768 pixels. Automated assertions checked horizontal overflow, text/control bounds, two or four project columns according to the content width, 44px minimum selector height, all eight pending values and the document language. Mobile cases contained no videos and requested no illustration assets. Mobile (Spanish, 390px) and desktop (English, 1440px) screenshots were visually inspected.
+
+Additional Chrome assertions checked entity selection with Enter, period selection with Space, visible keyboard focus, selected-button states, updated accessible activity descriptions and no Fetch/XHR requests from those controls. The mobile menu preserved the main content geometry, closed with Escape and restored toggle focus, dismissed on an outside pointer action and disabled its animation with reduced motion. No browser exceptions or console errors were observed. These checks used an isolated temporary profile, not the owner's browser session.
+
+The HTTP cases assert translated Overview content, the personal link, eight pending values, the initial activity description and the existing locale/security response behavior. The public-data integration assertion was updated for the pending Overview but its suite was not run: it inserts database fixtures, and this task excludes database work. No users, database records, migrations or dependencies were created or changed. Real counts, lifecycle definitions, activity queries and data-driven loading/error states remain pending. The owner accepted the first responsive Overview presentation on 2026-11-14; this does not approve database integration or the rest of phase 3. The existing local development preview on port 3003 was left running; the temporary production server on port 3004 was stopped after verification.
+
+## Floating mobile menu follow-up - 2026-11-14
+
+The owner rejected the mobile panel pushing the content and requested an overlay with a cozy animation and no visible Menu text. The panel is now absolutely positioned below the top bar, with a bounded height and internal scrolling. The header and content retain their layout dimensions when it opens. A circular cream button with rounded strokes replaces the text label; translated open/close accessible names remain. The icon changes to a close symbol. The panel entrance uses a 280ms opacity/translation/scale animation with a slight rotation; reduced-motion preferences disable it and the icon transition. The existing palette and panel shadow are reused. The skip link stays above the overlay. Desktop retains its static flex panel and disables the entrance animation.
+
+Outside pointer presses and focus leaving the sidebar dismiss the mobile panel; Escape returns focus to the toggle. The overlay is non-modal, with no focus trap or blocked background controls. No mobile illustration or replacement media was added. This presentation remains provisional for owner review.
+
+`npm run lint`, `npm run typecheck`, `npm test` (34 passed), `npm run build`, `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` (eight passed) and `git diff --check` passed. HTTP coverage additionally checks that the toggle contains a decorative SVG without visible text while retaining its translated accessible name. The compiled stylesheet was checked for the reused shadow token. These checks do not establish browser geometry, focus behavior, animation appearance or reduced-motion behavior after hydration; no browser pass was performed in this follow-up. The development preview remains available on port 3003. No commit or push was made.
+
+## Mobile navigation disclosure - 2026-11-14
+
+The owner requested a collapsible mobile menu containing the existing navigation and language selection, without the decorative media. Below 48rem the shell now uses a top bar with the visible brand and a translated Menu button. The shared panel starts collapsed, expands in document flow, closes on link activation and supports Escape with focus returned to the toggle. Desktop retains the sidebar. The language capsule stays horizontal, and all new labels are translated in English, Spanish and Catalan. Appearance and spacing remain provisional until owner review.
+
+The illustration now mounts only after the client confirms both a width of at least 48rem and a height of at least 42rem. Initial HTML contains no video or decorative poster; initial mobile rendering does not create those media elements. Shrinking from desktop unmounts the player but cannot undo prior downloads. No replacement image or dependency was added. The mobile disclosure requires JavaScript; the language form still uses the existing native Server Action.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | All eight HTTP cases passed against the temporary production server |
+| `git diff --check` | Passed |
+
+HTTP assertions now verify the initially collapsed disclosure, its translated accessible name and matching panel identifier, one shared navigation/language form, and the absence of decorative media in initial markup. Existing locale submission, cookie, authorization redirect and invalid-sign-in checks also passed. These HTTP assertions do not execute client interactions, measure downloads after hydration or establish responsive geometry, focus visibility, touch behavior or desktop animation playback. No browser interaction or visual pass was performed for this revision; those checks remain pending in the development preview at port 3003. No database fixture suite, data change, user creation, commit or push was performed.
+
+## Administrator indicator placement follow-up - 2026-11-14
+
+At the owner's request, the verified administrator icon was moved from the sidebar to the upper right of the shared content area. Its own row reserves space above route content rather than overlaying it. The icon keeps its existing server authorization check, translated label and 44px size. No account-menu behavior was added.
+
+`npm run lint`, `npm run typecheck`, `npm test` (34 passed), `npm run build` and `git diff --check` passed. No additional HTTP or browser verification was performed for this placement-only change; owner review in the existing preview remains pending.
+
+
+## Local login preview enabled — 2026-11-14
+
+At the owner's request, `docker desktop start` started Docker and the existing local Supabase containers resumed. Auth and PostgreSQL reported healthy. The worktree's ignored `.env.local` was configured from the original checkout's existing local URL and publishable key; values were not printed. No migrations, resets, users, administrator assignments or application-data changes were performed. A read-only query confirmed one existing user and one administrator record.
+
+The Auth health endpoint returned HTTP 200. `http://localhost:3003/admin/login` returned HTTP 200 with both email and password fields after the development server picked up its configuration. The preview remains running for the owner to sign in. These checks establish service availability and form rendering; successful credential sign-in, session renewal and the authenticated user icon remain pending owner review. Application checks were not rerun for this service/configuration-only operation. `git diff --check` passed.
+
+## Cozy language capsule follow-up — 2026-11-14
+
+The owner subsequently requested removing the dot beneath the selected language. The dot and its reserved spacing were removed; the honey background and `aria-pressed` remain. `npm run lint`, `npm run typecheck`, `npm test` (34 passed), `npm run build` and `git diff --check` passed after this presentation-only adjustment. No additional HTTP or browser pass was performed; visual review remains pending in the development preview.
+
+The owner rejected the initial dropdown's appearance and requested a cozier selector. `LanguageSwitcher` now renders three native submit buttons inside a cream capsule. Honey fill, a small dot and `aria-pressed` identify the active locale; full language names come from the catalogs. Each button submits its locale directly to the existing action. The component remains server-rendered and requires no JavaScript for submission or new dependencies. The capsule stacks vertically on the compact rail, with 44px minimum button height and visible focus styling. This is a provisional visual choice awaiting owner review in the existing development preview on port 3003.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Seven passed; invalid-sign-in case explicitly skipped because this worktree has no Supabase configuration |
+| `git diff --check` | Passed |
+
+The HTTP suite verifies one form containing all three labeled options, exactly one selected locale, translated public/login/unavailable states, native submissions for all three languages, cookie persistence, unsupported-locale rejection and unchanged authorization redirects. It supports the documented configuration-unavailable login state rather than assuming credentials are configured. An initial Catalan assertion failed because the unavailable message's apostrophe was HTML-escaped; the assertion was corrected and the suite rerun successfully.
+
+No browser responsive, keyboard or focus verification was performed for this follow-up. CSS and HTTP checks do not establish visual acceptance. Supabase configuration and the service remain unavailable here, so actual authenticated-session and database checks were not run. No users, fixtures, schema, account features, commits or remote operations were introduced.
+
+## Sidebar session indicator and language selector — 2026-11-14
+
+The owner requested a user icon at the upper left when signed in and a language selector beneath the animation. The shared Server Component now renders a labeled circular icon only when the existing `getAdministrator` check confirms both identity and database authorization. Auth errors omit the icon so public browsing can continue. Sign-in/sign-out invalidate the root layout to refresh the indicator. Public project queries, the `/admin` session-refresh matcher, RLS, dependencies and schema remain unchanged.
+
+The preserved native language form is mounted below the animation, using palette roles, EN/ES/CA choices and an explicit Apply button. Its compact mobile layout uses a check icon with a translated accessible name. Both controls retain a 44px minimum height and visible focus styling. The form remains mounted when the decoration is hidden. Placement and appearance are a working prototype pending owner review.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3003 node --test tests/i18n-http.test.mjs` | All eight HTTP tests passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3003 node --test --test-name-pattern 'cookie preference renders' tests/i18n-http.test.mjs` | Three locale cases passed after adding private/no-store response assertions |
+| `git diff --check` | Passed |
+
+HTTP assertions cover one shared selector across public/login/unknown routes, selected locale, placement after the videos, absence of the administrator icon for anonymous visitors, unchanged empty Overview content and no preference cookie on reads. Native form submissions persist all three supported locales with the expected cookie attributes, reject unsupported values and do not grant access or set Auth cookies. Invalid-sign-in feedback remains localized.
+
+Local Supabase was not listening on port 54321. Database-backed project requests reported connection failures; the passing interface cases do not establish successful project-data rendering. No database suites, fixtures or users were created. Actual authorized icon rendering, login/logout display updates, expired-session behavior, browser responsive appearance, keyboard interaction and focus visibility remain unverified in this revision. Source review and HTTP assertions are distinct from browser verification and visual acceptance. No account menu, new dependency, migration, commit, push or deployment is included.
+
 The phase 2 and phase 3 results below were recorded on 2026-11-01, exclusively against local Supabase with PostgreSQL 17 and Docker on WSL2. No migrations or tests were run against a remote project. These are historical results, not evidence that every check was rerun during the documentation revision.
 
 Technical checks do not constitute acceptance of navigation or design. The preserved phase 3 UI remains pending the owner's review. See [Product requirements](product.md).

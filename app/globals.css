@@ -11,6 +11,15 @@
   --palette-sage-soft: #e8efdf;
 }
 
+/* Scale the rem-based shell and summary together when both dimensions allow it.
+   Short desktop windows keep the compact size; browser text preferences remain
+   the lower and upper bounds instead of shrinking content to fit a viewport. */
+@media (width >= 100rem) and (height >= 56.25rem) {
+  html {
+    font-size: clamp(100%, min(0.95238vw, 1.72414svh), 200%);
+  }
+}
+
 /* Components use semantic font and color roles from this file. */
 @theme inline {
   --font-sans: var(--font-handlee), cursive;
@@ -61,10 +70,11 @@
 
 .workspace-stage {
   --workspace-inset: clamp(0.5rem, 1vw, 1rem);
-  --workspace-sidebar-width: 5rem;
+  --workspace-sidebar-width: 19rem;
 
   display: grid;
-  grid-template-columns: calc(var(--workspace-sidebar-width) + var(--workspace-inset)) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
   min-height: 100svh;
   background-color: var(--palette-peach);
   background-image:
@@ -76,17 +86,85 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: sticky;
-  top: var(--workspace-inset);
+  position: relative;
+  z-index: 5;
   align-self: start;
-  height: calc(100svh - 2 * var(--workspace-inset));
-  margin: var(--workspace-inset) 0 var(--workspace-inset) var(--workspace-inset);
-  padding: 2rem 0.75rem;
-  overflow-y: auto;
+  min-width: 0;
+  margin: var(--workspace-inset);
+  padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--palette-cream) 80%, transparent);
   border-radius: clamp(1rem, 1.5vw, 1.5rem);
   background: linear-gradient(155deg, var(--palette-peach), var(--palette-peach-soft));
   box-shadow: 0 8px 28px color-mix(in srgb, var(--palette-espresso) 12%, transparent);
+}
+
+.workspace-sidebar-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  inset-inline: 0;
+  min-height: 0;
+  max-height: calc(100svh - 6rem - 2 * var(--workspace-inset));
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--palette-cream) 80%, transparent);
+  border-radius: 1.5rem;
+  background: linear-gradient(155deg, var(--palette-peach), var(--palette-peach-soft));
+  box-shadow: var(--shadow-panel);
+  transform-origin: top right;
+}
+
+.workspace-sidebar-panel[data-open="true"] {
+  display: flex;
+  animation: workspace-menu-unfold 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.workspace-menu-toggle {
+  transition: background-color 180ms ease;
+}
+
+.workspace-menu-stroke {
+  transition: transform 220ms ease;
+}
+
+.workspace-menu-stroke-top {
+  transform-origin: 12px 8.5px;
+}
+
+.workspace-menu-toggle[data-open="true"] .workspace-menu-stroke-top {
+  transform: translateY(3.5px) rotate(45deg);
+}
+
+.workspace-menu-stroke-bottom {
+  transform-origin: 12px 15.5px;
+}
+
+.workspace-menu-toggle[data-open="true"] .workspace-menu-stroke-bottom {
+  transform: translateY(-3.5px) rotate(-45deg);
+}
+
+@keyframes workspace-menu-unfold {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.97) rotate(-0.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-sidebar-panel[data-open="true"] {
+    animation: none;
+  }
+
+  .workspace-menu-toggle,
+  .workspace-menu-stroke {
+    transition: none;
+  }
 }
 
 .workspace-content {
@@ -95,12 +173,33 @@
   flex-direction: column;
 }
 
-@media (width >= 48rem) {
+@media (width >= 64rem) {
   .workspace-stage {
-    --workspace-sidebar-width: 19rem;
+    grid-template-columns: calc(var(--workspace-sidebar-width) + var(--workspace-inset)) minmax(0, 1fr);
+    grid-template-rows: auto;
   }
 
   .workspace-sidebar {
+    position: sticky;
+    top: var(--workspace-inset);
+    height: calc(100svh - 2 * var(--workspace-inset));
+    margin: var(--workspace-inset) 0 var(--workspace-inset) var(--workspace-inset);
     padding: 3rem 2rem 1rem;
+    overflow-y: auto;
+  }
+
+  .workspace-sidebar-panel,
+  .workspace-sidebar-panel[data-open="true"] {
+    display: flex;
+    position: static;
+    max-height: none;
+    flex: 1;
+    overflow: visible;
+    padding: 3rem 0 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    animation: none;
   }
 }

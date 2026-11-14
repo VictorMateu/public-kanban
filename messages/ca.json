@@ -15,13 +15,18 @@
   "Navigation": {
     "label": "Navegació principal",
     "overview": "Resum",
-    "projects": "Projectes"
+    "projects": "Projectes",
+    "openMenu": "Obre el menú",
+    "closeMenu": "Tanca el menú"
   },
   "SidebarIllustration": {
     "pause": "Pausa l'animació de la barra lateral",
     "resume": "Reprèn l'animació de la barra lateral"
   },
   "Language": {
+    "english": "English",
+    "spanish": "Español",
+    "catalan": "Català",
     "label": "Idioma de la interfície",
     "apply": "Aplica"
   },
@@ -68,6 +73,7 @@
     "dueDate": "Data límit:"
   },
   "Auth": {
+    "sessionActive": "Sessió d’administrador iniciada",
     "title": "Accés de l'administrador",
     "description": "Accés exclusiu del propietari de {appName}.",
     "email": "Correu electrònic",
@@ -81,7 +87,10 @@
     "notConfigured": "L'accés de l'administrador no està disponible en aquest moment.",
     "invalidCredentials": "No s'ha pogut iniciar la sessió amb les dades proporcionades.",
     "signInUnavailable": "No s'ha pogut iniciar la sessió. Torna-ho a provar més tard.",
-    "signOutFailed": "No s'ha pogut tancar la sessió. Torna-ho a provar."
+    "signOutFailed": "No s'ha pogut tancar la sessió. Torna-ho a provar.",
+    "accountMenu": "Opcions del teu compte",
+    "accountTitle": "El teu raconet",
+    "accountDescription": "Torna a veure el jardí com a visitant."
   },
   "Error": {
     "title": "No s'ha pogut carregar el contingut",
@@ -94,5 +103,37 @@
   "Construction": {
     "status": "En construcció",
     "description": "El tauler està en construcció. Aquí podràs conèixer els projectes del portafolis, les seves tasques i la seva evolució."
+  },
+  "Overview": {
+    "title": "Idees que van creixent",
+    "description": "Els meus projectes, les tasques que els donen forma i una mirada al que vaig construint.",
+    "personalWebsite": "La meva web personal",
+    "projects": "Projectes",
+    "tasks": "Tasques",
+    "projectTotal": "Total",
+    "projectOpen": "Oberts",
+    "projectCompleted": "Completats",
+    "projectCanceled": "Cancel·lats",
+    "taskTotal": "Total",
+    "taskOpen": "Obertes",
+    "taskCompleted": "Completades",
+    "taskCanceled": "Cancel·lades",
+    "pendingValue": "Encara no disponible",
+    "pending": "Les xifres de projectes i tasques estaran disponibles aviat.",
+    "activityTitle": "El ritme del jardí",
+    "activityEntity": "Tipus d'activitat",
+    "activityPeriod": "Agrupació temporal",
+    "month": "Mesos",
+    "day": "Dies",
+    "taskActivityMonths": "Tasques creades i completades per mes",
+    "taskActivityDays": "Tasques creades i completades per dia",
+    "projectActivityMonths": "Projectes creats i completats per mes",
+    "projectActivityDays": "Projectes creats i completats per dia",
+    "activityPending": "L’activitat creixerà aquí",
+    "activityPendingDescription": "Un espai per veure com evoluciona la feina.",
+    "tasksCreated": "Creades",
+    "tasksCompleted": "Completades",
+    "projectsCreated": "Creats",
+    "projectsCompleted": "Completats"
   }
 }

@@ -66,13 +66,16 @@ test("public project pages use real local data and preserve existing users", asy
         ('${tasks[2]}', '${projects[0]}', '${columns[0]}', ${literal(escapedTitle)}, NULL, 'medium', NULL, 0);
       COMMIT;`);
 
-    await context.test("keeps overview content empty even when projects exist", async () => {
+    await context.test("keeps overview metrics pending without serializing project data", async () => {
       const result = await page("/");
       assert.equal(result.status, 200);
-      for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "The blank home must not serialize project data");
-      assert.doesNotMatch(result.renderedHtml, /<(form|input|select)\b/);
+      for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "The pending overview must not serialize project data");
+      const main = result.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1];
+      assert.ok(main);
+      assert.doesNotMatch(main, /<(form|input|select)\b/);
       assert.doesNotMatch(result.renderedHtml, /href="\/projects\//);
-      assert.match(result.renderedHtml, /<main\b[^>]*>\s*<\/main>/);
+      assert.equal((main.match(/<dd\b/g) ?? []).length, 8);
+      assert.equal((main.match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8);
     });
 
     await context.test("lists published projects in order on the projects route without exposing drafts", async () => {

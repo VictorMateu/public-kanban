@@ -42,24 +42,41 @@ for (const locale of ["en", "es", "ca"]) {
     const headers = { Cookie: `${cookieName}=${locale}` };
     const home = await page("/", headers);
     assert.equal(home.response.status, 200);
+    assert.match(home.response.headers.get("cache-control") ?? "", /private/);
+    assert.match(home.response.headers.get("cache-control") ?? "", /no-store/);
     assertSharedLayout(home.renderedHtml);
     assert.ok(home.html.includes(`<html lang="${locale}"`));
     assert.ok(home.html.includes(`name="description" content="${catalogs[locale].Metadata.description.replaceAll("'", "&#x27;")}"`));
     const main = home.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/);
-    assert.ok(main, "The blank home should have a main landmark");
-    assert.equal(main[1].trim(), "", "The initial content area must remain empty");
+    assert.ok(main, "The overview should have a main landmark");
+    const text = value => value.replaceAll("'", "&#x27;");
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.title)));
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.description)));
+    assert.match(main[1], /href="https:\/\/victormateulopez\.com"/);
+    assert.equal((main[1].match(/<dd\b/g) ?? []).length, 8, "The overview contains four project and four task metrics");
+    assert.equal((main[1].match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8, "Pending metrics must never be rendered as zero");
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.pendingValue)));
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.taskActivityMonths)));
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.pending)));
+    assert.doesNotMatch(main[1], /<video\b|<canvas\b/, "The provisional overview must not render media or a simulated chart");
     assert.ok(home.renderedHtml.includes(`aria-label="${catalogs[locale].Common.mainContent}"`));
-    assert.doesNotMatch(home.renderedHtml, /<(form|input|select)\b/);
+    assert.equal((home.renderedHtml.match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);
+    assert.ok(!home.renderedHtml.includes(`aria-label="${catalogs[locale].Auth.accountMenu}"`), "Anonymous visitors must not receive account controls");
+    assert.ok(!home.renderedHtml.includes(`aria-label="${catalogs[locale].Auth.sessionActive}"`), "Anonymous visitors must not receive a mobile administrator indicator");
     const sidebar = home.renderedHtml.match(/<aside\b[^>]*>([\s\S]*?)<\/aside>/)?.[1];
-    assert.ok(sidebar, "The shared sidebar should contain the decorative animation control");
-    assert.match(sidebar, /id="sidebar-illustration-[^"]+"[^>]*aria-hidden="true"/);
-    assert.ok(sidebar.includes(`aria-label="${catalogs[locale].SidebarIllustration.resume.replaceAll("'", "&#x27;")}"`));
-    assert.equal((sidebar.match(/<video\b/g) ?? []).length, 2, "Both native video sequences should be mounted");
-    assert.match(sidebar, /src="\/illustrations\/typing-v6\.webm"/);
-    assert.match(sidebar, /<video\b(?=[^>]*src="\/illustrations\/typing-v6\.webm")(?=[^>]*loop="")[^>]*>/);
-    assert.match(sidebar, /src="\/illustrations\/drinking-v4\.webm"/);
-    assert.doesNotMatch(sidebar, /<video\b(?=[^>]*src="\/illustrations\/drinking-v4\.webm")(?=[^>]*loop="")[^>]*>/);
-    assert.equal((home.renderedHtml.match(/<button\b/g) ?? []).length, 1, "Only the sidebar animation control is added to the blank home");
+    assert.ok(sidebar, "The shared sidebar should contain the mobile disclosure and language form");
+    const disclosure = sidebar.match(/<button\b(?=[^>]*aria-expanded="false")(?=[^>]*aria-controls="([^"]+)")[^>]*>/);
+    assert.ok(disclosure, "The mobile menu must start collapsed and identify its panel");
+    const disclosureContent = sidebar.slice(sidebar.indexOf(disclosure[0]) + disclosure[0].length).split("</button>")[0];
+    assert.match(disclosureContent, /<svg\b[^>]*aria-hidden="true"/);
+    assert.equal(disclosureContent.replace(/<[^>]+>/g, "").trim(), "", "The mobile toggle uses an icon without a visible Menu label");
+    assert.ok(disclosure[0].includes(`aria-label="${catalogs[locale].Navigation.openMenu}"`));
+    assert.ok(sidebar.includes(`id="${disclosure[1]}" data-open="false"`));
+    assert.doesNotMatch(sidebar, /<video\b|<img\b[^>]*src="[^"]*illustrations\//, "Initial HTML must not load decorative media before the desktop viewport is known");
+    assert.equal((sidebar.match(/<button\b/g) ?? []).length, 4, "The sidebar contains the disclosure and three language controls");
+    assert.match(sidebar, new RegExp(`<button\\b(?=[^>]*value="${locale}")(?=[^>]*aria-pressed="true")[^>]*>`));
+    assert.equal((sidebar.match(/aria-pressed="true"/g) ?? []).length, 1);
+    for (const name of ["English", "Español", "Català"]) assert.ok(sidebar.includes(`aria-label="${name}"`));
     assert.doesNotMatch(home.renderedHtml, /href="\/projects\//);
     assert.match(home.renderedHtml, /<a\b(?=[^>]*href="\/")(?=[^>]*aria-current="page")[^>]*>/);
     assert.ok(!home.response.headers.has("set-cookie"), "Reading a page must not create a preference cookie");
@@ -74,11 +91,17 @@ for (const locale of ["en", "es", "ca"]) {
     const login = await page("/admin/login", headers);
     assert.equal(login.response.status, 200);
     assertSharedLayout(login.renderedHtml);
+    assert.ok(!login.renderedHtml.includes(`aria-label="${catalogs[locale].Auth.accountMenu}"`), "The anonymous login page must not expose account controls");
+    assert.ok(!login.renderedHtml.includes(`aria-label="${catalogs[locale].Auth.sessionActive}"`), "Anonymous visitors must not receive a mobile administrator indicator");
     assert.doesNotMatch(login.renderedHtml, /aria-current="page"/);
-    assert.doesNotMatch(login.renderedHtml, /<select\b[^>]*name="locale"/);
+    assert.equal((login.renderedHtml.match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);
     assert.ok(login.html.includes(`<html lang="${locale}"`));
-    assert.ok(login.renderedHtml.includes(catalogs[locale].Auth.email));
-    assert.ok(login.renderedHtml.includes(catalogs[locale].Auth.password));
+    if (login.renderedHtml.includes(catalogs[locale].Auth.notConfigured.replaceAll("'", "&#x27;"))) {
+      assert.doesNotMatch(login.renderedHtml, /name="(email|password)"/);
+    } else {
+      assert.ok(login.renderedHtml.includes(catalogs[locale].Auth.email));
+      assert.ok(login.renderedHtml.includes(catalogs[locale].Auth.password));
+    }
     assert.match(login.response.headers.get("cache-control") ?? "", /no-store/);
 
     const missing = await page("/projects/InvalidSlug", headers);
@@ -111,20 +134,62 @@ test("locale responses stay isolated between visitors and do not change authenti
   assert.equal(new URL(admin.response.headers.get("location"), origin).pathname, "/admin/login");
 });
 
-test("pages do not expose a language selector or create preference cookies", async () => {
+test("pages share one language selector without creating preference cookies on reads", async () => {
   for (const path of ["/", "/projects", "/admin/login", "/unknown-i18n-test-route"]) {
     const result = await page(path);
-    assert.doesNotMatch(result.renderedHtml, /<select\b[^>]*name="locale"/);
+    const forms = [...result.renderedHtml.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)]
+      .filter(match => match[0].includes('name="locale"'));
+    assert.equal(forms.length, 1);
+    assert.equal((forms[0][0].match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);
     assert.ok(!result.response.headers.getSetCookie().some(value => value.startsWith(cookieName + "=")));
   }
 });
 
-test("invalid sign-in feedback is localized without creating users or granting access", async () => {
+test("the language form validates and persists selection without changing the URL or granting access", async () => {
+  const initial = await page("/projects");
+  const form = [...initial.renderedHtml.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)]
+    .find(match => match[0].includes('name="locale"'))?.[0];
+  assert.ok(form, "Language selection must work as a native form");
+  for (const locale of ["es", "ca", "en", "fr"]) {
+    const body = new FormData();
+    for (const input of form.matchAll(/<input\b[^>]*>/g)) {
+      const name = input[0].match(/name="([^"]*)"/);
+      if (input[0].includes('type="hidden"') && name) {
+        body.set(name[1], input[0].match(/value="([^"]*)"/)?.[1] ?? "");
+      }
+    }
+    body.set("locale", locale);
+    const response = await fetch(new URL("/projects", origin), {
+      method: "POST", headers: { Origin: origin.origin }, body, redirect: "manual",
+    });
+    assert.equal(response.status, 200);
+    const cookies = response.headers.getSetCookie();
+    assert.ok(!cookies.some(cookie => cookie.startsWith("sb-")));
+    const preference = cookies.find(cookie => cookie.startsWith(cookieName + "="));
+    if (locale === "fr") {
+      assert.equal(preference, undefined, "Unsupported locales must not be persisted");
+      continue;
+    }
+    assert.ok(preference?.startsWith(`${cookieName}=${locale};`));
+    assert.match(preference, /HttpOnly/i);
+    assert.match(preference, /SameSite=lax/i);
+    assert.match(preference, /Path=\//i);
+    const selected = await page("/projects", { Cookie: preference.split(";")[0] });
+    assert.ok(selected.html.includes(`<html lang="${locale}"`));
+    assert.equal((await page("/admin", { Cookie: preference.split(";")[0] })).response.status, 307);
+  }
+});
+
+test("invalid sign-in feedback is localized without creating users or granting access", async (context) => {
   const decode = value => value.replaceAll("&quot;", '"').replaceAll("&#x27;", "'").replaceAll("&amp;", "&");
   for (const locale of ["en", "es", "ca"]) {
     const headers = { Cookie: `${cookieName}=${locale}` };
     const login = await page("/admin/login", headers);
     const form = [...login.html.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)].find(match => match[0].includes('name="email"'));
+    if (!form && decode(login.renderedHtml).includes(catalogs[locale].Auth.notConfigured)) {
+      context.skip("Supabase configuration is required to render the sign-in form");
+      return;
+    }
     assert.ok(form);
     const body = new FormData();
     for (const input of form[0].matchAll(/<input\b[^>]*>/g)) {

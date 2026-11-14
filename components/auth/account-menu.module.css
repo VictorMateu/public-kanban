@@ -1,0 +1,48 @@
+.trigger {
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+.trigger[aria-expanded="true"] {
+  background: var(--palette-sage-soft);
+}
+
+@media (hover: hover) {
+  .trigger:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.panel {
+  position: absolute;
+  top: 100%;
+  inset-inline-end: 0;
+  width: min(18rem, calc(100vw - 2rem));
+  padding-top: 0.5rem;
+  transform-origin: top right;
+  animation: account-unfold 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes account-unfold {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+  }
+
+  .trigger:hover {
+    transform: none;
+  }
+
+  .panel {
+    animation: none;
+  }
+}

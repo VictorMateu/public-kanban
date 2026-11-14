@@ -8,7 +8,7 @@ import { LoginForm } from "./login-form";
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
-  if (await getAdministrator()) redirect("/admin");
+  if (await getAdministrator()) redirect("/");
 
   const t = await getTranslations("Auth");
   const common = await getTranslations("Common");
