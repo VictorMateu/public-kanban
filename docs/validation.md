@@ -1,5 +1,30 @@
 # Local validation
 
+## Floating mobile menu follow-up - 2026-11-14
+
+The owner rejected the mobile panel pushing the content and requested an overlay with a cozy animation and no visible Menu text. The panel is now absolutely positioned below the top bar, with a bounded height and internal scrolling. The header and content retain their layout dimensions when it opens. A circular cream button with rounded strokes replaces the text label; translated open/close accessible names remain. The icon changes to a close symbol. The panel entrance uses a 280ms opacity/translation/scale animation with a slight rotation; reduced-motion preferences disable it and the icon transition. The existing palette and panel shadow are reused. The skip link stays above the overlay. Desktop retains its static flex panel and disables the entrance animation.
+
+Outside pointer presses and focus leaving the sidebar dismiss the mobile panel; Escape returns focus to the toggle. The overlay is non-modal, with no focus trap or blocked background controls. No mobile illustration or replacement media was added. This presentation remains provisional for owner review.
+
+`npm run lint`, `npm run typecheck`, `npm test` (34 passed), `npm run build`, `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` (eight passed) and `git diff --check` passed. HTTP coverage additionally checks that the toggle contains a decorative SVG without visible text while retaining its translated accessible name. The compiled stylesheet was checked for the reused shadow token. These checks do not establish browser geometry, focus behavior, animation appearance or reduced-motion behavior after hydration; no browser pass was performed in this follow-up. The development preview remains available on port 3003. No commit or push was made.
+
+## Mobile navigation disclosure - 2026-11-14
+
+The owner requested a collapsible mobile menu containing the existing navigation and language selection, without the decorative media. Below 48rem the shell now uses a top bar with the visible brand and a translated Menu button. The shared panel starts collapsed, expands in document flow, closes on link activation and supports Escape with focus returned to the toggle. Desktop retains the sidebar. The language capsule stays horizontal, and all new labels are translated in English, Spanish and Catalan. Appearance and spacing remain provisional until owner review.
+
+The illustration now mounts only after the client confirms both a width of at least 48rem and a height of at least 42rem. Initial HTML contains no video or decorative poster; initial mobile rendering does not create those media elements. Shrinking from desktop unmounts the player but cannot undo prior downloads. No replacement image or dependency was added. The mobile disclosure requires JavaScript; the language form still uses the existing native Server Action.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | All eight HTTP cases passed against the temporary production server |
+| `git diff --check` | Passed |
+
+HTTP assertions now verify the initially collapsed disclosure, its translated accessible name and matching panel identifier, one shared navigation/language form, and the absence of decorative media in initial markup. Existing locale submission, cookie, authorization redirect and invalid-sign-in checks also passed. These HTTP assertions do not execute client interactions, measure downloads after hydration or establish responsive geometry, focus visibility, touch behavior or desktop animation playback. No browser interaction or visual pass was performed for this revision; those checks remain pending in the development preview at port 3003. No database fixture suite, data change, user creation, commit or push was performed.
+
 ## Administrator indicator placement follow-up - 2026-11-14
 
 At the owner's request, the verified administrator icon was moved from the sidebar to the upper right of the shared content area. Its own row reserves space above route content rather than overlaying it. The icon keeps its existing server authorization check, translated label and 44px size. No account-menu behavior was added.

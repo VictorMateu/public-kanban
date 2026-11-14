@@ -15,7 +15,9 @@
   "Navigation": {
     "label": "Navegación principal",
     "overview": "Resumen",
-    "projects": "Proyectos"
+    "projects": "Proyectos",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
   },
   "SidebarIllustration": {
     "pause": "Pausar animación de la barra lateral",

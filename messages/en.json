@@ -16,7 +16,9 @@
   "Navigation": {
     "label": "Main navigation",
     "overview": "Overview",
-    "projects": "Projects"
+    "projects": "Projects",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "SidebarIllustration": {
     "pause": "Pause sidebar animation",

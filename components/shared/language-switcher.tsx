@@ -12,7 +12,7 @@ export async function LanguageSwitcher() {
   const t = await getTranslations("Language");
 
   return (
-    <form action={setLocale} aria-label={t("label")} className="flex w-full flex-col gap-1 self-center rounded-full border border-border/15 bg-surface/70 p-1 md:w-fit md:flex-row">
+    <form action={setLocale} aria-label={t("label")} className="flex w-fit max-w-full gap-1 self-center rounded-full border border-border/15 bg-surface/70 p-1">
       {languages.map((language) => {
         const active = locale === language.locale;
         return (
@@ -25,7 +25,7 @@ export async function LanguageSwitcher() {
             aria-label={t(language.label)}
             aria-pressed={active}
             title={t(language.label)}
-            className={`flex min-h-11 min-w-0 items-center justify-center rounded-full px-1 py-1 text-base text-foreground transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:min-w-14 md:px-3 ${active ? "bg-accent" : "hover:bg-surface-warm"}`}
+            className={`flex min-h-11 min-w-14 items-center justify-center rounded-full px-3 py-1 text-base text-foreground transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${active ? "bg-accent" : "hover:bg-surface-warm"}`}
           >
             <span>{language.locale.toUpperCase()}</span>
           </button>

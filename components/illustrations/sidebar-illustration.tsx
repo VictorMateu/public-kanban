@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { VideoIllustration, useReducedMotion } from "./video-illustration";
 import styles from "./sidebar-illustration.module.css";
@@ -10,7 +10,21 @@ const sources = {
   drinking: { src: "/illustrations/drinking-v4.webm", durationSeconds: 5.459 },
 };
 
+const illustrationViewport = "(min-width: 48rem) and (min-height: 42rem)";
+
+function subscribeViewport(listener: () => void) {
+  const query = window.matchMedia(illustrationViewport);
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
+}
+
 export function SidebarIllustration() {
+  // CSS visibility alone would still allow hidden videos to download on mobile.
+  const visible = useSyncExternalStore(subscribeViewport, () => window.matchMedia(illustrationViewport).matches, () => false);
+  return visible ? <DesktopSidebarIllustration /> : null;
+}
+
+function DesktopSidebarIllustration() {
   const [paused, setPaused] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [manualMotion, setManualMotion] = useState(false);
