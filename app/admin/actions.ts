@@ -14,8 +14,8 @@ export async function signIn(_previous: AuthFormState, formData: FormData): Prom
     return { error: "signInUnavailable" };
   }
 
-  revalidatePath("/admin", "layout");
-  redirect("/admin");
+  revalidatePath("/", "layout");
+  redirect("/projects");
 }
 
 export async function signOut(): Promise<AuthFormState> {
@@ -27,6 +27,6 @@ export async function signOut(): Promise<AuthFormState> {
     return { error: "signOutFailed" };
   }
 
-  revalidatePath("/admin", "layout");
+  revalidatePath("/", "layout");
   redirect("/admin/login");
 }
