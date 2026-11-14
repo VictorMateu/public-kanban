@@ -696,3 +696,41 @@ At the owner's request, the 13 component/CSS files were grouped into `layout`, `
 ### Commit handoff
 
 The owner subsequently authorized committing the pending work by responsibility: `f075749` contains component organization and import updates; `f4734ed` contains the sidebar animation, source sheets, runtime media, controls, translations and tests. The related development, product and validation documentation is recorded in a separate commit. Staged diffs were reviewed for scope, whitespace, credentials and generated/environment files; the animation CSS's redundant final blank line was removed. Ignored local source PNGs and encoding recipes remain outside Git and were preserved. No push was requested or performed. Visual acceptance remains pending owner review.
+
+## Shortened drinking hold and lighter media — 2026-11-14
+
+The owner reported a frozen-looking sip and then requested a smoother, cozy animation without excessive browser work. Before adjustment, a 90-second Chrome observation captured three complete drinks without a permanent playback stall. Decoded stills and the original PNG inputs identified 21 identical sip poses, not a stopped media clock. The adjustment is confined to the drinking asset, its source/duration declaration, HTTP media coverage and documentation. The native player, typing clip, poster, styling, pause/visibility behavior and drink scheduling are unchanged.
+
+The new `drinking-v5.webm` was regenerated from the original color/alpha PNGs rather than transcoding the compressed v4 file. Eighteen identical sip poses were omitted while three were retained; gesture movement was not accelerated. Offline motion interpolation targets 30fps and the final output is trimmed to 122 frames, avoiding the previous long cloned tail. The same resting source drawing is retained at both endpoints. The original drawings and PNG inputs were read without modification; the v4 clip and conversion recipe remain in ignored local build directories, not public runtime paths.
+
+The existing documented portable FFmpeg 9.0.2 was temporarily downloaded again from Gyan and verified against its published archive SHA-256: `60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba`. No application dependency or lockfile was changed.
+
+| Drinking asset | Duration | Frame rate | Decoded frames | Bytes |
+| --- | --- | --- | --- | --- |
+| Previous v4 | 5.459s | 48fps | 262 | 264,560 |
+| Selected v5 | 4.066s | 30fps | 122 | 173,879 |
+
+Full libvpx decoding succeeded. The selected clip is 224×224, has no audio and retains alpha spanning 0–255. In an ad hoc adjacent-frame check on premultiplied RGB, using a mean channel difference below 0.025 on the 0–255 scale as the near-static threshold, the longest run was approximately 0.067s in v5 versus 0.521s in v4. This threshold describes encoded image differences, not perceptual naturalness. The decoded first frame exactly matches typing's first frame in that comparison; the final frame differs by approximately 0.0023 mean channel levels. Decoded contact sheets and the desktop sidebar screenshot were inspected. Active videos plus poster total 236,031 bytes. Smaller media and fewer frames are not a measured CPU/battery benchmark, and both clips retain existing preload behavior.
+
+| Check | Result |
+| --- | --- |
+| `npm ci` | Existing lockfile installed; reported seven moderate audit findings and the already documented ESLint deprecation; no dependency fixes or upgrades attempted |
+| `npm run lint` | Passed, including a rerun after adding the HTTP media assertion |
+| `npm run typecheck` | Passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Passed without Supabase environment configuration |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Four passed and four failed: the three locale route cases reached their sign-in form assertions, and invalid-sign-in coverage also failed because this worktree has no Supabase configuration and intentionally renders the unavailable-sign-in state; not a successful authentication/integration validation |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test --test-name-pattern='sidebar videos' tests/i18n-http.test.mjs` | Passed; both active videos return WebM/EBML data and exact 32-byte range requests return 206 with the correct content range |
+| Chrome, production build, 1440×900 | A 75-second instrumented window contained two complete v5 drinks and a partial third; each complete drink delivered all 122 frame callbacks, with maximum within-clip callback gaps of 47ms and 37ms; both returned to typing and no drinking `waiting`, `stalled` or media-error events occurred in the window |
+| Keyboard and manual pause | Five Tab presses reached the translated control, with a 44×44px target and solid 2px focus outline; Enter paused both videos and their clocks stayed fixed over 700ms; Enter resumed |
+| Compact viewport | At an emulated 390×844 viewport, the illustration is hidden, both videos are paused and there is no horizontal overflow |
+| Reduced motion | Reloading with the preference enabled held both clips paused at zero; explicit play resumed playback |
+| Media failure | A deliberately unavailable video URL replaced the video elements with the loaded, visible, decorative 224px fallback poster and changed the control to Resume |
+
+Hidden-tab behavior was not rerun in this adjustment. Other browsers, mobile hardware, sustained CPU use, energy consumption and network throttling were not benchmarked. No database suites, users, records, remote services, migrations, commits or deployments were introduced. The complete interface HTTP suite remains limited by missing local Supabase configuration. Implementation and local checks do not constitute visual acceptance; the owner still needs to review the shortened sip and 30fps motion.
+
+### PR integration validation
+
+The owner subsequently requested commits and a pull request. The animation change was rebased onto `main` at `72a7ccd`, preserving its newer navigation, account controls, language form and viewport-based illustration mounting. Conflicting HTTP assertions were resolved in favor of the existing main-branch contract: initial server HTML must not contain decorative media. The new WebM/range-request case was retained. The development and product documentation preserve the newer sidebar and authentication decisions alongside this media adjustment.
+
+After integration, `npm run lint`, `npm run typecheck`, `npm test` (41 passing tests), `npm run build` and `git diff origin/main...HEAD --check` passed. Against a fresh local production server, `KANBAN_TEST_URL=http://127.0.0.1:3005 node --test tests/i18n-http.test.mjs` passed eight cases and skipped one sign-in-feedback case because Supabase is not configured. Main's existing unavailable-sign-in handling and test prerequisite checks account for the difference from the earlier pre-integration HTTP failures; no authentication changes were added by this branch. The browser checks above were performed before this rebase and were not repeated during the commit/PR handoff. Visual acceptance and real CPU/battery measurements remain outstanding.
