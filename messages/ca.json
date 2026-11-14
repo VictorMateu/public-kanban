@@ -22,6 +22,9 @@
     "resume": "Reprèn l'animació de la barra lateral"
   },
   "Language": {
+    "english": "English",
+    "spanish": "Español",
+    "catalan": "Català",
     "label": "Idioma de la interfície",
     "apply": "Aplica"
   },
@@ -68,6 +71,7 @@
     "dueDate": "Data límit:"
   },
   "Auth": {
+    "sessionActive": "Sessió d’administrador iniciada",
     "title": "Accés de l'administrador",
     "description": "Accés exclusiu del propietari de {appName}.",
     "email": "Correu electrònic",

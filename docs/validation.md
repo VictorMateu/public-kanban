@@ -1,5 +1,57 @@
 # Local validation
 
+## Administrator indicator placement follow-up - 2026-11-14
+
+At the owner's request, the verified administrator icon was moved from the sidebar to the upper right of the shared content area. Its own row reserves space above route content rather than overlaying it. The icon keeps its existing server authorization check, translated label and 44px size. No account-menu behavior was added.
+
+`npm run lint`, `npm run typecheck`, `npm test` (34 passed), `npm run build` and `git diff --check` passed. No additional HTTP or browser verification was performed for this placement-only change; owner review in the existing preview remains pending.
+
+
+## Local login preview enabled — 2026-11-14
+
+At the owner's request, `docker desktop start` started Docker and the existing local Supabase containers resumed. Auth and PostgreSQL reported healthy. The worktree's ignored `.env.local` was configured from the original checkout's existing local URL and publishable key; values were not printed. No migrations, resets, users, administrator assignments or application-data changes were performed. A read-only query confirmed one existing user and one administrator record.
+
+The Auth health endpoint returned HTTP 200. `http://localhost:3003/admin/login` returned HTTP 200 with both email and password fields after the development server picked up its configuration. The preview remains running for the owner to sign in. These checks establish service availability and form rendering; successful credential sign-in, session renewal and the authenticated user icon remain pending owner review. Application checks were not rerun for this service/configuration-only operation. `git diff --check` passed.
+
+## Cozy language capsule follow-up — 2026-11-14
+
+The owner subsequently requested removing the dot beneath the selected language. The dot and its reserved spacing were removed; the honey background and `aria-pressed` remain. `npm run lint`, `npm run typecheck`, `npm test` (34 passed), `npm run build` and `git diff --check` passed after this presentation-only adjustment. No additional HTTP or browser pass was performed; visual review remains pending in the development preview.
+
+The owner rejected the initial dropdown's appearance and requested a cozier selector. `LanguageSwitcher` now renders three native submit buttons inside a cream capsule. Honey fill, a small dot and `aria-pressed` identify the active locale; full language names come from the catalogs. Each button submits its locale directly to the existing action. The component remains server-rendered and requires no JavaScript for submission or new dependencies. The capsule stacks vertically on the compact rail, with 44px minimum button height and visible focus styling. This is a provisional visual choice awaiting owner review in the existing development preview on port 3003.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Seven passed; invalid-sign-in case explicitly skipped because this worktree has no Supabase configuration |
+| `git diff --check` | Passed |
+
+The HTTP suite verifies one form containing all three labeled options, exactly one selected locale, translated public/login/unavailable states, native submissions for all three languages, cookie persistence, unsupported-locale rejection and unchanged authorization redirects. It supports the documented configuration-unavailable login state rather than assuming credentials are configured. An initial Catalan assertion failed because the unavailable message's apostrophe was HTML-escaped; the assertion was corrected and the suite rerun successfully.
+
+No browser responsive, keyboard or focus verification was performed for this follow-up. CSS and HTTP checks do not establish visual acceptance. Supabase configuration and the service remain unavailable here, so actual authenticated-session and database checks were not run. No users, fixtures, schema, account features, commits or remote operations were introduced.
+
+## Sidebar session indicator and language selector — 2026-11-14
+
+The owner requested a user icon at the upper left when signed in and a language selector beneath the animation. The shared Server Component now renders a labeled circular icon only when the existing `getAdministrator` check confirms both identity and database authorization. Auth errors omit the icon so public browsing can continue. Sign-in/sign-out invalidate the root layout to refresh the indicator. Public project queries, the `/admin` session-refresh matcher, RLS, dependencies and schema remain unchanged.
+
+The preserved native language form is mounted below the animation, using palette roles, EN/ES/CA choices and an explicit Apply button. Its compact mobile layout uses a check icon with a translated accessible name. Both controls retain a 44px minimum height and visible focus styling. The form remains mounted when the decoration is hidden. Placement and appearance are a working prototype pending owner review.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Route generation and TypeScript passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3003 node --test tests/i18n-http.test.mjs` | All eight HTTP tests passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3003 node --test --test-name-pattern 'cookie preference renders' tests/i18n-http.test.mjs` | Three locale cases passed after adding private/no-store response assertions |
+| `git diff --check` | Passed |
+
+HTTP assertions cover one shared selector across public/login/unknown routes, selected locale, placement after the videos, absence of the administrator icon for anonymous visitors, unchanged empty Overview content and no preference cookie on reads. Native form submissions persist all three supported locales with the expected cookie attributes, reject unsupported values and do not grant access or set Auth cookies. Invalid-sign-in feedback remains localized.
+
+Local Supabase was not listening on port 54321. Database-backed project requests reported connection failures; the passing interface cases do not establish successful project-data rendering. No database suites, fixtures or users were created. Actual authorized icon rendering, login/logout display updates, expired-session behavior, browser responsive appearance, keyboard interaction and focus visibility remain unverified in this revision. Source review and HTTP assertions are distinct from browser verification and visual acceptance. No account menu, new dependency, migration, commit, push or deployment is included.
+
 The phase 2 and phase 3 results below were recorded on 2026-11-01, exclusively against local Supabase with PostgreSQL 17 and Docker on WSL2. No migrations or tests were run against a remote project. These are historical results, not evidence that every check was rerun during the documentation revision.
 
 Technical checks do not constitute acceptance of navigation or design. The preserved phase 3 UI remains pending the owner's review. See [Product requirements](product.md).

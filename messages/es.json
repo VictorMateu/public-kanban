@@ -22,6 +22,9 @@
     "resume": "Reanudar animación de la barra lateral"
   },
   "Language": {
+    "english": "English",
+    "spanish": "Español",
+    "catalan": "Català",
     "label": "Idioma de la interfaz",
     "apply": "Aplicar"
   },
@@ -68,6 +71,7 @@
     "dueDate": "Fecha límite:"
   },
   "Auth": {
+    "sessionActive": "Sesión de administrador iniciada",
     "title": "Acceso del administrador",
     "description": "Acceso exclusivo del propietario de {appName}.",
     "email": "Correo electrónico",

@@ -23,6 +23,9 @@
     "resume": "Resume sidebar animation"
   },
   "Language": {
+    "english": "English",
+    "spanish": "Español",
+    "catalan": "Català",
     "label": "Interface language",
     "apply": "Apply"
   },
@@ -69,6 +72,7 @@
     "dueDate": "Due date:"
   },
   "Auth": {
+    "sessionActive": "Administrator signed in",
     "title": "Administrator sign-in",
     "description": "Exclusive access for the owner of {appName}.",
     "email": "Email address",
