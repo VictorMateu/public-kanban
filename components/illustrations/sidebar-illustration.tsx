@@ -10,7 +10,7 @@ const sources = {
   drinking: { src: "/illustrations/drinking-v4.webm", durationSeconds: 5.459 },
 };
 
-const illustrationViewport = "(min-width: 48rem) and (min-height: 42rem)";
+const illustrationViewport = "(min-width: 64rem) and (min-height: 42rem)";
 
 function subscribeViewport(listener: () => void) {
   const query = window.matchMedia(illustrationViewport);

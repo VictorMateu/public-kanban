@@ -10,16 +10,16 @@ export async function OverviewMetrics({ entity }: { entity: "projects" | "tasks"
   const headingId = `overview-${entity}`;
 
   return (
-    <section aria-labelledby={headingId} className={compact ? "min-w-0 rounded-3xl border border-border/15 bg-surface/90 p-5 shadow-panel sm:p-6" : undefined}>
-      <h2 id={headingId} className="text-3xl">{t(entity)}</h2>
-      <dl className={`mt-4 ${compact ? styles.taskMetrics : styles.projectMetrics}`}>
+    <section aria-labelledby={headingId} className={compact ? `${styles.taskPanel} min-w-0 rounded-3xl border border-border/15 bg-surface/90 shadow-panel` : undefined}>
+      <h2 id={headingId} className={styles.sectionTitle}>{t(entity)}</h2>
+      <dl className={compact ? styles.taskMetrics : styles.projectMetrics}>
         {labels.map((label, index) => (
           <div key={label} className={compact
-            ? "flex min-w-0 flex-col gap-2 py-2"
-            : `flex min-w-0 flex-col gap-3 rounded-2xl border border-border/10 p-4 shadow-panel sm:p-5 ${index === 0 ? "bg-surface-highlight" : index === 2 ? "bg-surface-positive" : "bg-surface/90"}`}
+            ? `${styles.taskMetric} flex min-w-0 flex-col`
+            : `${styles.projectMetric} flex min-w-0 flex-col rounded-2xl border border-border/10 shadow-panel ${index === 0 ? "bg-surface-highlight" : index === 2 ? "bg-surface-positive" : "bg-surface/90"}`}
           >
             <dt className="text-base text-foreground/80">{t(label)}</dt>
-            <dd className="text-3xl tabular-nums sm:text-4xl">
+            <dd className={`${styles.metricValue} tabular-nums`}>
               <span aria-hidden="true">&mdash;</span>
               <span className="sr-only">{t("pendingValue")}</span>
             </dd>

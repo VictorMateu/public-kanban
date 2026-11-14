@@ -45,7 +45,7 @@ export function WorkspaceSidebar({ brand, children, label, mobileStatus }: { bra
     >
       <div className="flex shrink-0 items-center justify-between gap-2">
         {brand}
-        <div className="flex shrink-0 items-center gap-2 md:hidden">
+        <div className="flex shrink-0 items-center gap-2 lg:hidden">
           {mobileStatus}
           <button
             ref={toggleRef}
@@ -55,7 +55,7 @@ export function WorkspaceSidebar({ brand, children, label, mobileStatus }: { bra
             aria-controls={panelId}
             aria-label={t(open ? "closeMenu" : "openMenu")}
             onClick={() => setOpen(!open)}
-            className="workspace-menu-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-border/15 bg-surface/80 text-foreground hover:bg-accent/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:hidden"
+            className="workspace-menu-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-border/15 bg-surface/80 text-foreground hover:bg-accent/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus lg:hidden"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true" focusable="false" className="size-6">
               <path d="M6 8.5h12" className="workspace-menu-stroke workspace-menu-stroke-top" />

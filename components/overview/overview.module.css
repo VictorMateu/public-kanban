@@ -1,39 +1,257 @@
 .overview {
+  --overview-gap: 1.25rem;
+  --overview-panel-padding: 1rem;
+
+  display: flex;
+  min-width: 0;
+  max-width: 88rem;
+  flex-direction: column;
+  gap: var(--overview-gap);
   container-type: inline-size;
+  padding: 1rem 1rem 1.5rem;
+}
+
+.introduction {
+  display: grid;
+  gap: 0.5rem;
+  align-items: start;
+  overflow-wrap: anywhere;
+}
+
+.eyebrow {
+  display: none;
+}
+
+.introduction h1 {
+  font-size: 2rem;
+}
+
+.description {
+  max-width: 38rem;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.website {
+  justify-self: start;
+  font-size: 1rem;
+}
+
+.sectionTitle {
+  font-size: 1.75rem;
 }
 
 .projectMetrics,
 .taskMetrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.625rem;
+  margin-top: 0.75rem;
+}
+
+.projectMetric {
+  gap: 0;
+  padding: 0.75rem;
+}
+
+.taskMetrics {
+  flex: none;
+}
+
+.taskMetric {
+  justify-content: center;
+  gap: 0.25rem;
+  padding-block: 0.25rem;
+}
+
+.metricValue {
+  font-size: 1.75rem;
+  line-height: 1.2;
 }
 
 .content {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
-  align-items: start;
+  grid-template-areas: "tasks" "activity";
+  gap: var(--overview-gap);
+  align-content: start;
+}
+
+.activityPanel,
+.taskPanel {
+  padding: var(--overview-panel-padding);
+  display: flex;
+  flex-direction: column;
+}
+
+.activityPanel {
+  grid-area: activity;
+}
+
+.taskPanel {
+  grid-area: tasks;
+}
+
+.activityDescription {
+  margin-top: 0.25rem;
+}
+
+.activityControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.activityControls button {
+  flex-basis: auto;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+}
+
+.activityFigure {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: 1rem;
 }
 
 .activityPlot {
   position: relative;
   display: flex;
-  min-height: 14rem;
+  flex: 1;
+  min-height: 7.5rem;
   align-items: center;
   justify-content: center;
 }
 
-@container (width >= 40rem) {
+.activityLegend {
+  margin-top: 0.5rem;
+}
+
+@container (width >= 20rem) and (width < 34rem) {
+  .projectMetric,
+  .taskMetric {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+}
+
+@container (width >= 22rem) {
+  .activityControls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width >= 48rem) {
+  .overview {
+    --overview-gap: clamp(0.75rem, 1.4svh, 1.75rem);
+    --overview-panel-padding: clamp(0.875rem, 1.8svh, 1.5rem);
+
+    padding: clamp(0.75rem, 1.5svh, 2rem) clamp(1rem, 2.5vw, 2.5rem);
+  }
+}
+
+@media (width >= 64rem) and (height >= 50rem) {
+  .overview {
+    padding-top: clamp(1.5rem, 4svh, 3rem);
+  }
+}
+
+@container (width >= 34rem) {
+  .eyebrow {
+    display: block;
+  }
+
+  .introduction {
+    gap: clamp(0.25rem, 0.7svh, 0.75rem);
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 1.5rem;
+  }
+
+  .introduction h1 {
+    font-size: clamp(2rem, 4.8svh, 3rem);
+  }
+
+  .description {
+    font-size: 1.125rem;
+    line-height: 1.5;
+  }
+
+  .website {
+    font-size: 1.125rem;
+    grid-column: 2;
+    grid-row: 2 / 4;
+    align-self: center;
+  }
+
+  .sectionTitle {
+    font-size: clamp(1.5rem, 3.4svh, 1.875rem);
+  }
+
+  .projectMetrics,
+  .taskMetrics {
+    gap: 0.75rem;
+    margin-top: clamp(0.5rem, 1svh, 1rem);
+  }
+
+  .projectMetric {
+    gap: 0.25rem;
+    padding: clamp(0.75rem, 1.6svh, 1.25rem);
+  }
+
+  .metricValue {
+    font-size: clamp(1.75rem, 3.8svh, 2.25rem);
+  }
+
+  .activityControls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: clamp(0.75rem, 1.5svh, 1.25rem);
+  }
+
+  .activityControls button {
+    flex-basis: 0%;
+    padding-inline: 0.75rem;
+  }
+
+  .activityFigure {
+    margin-top: clamp(0.75rem, 1.5svh, 1.5rem);
+  }
+
+  .activityPlot {
+    min-height: clamp(6rem, 14svh, 14rem);
+  }
+
   .projectMetrics {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .content {
-    grid-template-columns: minmax(0, 1.75fr) minmax(14rem, 1fr);
+    flex: 1;
+    max-height: 28rem;
+    grid-template-columns: minmax(0, 1.8fr) minmax(11rem, 1fr);
+    grid-template-areas: "activity tasks";
+    align-content: stretch;
   }
 
   .taskMetrics {
+    flex: 1;
     grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
   }
+
+  .taskMetric {
+    gap: 0;
+    padding-block: 0;
+  }
+
+  .introduction > :not(.website) {
+    grid-column: 1;
+  }
+
 }

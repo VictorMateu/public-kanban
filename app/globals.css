@@ -11,6 +11,15 @@
   --palette-sage-soft: #e8efdf;
 }
 
+/* Scale the rem-based shell and summary together when both dimensions allow it.
+   Short desktop windows keep the compact size; browser text preferences remain
+   the lower and upper bounds instead of shrinking content to fit a viewport. */
+@media (width >= 100rem) and (height >= 56.25rem) {
+  html {
+    font-size: clamp(100%, min(0.95238vw, 1.72414svh), 200%);
+  }
+}
+
 /* Components use semantic font and color roles from this file. */
 @theme inline {
   --font-sans: var(--font-handlee), cursive;
@@ -164,7 +173,7 @@
   flex-direction: column;
 }
 
-@media (width >= 48rem) {
+@media (width >= 64rem) {
   .workspace-stage {
     grid-template-columns: calc(var(--workspace-sidebar-width) + var(--workspace-inset)) minmax(0, 1fr);
     grid-template-rows: auto;

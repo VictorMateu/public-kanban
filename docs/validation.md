@@ -1,5 +1,70 @@
 # Local validation
 
+## Desktop summary top spacing - 2026-11-14
+
+The owner approved the current interface proportions and requested more space above the summary. `overview.module.css` now uses `padding-top: clamp(1.5rem, 4svh, 3rem)` for desktop viewports at least 64rem wide and 50rem tall. This moves the summary down while keeping its established scale, widths and internal spacing. Mobile and short windows retain their previous spacing. The new top spacing remains pending visual review; the owner's approval covers the preceding proportions only.
+
+`npm run lint`, `npm run typecheck`, all 41 `npm test` cases and `npm run build` passed. The initial browser regression caught vertical overflow in the Catalan 1280x720 case when the extra padding also applied to short windows. Restricting the additional padding to sufficiently tall desktop windows resolved that failure. The rebuilt production version then passed all 35 viewport/locale cases in `KANBAN_TEST_URL=http://127.0.0.1:3004 node work/overview-proportions-qa.mjs`, including explicit desktop top-padding and unchanged phone-spacing assertions, compact desktop fit, keyboard/menu checks, client navigation and 200% text reflow. A large-desktop screenshot was visually inspected. No browser exceptions or console errors were observed. `git diff --check` passed.
+
+The desktop matrix reserves space with a layout-only account-row fixture; live administrator authentication was not tested. The previous entry's limitations for populated data pages remain. QA scripts/screenshots stay untracked under `work/`. No new dependencies, queries, database operations, commits or pushes were introduced. The temporary production server was stopped and the development preview remains on port 3003.
+
+## Proportional large-screen scaling and mobile preview inspection - 2026-11-14
+
+The owner clarified that larger screens should enlarge the entire interface, including width, typography and controls. The provisional layout now scales the rem-based shell and summary together only when both viewport dimensions allow it. Root sizing is bounded between 100% and 200% of the browser font preference; the summary is bounded at 88rem. The wide panel row remains bounded at 28rem of the current scale. This supersedes the preceding default-size desktop limit: panels no longer grow only vertically while their text, controls and width stay small. Narrow/short viewports retain the base scale and normal document scrolling. Mobile main/card padding, heading sizes, stacked sections and hidden illustration remain in place; activity labels do not split inside words.
+
+The shared development preview was inspected before and after updates. Its accessible automation snapshot timed out twice, so visual captures used isolated Chrome after reporting that limitation. Direct evaluation in the shared preview observed an old global stylesheet while the updated CSS module was already loaded; full navigation loaded the current stylesheet. After navigation, the 390px shared preview had 16px main gutters, 12px project-card padding, 28px section headings, no repeated application eyebrow and no horizontal overflow. The exact missing-server-component-style state shown in the owner's screenshot could not be reproduced. Stale development styles are an observed preview issue, not a proven complete explanation of that screenshot; no CSS Module workaround or toolchain/dependency change was introduced.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Passed |
+| `npm test` | All 41 tests passed |
+| `npm run build` | Passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Eight production HTTP tests passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node work/overview-proportions-qa.mjs` | 35 production viewport/locale cases, client navigation, keyboard, menu and enlarged-text assertions passed |
+| `git diff --check` | Passed |
+
+The browser matrix covered English, Spanish and Catalan with widths from 320px through 3840px, including the supplied 534px mobile size. At 1920x1080, 2560x1440 and 3840x2160, root sizing was approximately 18.29px, 24.38px and 32px, and main width was approximately 1554px, 2072px and 2816px. Compact 1366x768 and 1280x720 windows retained the 16px base. Assertions verified proportional width/type growth, the scale-aware panel cap, desktop alignment, mobile spacing/order, main/card padding, no clipped text or horizontal overflow, eight pending values, 44px-minimum filter targets and no decorative media below 1024px. The tested desktop/tablet summary sizes fit their viewport; narrow/short screens scroll. Desktop sizing used a layout-only 3.75rem account-row fixture, which does not authenticate an administrator.
+
+Production screenshots at 2560px and 390/534px mobile widths were visually inspected. Client navigation from Overview to Projects and back retained mobile padding. Keyboard filter activation, visible focus, menu overlay geometry, Escape focus restoration, outside dismissal, reduced motion and absence of filter data requests passed. At 200% root text in a short window, content reflowed without horizontal scrolling and the final status remained reachable. No browser exceptions or console errors were observed. The local QA scripts/screenshots remain untracked under `work/`; they are not committed application tests. The temporary production server was stopped after checks; the development preview remains on port 3003. Live administrator authentication and populated project/board appearance at the new desktop scale remain unverified. No database suites, users, migrations, remote operations, dependencies, commits or pushes were introduced. Visual acceptance remains pending owner review.
+
+## Bounded desktop proportions and mobile summary composition - 2026-11-14
+
+The owner reported that large displays stretched the activity/task panels excessively and rejected the mobile presentation. The wide panel row is now capped at 28rem (448px at the default root size), retaining the compact desktop proportions instead of consuming arbitrary viewport height. Mobile uses 1rem side gutters and 1.25rem section gaps, a smaller heading/description and no repeated application eyebrow. Project/task metrics appear before activity in the DOM and mobile layout; CSS grid areas preserve the desktop activity-left/task-right arrangement. From 20rem to below 34rem of content width, metric labels and pending values share a row, with a stacked fallback for narrow cells. Activity controls form full-width rows on narrow phones and two equal groups from 22rem. Button sizing accounts for longer translated labels. The mobile plot has a 7.5rem minimum and the section stack no longer flex-grows. No data logic, dependencies, authentication or schema changes were added. These visual adjustments remain pending owner review and supersede the previous unbounded panel growth/mobile composition.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed after removing unused helpers from the local diagnostic script |
+| `npm run typecheck` | Passed |
+| `npm test` | 41 tests passed |
+| `npm run build` | Passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Eight production HTTP tests passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node work/overview-proportions-qa.mjs` | 34 production browser viewport/locale cases plus client-navigation, keyboard and enlarged-text assertions passed |
+| `git diff --check` | Passed |
+
+The isolated Chrome matrix covered 320-2560px widths and English, Spanish and Catalan. It added 534x796 cases matching the supplied mobile capture, common 360/375/390/430px phone widths and 1920x1080/2560x1440 displays. Assertions verified the 448px wide-panel height cap, desktop panel alignment, mobile metric-before-activity order and section spacing, main/card padding, compact mobile plot, no clipped text or horizontal overflow, all pending values, 44px filter buttons and no decorative media below the navigation breakpoint. Existing one-screen sizing assertions still passed for the tested desktop/tablet sizes. Desktop sizing reserved a layout-only 60px account row; it did not authenticate an administrator. Production screenshots at large desktop and 390/534px mobile sizes were visually inspected.
+
+A mobile client-side round trip from Overview to Projects and back retained main/card padding. Keyboard filters, visible focus, no filter fetches, menu overlay geometry/Escape/outside dismissal and reduced motion passed. The 200% root-text check retained reflow and access to the final status. The initial local diagnostic script triggered lint warnings for unused helper functions; they were removed and lint passed on rerun. No browser exceptions or console errors were observed. Local QA scripts and screenshots remain untracked under `work/`, outside the committed test suite. Narrow/short screens retain normal document scrolling. Live administrator session behavior was not tested in this visual-only follow-up. No database suite or remote operation ran. The temporary production server was stopped, and the development preview remains on port 3003.
+
+## Viewport-aware Overview and tablet navigation - 2026-11-14
+
+The owner requested that the UI adapt to screen dimensions and avoid scrolling down to read the current summary. Overview now uses bounded viewport-height spacing, card padding, headings/values and chart minimum height. Its activity/task panels grow into available space. At 34rem of available content width, project metrics use four columns, task metrics form a vertical list and the personal link sits beside the introduction. Below that width, sections stack with two-column metrics. The existing top-bar disclosure now applies below 64rem of viewport width; the shared shell, session controls and illustration visibility/mount query use the same threshold. This supersedes the 48rem threshold in earlier validation entries. No scroll lock, clipping, simulated observations, database logic or dependency was introduced. Short windows, narrow phones, enlarged text and future growing lists may still scroll normally. The revised proportions and tablet breakpoint remain pending owner visual review.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed |
+| `npm run typecheck` | Passed |
+| `npm test` | 41 tests passed |
+| `npm run build` | Passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | Eight production HTTP tests passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node work/overview-viewport-qa.mjs` | 25 production browser viewport/locale cases plus keyboard/reflow checks passed |
+| `node work/mobile-session-qa.mjs` | Seven isolated account/sidebar component viewport/locale cases plus desktop interaction checks passed |
+| `git diff --check` | Passed |
+
+Isolated headless Chrome checked the actual anonymous production Overview from 320px to 1900px wide, including the 1023/1024px navigation boundary and English, Spanish and Catalan. Desktop sizing assertions additionally inserted a layout-only 60px account row to reserve the same space as authenticated controls; this did not authenticate a user or change application authorization. The complete summary fitted 1900x905, 1440x900, 1366x768, 1280x720 and 1024x768 in the tested locale combinations. The latter three sizes were checked in all three languages. The tablet summary also fitted 768x1024 in all languages, plus 820x1180 and 1023x768 in the tested locales. Assertions found no horizontal page overflow or clipped text, retained all eight pending values and 44px activity-filter targets, and observed no illustration asset requests below 1024px. Screenshots at desktop, compact desktop and tablet sizes were visually inspected. Small-phone and short landscape cases retained document scrolling. A 640x360 layout with root text enlarged to 200% reflowed without horizontal scrolling, and its final status remained reachable.
+
+Keyboard entity/period selection, visible focus, no filter data requests, menu overlay geometry, Escape focus restoration, outside dismissal and reduced motion passed. The separate component fixture used actual sidebar/account components and an intentionally failing logout action: static top-bar status/menu logout passed at 320, 360, 390, 768 and 1023px; desktop account behavior passed at 1024 and 1440px. It also checked pending/error feedback and retry focus. No browser exceptions or console errors were observed. The local `work/` QA scripts/screenshots remain untracked and are not part of the committed test suite. Live administrator cookie round-trip and authenticated server rendering were not tested. No database suites, user creation, schema changes or remote operations were performed. The temporary production server on port 3004 was stopped; the owner's development preview on port 3003 remains running.
+
 ## Mobile session indicator and navigation logout correction - 2026-11-14
 
 The owner rejected the separate mobile account dropdown and requested a static session sphere in the top bar with sign-out inside the main navigation disclosure. Below 48rem, the server-verified shell now supplies the noninteractive indicator beside the navigation toggle and the shared sign-out form below the language selector. The external account row is hidden, so it adds no mobile content spacing. From 48rem upwards the previous account dropdown remains available, while the mobile status and logout are hidden. The brand scales down below 360px to accommodate the controls. A shared account icon avoids duplicate artwork; session/authorization and redirect behavior are unchanged.

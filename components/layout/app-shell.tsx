@@ -26,9 +26,9 @@ export async function AppShell({ children }: { children: ReactNode }) {
         label={t("sidebar")}
         mobileStatus={administrator ? <SessionIndicator label={auth("sessionActive")} /> : undefined}
         brand={
-          <Link href="/" title={t("backHome")} className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus min-[360px]:gap-3 md:gap-4">
+          <Link href="/" title={t("backHome")} className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus min-[360px]:gap-3 lg:gap-4">
             <Image src="/brand/logo.svg" alt="" width={40} height={40} className="size-8 shrink-0 object-contain min-[360px]:size-10" />
-            <p className="font-heading text-xl font-semibold min-[360px]:text-2xl md:text-3xl">{t("appName")}</p>
+            <p className="font-heading text-xl font-semibold min-[360px]:text-2xl lg:text-3xl">{t("appName")}</p>
           </Link>
         }
       >
@@ -36,12 +36,12 @@ export async function AppShell({ children }: { children: ReactNode }) {
         <div className="mt-auto flex shrink-0 flex-col gap-4 pt-6">
           <SidebarIllustration />
           <LanguageSwitcher />
-          {administrator && <SignOutForm className="md:hidden" />}
+          {administrator && <SignOutForm className="lg:hidden" />}
         </div>
       </WorkspaceSidebar>
       <div className="workspace-content">
         {administrator && (
-          <div className="hidden shrink-0 justify-end px-4 pt-4 sm:px-8 md:flex">
+          <div className="hidden shrink-0 justify-end px-4 pt-4 sm:px-8 lg:flex">
             <AccountMenu>
               <SignOutForm />
             </AccountMenu>
