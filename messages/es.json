@@ -100,5 +100,37 @@
   "Construction": {
     "status": "En construcción",
     "description": "El tablero está en construcción. Aquí podrás conocer los proyectos del portfolio, sus tareas y su evolución."
+  },
+  "Overview": {
+    "title": "Ideas que van creciendo",
+    "description": "Mis proyectos, las tareas que les dan forma y un vistazo a lo que voy construyendo.",
+    "personalWebsite": "Mi web personal",
+    "projects": "Proyectos",
+    "tasks": "Tareas",
+    "projectTotal": "Total",
+    "projectOpen": "Abiertos",
+    "projectCompleted": "Completados",
+    "projectCanceled": "Cancelados",
+    "taskTotal": "Total",
+    "taskOpen": "Abiertas",
+    "taskCompleted": "Completadas",
+    "taskCanceled": "Canceladas",
+    "pendingValue": "Todavía no disponible",
+    "pending": "Las cifras de proyectos y tareas estarán disponibles próximamente.",
+    "activityTitle": "El ritmo del jardín",
+    "activityEntity": "Tipo de actividad",
+    "activityPeriod": "Agrupación temporal",
+    "month": "Meses",
+    "day": "Días",
+    "taskActivityMonths": "Tareas creadas y completadas por mes",
+    "taskActivityDays": "Tareas creadas y completadas por día",
+    "projectActivityMonths": "Proyectos creados y completados por mes",
+    "projectActivityDays": "Proyectos creados y completados por día",
+    "activityPending": "La actividad crecerá aquí",
+    "activityPendingDescription": "Un espacio para ver cómo evoluciona el trabajo.",
+    "tasksCreated": "Creadas",
+    "tasksCompleted": "Completadas",
+    "projectsCreated": "Creados",
+    "projectsCompleted": "Completados"
   }
 }

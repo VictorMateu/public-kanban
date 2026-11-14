@@ -100,5 +100,37 @@
   "Construction": {
     "status": "En construcció",
     "description": "El tauler està en construcció. Aquí podràs conèixer els projectes del portafolis, les seves tasques i la seva evolució."
+  },
+  "Overview": {
+    "title": "Idees que van creixent",
+    "description": "Els meus projectes, les tasques que els donen forma i una mirada al que vaig construint.",
+    "personalWebsite": "La meva web personal",
+    "projects": "Projectes",
+    "tasks": "Tasques",
+    "projectTotal": "Total",
+    "projectOpen": "Oberts",
+    "projectCompleted": "Completats",
+    "projectCanceled": "Cancel·lats",
+    "taskTotal": "Total",
+    "taskOpen": "Obertes",
+    "taskCompleted": "Completades",
+    "taskCanceled": "Cancel·lades",
+    "pendingValue": "Encara no disponible",
+    "pending": "Les xifres de projectes i tasques estaran disponibles aviat.",
+    "activityTitle": "El ritme del jardí",
+    "activityEntity": "Tipus d'activitat",
+    "activityPeriod": "Agrupació temporal",
+    "month": "Mesos",
+    "day": "Dies",
+    "taskActivityMonths": "Tasques creades i completades per mes",
+    "taskActivityDays": "Tasques creades i completades per dia",
+    "projectActivityMonths": "Projectes creats i completats per mes",
+    "projectActivityDays": "Projectes creats i completats per dia",
+    "activityPending": "L’activitat creixerà aquí",
+    "activityPendingDescription": "Un espai per veure com evoluciona la feina.",
+    "tasksCreated": "Creades",
+    "tasksCompleted": "Completades",
+    "projectsCreated": "Creats",
+    "projectsCompleted": "Completats"
   }
 }

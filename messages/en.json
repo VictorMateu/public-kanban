@@ -101,5 +101,37 @@
   "Construction": {
     "status": "Under construction",
     "description": "The board is under construction. Here you will be able to explore portfolio projects, their tasks and progress."
+  },
+  "Overview": {
+    "title": "Ideas taking root",
+    "description": "My projects, the tasks that shape them, and a glimpse of what I am building.",
+    "personalWebsite": "My personal website",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "projectTotal": "Total",
+    "projectOpen": "Open",
+    "projectCompleted": "Completed",
+    "projectCanceled": "Canceled",
+    "taskTotal": "Total",
+    "taskOpen": "Open",
+    "taskCompleted": "Completed",
+    "taskCanceled": "Canceled",
+    "pendingValue": "Not available yet",
+    "pending": "Project and task figures will be available soon.",
+    "activityTitle": "The garden’s rhythm",
+    "activityEntity": "Activity type",
+    "activityPeriod": "Time grouping",
+    "month": "Months",
+    "day": "Days",
+    "taskActivityMonths": "Tasks created and completed each month",
+    "taskActivityDays": "Tasks created and completed each day",
+    "projectActivityMonths": "Projects created and completed each month",
+    "projectActivityDays": "Projects created and completed each day",
+    "activityPending": "Activity will grow here",
+    "activityPendingDescription": "A space to follow how the work evolves.",
+    "tasksCreated": "Created",
+    "tasksCompleted": "Completed",
+    "projectsCreated": "Created",
+    "projectsCompleted": "Completed"
   }
 }

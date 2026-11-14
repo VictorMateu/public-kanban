@@ -48,8 +48,17 @@ for (const locale of ["en", "es", "ca"]) {
     assert.ok(home.html.includes(`<html lang="${locale}"`));
     assert.ok(home.html.includes(`name="description" content="${catalogs[locale].Metadata.description.replaceAll("'", "&#x27;")}"`));
     const main = home.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/);
-    assert.ok(main, "The blank home should have a main landmark");
-    assert.equal(main[1].trim(), "", "The initial content area must remain empty");
+    assert.ok(main, "The overview should have a main landmark");
+    const text = value => value.replaceAll("'", "&#x27;");
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.title)));
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.description)));
+    assert.match(main[1], /href="https:\/\/victormateulopez\.com"/);
+    assert.equal((main[1].match(/<dd\b/g) ?? []).length, 8, "The overview contains four project and four task metrics");
+    assert.equal((main[1].match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8, "Pending metrics must never be rendered as zero");
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.pendingValue)));
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.taskActivityMonths)));
+    assert.ok(main[1].includes(text(catalogs[locale].Overview.pending)));
+    assert.doesNotMatch(main[1], /<video\b|<canvas\b/, "The provisional overview must not render media or a simulated chart");
     assert.ok(home.renderedHtml.includes(`aria-label="${catalogs[locale].Common.mainContent}"`));
     assert.equal((home.renderedHtml.match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);
     assert.doesNotMatch(home.renderedHtml, /role="img"[^>]*aria-label=/, "Anonymous visitors must not see an administrator indicator");
@@ -63,7 +72,7 @@ for (const locale of ["en", "es", "ca"]) {
     assert.ok(disclosure[0].includes(`aria-label="${catalogs[locale].Navigation.openMenu}"`));
     assert.ok(sidebar.includes(`id="${disclosure[1]}" data-open="false"`));
     assert.doesNotMatch(sidebar, /<video\b|<img\b[^>]*src="[^"]*illustrations\//, "Initial HTML must not load decorative media before the desktop viewport is known");
-    assert.equal((home.renderedHtml.match(/<button\b/g) ?? []).length, 4, "Initial markup contains the disclosure and three language controls");
+    assert.equal((sidebar.match(/<button\b/g) ?? []).length, 4, "The sidebar contains the disclosure and three language controls");
     assert.match(sidebar, new RegExp(`<button\\b(?=[^>]*value="${locale}")(?=[^>]*aria-pressed="true")[^>]*>`));
     assert.equal((sidebar.match(/aria-pressed="true"/g) ?? []).length, 1);
     for (const name of ["English", "Español", "Català"]) assert.ok(sidebar.includes(`aria-label="${name}"`));

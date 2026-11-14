@@ -1,5 +1,25 @@
 # Local validation
 
+## Responsive presentation-only Overview - 2026-11-14
+
+The owner approved the first Overview implementation while another thread defines the database. The page now contains an introduction and personal website link, four project metrics, four task metrics, and an activity panel with entity and month/day controls. Every metric remains an em dash with an accessible pending label. The activity area has no sample values, chart marks, dates or numeric axes. The server-only Overview query returns only a pending status and records future data work as TODOs; it does not access Supabase.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings, including the final local browser harness |
+| `npm run typecheck` | Passed |
+| `npm test` | All 34 application tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | All eight HTTP tests passed against the production build |
+| `node work/overview-qa.mjs` | Isolated headless Chrome responsive and keyboard assertions passed |
+| `git diff --check` | Passed |
+
+The browser matrix covered English at 320, 360, 390, 768, 1024 and 1440 CSS pixels, plus Spanish and Catalan at 320, 390 and 768 pixels. Automated assertions checked horizontal overflow, text/control bounds, two or four project columns according to the content width, 44px minimum selector height, all eight pending values and the document language. Mobile cases contained no videos and requested no illustration assets. Mobile (Spanish, 390px) and desktop (English, 1440px) screenshots were visually inspected.
+
+Additional Chrome assertions checked entity selection with Enter, period selection with Space, visible keyboard focus, selected-button states, updated accessible activity descriptions and no Fetch/XHR requests from those controls. The mobile menu preserved the main content geometry, closed with Escape and restored toggle focus, dismissed on an outside pointer action and disabled its animation with reduced motion. No browser exceptions or console errors were observed. These checks used an isolated temporary profile, not the owner's browser session.
+
+The HTTP cases assert translated Overview content, the personal link, eight pending values, the initial activity description and the existing locale/security response behavior. The public-data integration assertion was updated for the pending Overview but its suite was not run: it inserts database fixtures, and this task excludes database work. No users, database records, migrations or dependencies were created or changed. Real counts, lifecycle definitions, activity queries and data-driven loading/error states remain pending. The owner accepted the first responsive Overview presentation on 2026-11-14; this does not approve database integration or the rest of phase 3. The existing local development preview on port 3003 was left running; the temporary production server on port 3004 was stopped after verification.
+
 ## Floating mobile menu follow-up - 2026-11-14
 
 The owner rejected the mobile panel pushing the content and requested an overlay with a cozy animation and no visible Menu text. The panel is now absolutely positioned below the top bar, with a bounded height and internal scrolling. The header and content retain their layout dimensions when it opens. A circular cream button with rounded strokes replaces the text label; translated open/close accessible names remain. The icon changes to a close symbol. The panel entrance uses a 280ms opacity/translation/scale animation with a slight rotation; reduced-motion preferences disable it and the icon transition. The existing palette and panel shadow are reused. The skip link stays above the overlay. Desktop retains its static flex panel and disables the entrance animation.
