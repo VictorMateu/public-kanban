@@ -34,7 +34,7 @@ Open [localhost:3000](http://localhost:3000). The Overview presentation works wi
 
 - [Agent instructions and required reading](AGENTS.md)
 - [Product requirements and open decisions](docs/product.md)
-- [Future ideas](docs/ideas.md)
+- [Future ideas and required maintenance follow-up](docs/ideas.md)
 - [Development, configuration and database operations](docs/development.md)
 - [Validation evidence and limitations](docs/validation.md)
 - [ADR 0001: Next.js and Supabase](docs/adr/0001-nextjs-and-supabase.md)
