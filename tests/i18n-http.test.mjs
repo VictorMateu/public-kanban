@@ -114,6 +114,23 @@ for (const locale of ["en", "es", "ca"]) {
   });
 }
 
+test("sidebar videos are served as WebM and support partial playback requests", async () => {
+  for (const name of ["typing-v6", "drinking-v5"]) {
+    const url = new URL(`/illustrations/${name}.webm`, origin);
+    const response = await fetch(url);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") ?? "", /^video\/webm\b/);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    assert.deepEqual([...bytes.slice(0, 4)], [0x1a, 0x45, 0xdf, 0xa3], "The media must have a WebM/EBML header");
+    assert.equal(Number(response.headers.get("content-length")), bytes.length);
+
+    const partial = await fetch(url, { headers: { Range: "bytes=0-31" } });
+    assert.equal(partial.status, 206);
+    assert.equal(partial.headers.get("content-range"), `bytes 0-31/${bytes.length}`);
+    assert.deepEqual(new Uint8Array(await partial.arrayBuffer()), bytes.slice(0, 32));
+  }
+});
+
 test("missing and unsupported cookies default to English without browser-language detection", async () => {
   for (const cookie of [undefined, `${cookieName}=fr`, `${cookieName}=../../es`]) {
     const headers = { "Accept-Language": "es,ca;q=0.9" };
