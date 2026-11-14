@@ -1,32 +1,34 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { signIn } from "../actions";
 
 export function LoginForm() {
+  const t = useTranslations("Auth");
   const [state, action, pending] = useActionState(signIn, { error: null });
   return (
     <form action={action} className="mt-8 space-y-5">
       <div>
-        <label htmlFor="email" className="block text-sm font-medium">Correo electrónico</label>
+        <label htmlFor="email" className="block text-sm font-normal">{t("email")}</label>
         <input
           id="email" name="email" type="email" autoComplete="username" required maxLength={254}
-          className="mt-2 w-full rounded-lg border border-slate-400 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700"
+          className="mt-2 min-h-11 w-full rounded-xl border border-border/60 bg-surface px-3 py-2 text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm font-medium">Contraseña</label>
+        <label htmlFor="password" className="block text-sm font-normal">{t("password")}</label>
         <input
           id="password" name="password" type="password" autoComplete="current-password" required maxLength={1024}
-          className="mt-2 w-full rounded-lg border border-slate-400 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700"
+          className="mt-2 min-h-11 w-full rounded-xl border border-border/60 bg-surface px-3 py-2 text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         />
       </div>
-      <p role="status" aria-live="polite" className="text-sm text-red-800">{state.error}</p>
+      <p role="status" aria-live="polite" className={state.error ? "rounded-xl border border-border/25 bg-surface-warm p-3 text-sm text-foreground" : undefined}>{state.error ? t(state.error) : null}</p>
       <button
         type="submit" disabled={pending}
-        className="w-full rounded-lg bg-indigo-700 px-4 py-3 font-medium text-white hover:bg-indigo-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 disabled:opacity-60"
+        className="min-h-11 w-full rounded-xl border border-border/15 bg-accent px-4 py-3 text-accent-foreground transition-colors hover:bg-accent/80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60"
       >
-        {pending ? "Iniciando sesión…" : "Iniciar sesión"}
+        {pending ? t("signingIn") : t("signIn")}
       </button>
     </form>
   );

@@ -11,21 +11,23 @@ export function getSupabaseConfig(env: PublicEnvironment = {
   const key = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
 
   if (!url || !key) {
-    throw new Error("Falta configurar la URL y la clave publicable de Supabase.");
+    throw new Error("Supabase URL and publishable key are not configured.");
   }
 
   const parsedUrl = new URL(url);
+  const localHttp = parsedUrl.protocol === "http:" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(parsedUrl.hostname);
   if (
-    !["https:", "http:"].includes(parsedUrl.protocol) ||
+    (parsedUrl.protocol !== "https:" && !localHttp) ||
     parsedUrl.username || parsedUrl.password || parsedUrl.search || parsedUrl.hash ||
     parsedUrl.pathname !== "/"
   ) {
-    throw new Error("La URL de Supabase debe ser el origen HTTP o HTTPS del proyecto.");
+    throw new Error("The Supabase URL must be an HTTPS origin, or HTTP on an explicit loopback host.");
   }
 
-  // Esta base requiere las nuevas claves publicables, nunca claves privilegiadas.
+  // This application requires the new publishable keys, never privileged keys.
   if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(key)) {
-    throw new Error("Usa una clave publicable de Supabase (sb_publishable_...).");
+    throw new Error("Use a Supabase publishable key (sb_publishable_...).");
   }
 
   return { url: parsedUrl.origin, key };

@@ -1,0 +1,98 @@
+{
+  "Common": {
+    "sidebar": "Barra lateral",
+    "mainContent": "Contenido principal",
+    "skipContent": "Saltar al contenido",
+    "navigation": "Navegación principal",
+    "projects": "Proyectos",
+    "privateAccess": "Acceso del administrador",
+    "footer": "Proyectos, tareas y evolución.",
+    "exploreBoard": "Explorar tablero",
+    "retry": "Volver a intentar",
+    "viewProjects": "Ver proyectos",
+    "backHome": "Volver al inicio"
+  },
+  "Navigation": {
+    "label": "Navegación principal",
+    "overview": "Resumen",
+    "projects": "Proyectos"
+  },
+  "SidebarIllustration": {
+    "pause": "Pausar animación de la barra lateral",
+    "resume": "Reanudar animación de la barra lateral"
+  },
+  "Language": {
+    "label": "Idioma de la interfaz",
+    "apply": "Aplicar"
+  },
+  "Metadata": {
+    "description": "Explora los proyectos del portfolio y sigue la evolución de sus tareas en un tablero Kanban público."
+  },
+  "Home": {
+    "eyebrow": "Ideas en movimiento",
+    "introduction": "Conoce los proyectos del portfolio y sigue su evolución, tarea a tarea.",
+    "projects": "Proyectos",
+    "openProject": "Abre un proyecto para explorar su tablero.",
+    "loading": "Cargando proyectos…",
+    "publishedProjects": "Proyectos publicados",
+    "unavailableTitle": "Proyectos no disponibles",
+    "unavailableDescription": "No se pueden consultar los proyectos en este momento. Vuelve a intentarlo más tarde.",
+    "emptyTitle": "Todavía no hay proyectos publicados",
+    "emptyDescription": "Este espacio irá reuniendo los proyectos del portfolio y su evolución. Vuelve pronto para descubrirlos."
+  },
+  "Project": {
+    "label": "Proyecto",
+    "allProjects": "Todos los proyectos",
+    "board": "Tablero",
+    "boardDescription": "Explora las tareas de cada columna.",
+    "readOnly": "Solo lectura",
+    "loading": "Cargando tablero…",
+    "unavailableTitle": "Proyecto no disponible",
+    "unavailableDescription": "No se puede consultar este proyecto en este momento. Vuelve a intentarlo más tarde.",
+    "notFoundTitle": "Proyecto no encontrado",
+    "notFoundDescription": "El proyecto que buscas no está disponible."
+  },
+  "Board": {
+    "emptyTitle": "El tablero todavía no tiene columnas",
+    "emptyDescription": "Las columnas y las tareas de este proyecto aparecerán aquí cuando estén disponibles.",
+    "region": "Columnas y tareas del tablero",
+    "taskCount": "{count, plural, one {# tarea} other {# tareas}}",
+    "emptyColumn": "Sin tareas por ahora."
+  },
+  "Task": {
+    "priority": "Prioridad",
+    "priorityValue": "Prioridad {priority}",
+    "low": "baja",
+    "medium": "media",
+    "high": "alta",
+    "dueDate": "Fecha límite:"
+  },
+  "Auth": {
+    "title": "Acceso del administrador",
+    "description": "Acceso exclusivo del propietario de {appName}.",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "signIn": "Iniciar sesión",
+    "signingIn": "Iniciando sesión…",
+    "signOut": "Cerrar sesión",
+    "signingOut": "Cerrando sesión…",
+    "adminTitle": "Administración",
+    "verified": "Sesión de administrador verificada. La gestión del tablero se implementará en una fase posterior.",
+    "notConfigured": "El acceso del administrador no está disponible en este momento.",
+    "invalidCredentials": "No se pudo iniciar sesión con los datos proporcionados.",
+    "signInUnavailable": "No se pudo iniciar sesión. Vuelve a intentarlo más tarde.",
+    "signOutFailed": "No se pudo cerrar la sesión. Vuelve a intentarlo."
+  },
+  "Error": {
+    "title": "No se ha podido cargar el contenido",
+    "description": "Ha ocurrido un problema al cargar el contenido. Vuelve a intentarlo en unos instantes."
+  },
+  "NotFound": {
+    "title": "Página no encontrada",
+    "description": "La página que buscas no está disponible."
+  },
+  "Construction": {
+    "status": "En construcción",
+    "description": "El tablero está en construcción. Aquí podrás conocer los proyectos del portfolio, sus tareas y su evolución."
+  }
+}

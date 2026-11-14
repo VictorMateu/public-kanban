@@ -1,17 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./lib/supabase/database.types";
+import { getAuthCookieOptions } from "./lib/supabase/cookie-options";
 import { getSupabaseConfig, isSupabaseConfigured } from "./lib/supabase/env";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   response.headers.set("Cache-Control", "private, no-store");
 
-  // Permite compilar y mostrar el aviso de configuración sin credenciales.
+  // Allow builds and configuration-unavailable pages without credentials.
   if (!isSupabaseConfigured()) return response;
 
   const { url, key } = getSupabaseConfig();
   const supabase = createServerClient<Database>(url, key, {
+    cookieOptions: getAuthCookieOptions(),
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet, headers) {
@@ -28,7 +30,7 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Solo renueva/verifica la sesión; las páginas y acciones autorizan por separado.
+  // Only refresh and verify the session; pages and actions authorize separately.
   await supabase.auth.getClaims();
   return response;
 }

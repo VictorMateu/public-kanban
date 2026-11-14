@@ -1,34 +1,38 @@
-# ADR 0001: aplicación Next.js con Supabase
+# ADR 0001: Next.js application with Supabase
 
-- Estado: aceptada.
-- Fecha: 2026-11-01.
-- Alcance: base e integración de persistencia de las fases 1 y 2.
+- Status: accepted.
+- Date: 2026-11-01.
+- Scope: foundation and persistence integration in phases 1 and 2.
 
-## Contexto
+## Context
 
-Portfolio Kanban necesita una consulta pública y administración exclusiva del propietario. Se priorizan sencillez, seguridad, mantenimiento y costes reducidos. Se ha decidido mantener una única aplicación, sin backend independiente ni ORM adicional.
+Portfolio Kanban needs public browsing and administration exclusively by its owner. Simplicity, security, maintenance and low costs are priorities. It has been decided to keep a single application without an independent backend or an additional ORM.
 
-## Decisión
+## Decision
 
-Mantener una única aplicación Next.js con App Router, TypeScript estricto, Tailwind y Server Components por defecto. La base se inicializó manualmente; no se generó desde el starter de Vercel para Supabase.
+Keep a single Next.js application with App Router, strict TypeScript, Tailwind and Server Components by default. The foundation was initialized manually rather than generated from Vercel's Supabase starter.
 
-Utilizar PostgreSQL y Auth de Supabase con sus clientes oficiales. `lib/supabase/` separa cliente de navegador, cliente de servidor por petición y cliente público sin sesión. `server-only` protege los módulos de acceso del servidor.
+Use Supabase PostgreSQL and Auth through the official clients. `lib/supabase/` separates the browser client, per-request server client and session-free public client. `server-only` protects server data-access modules.
 
-Las consultas de proyectos, columnas y tareas se organizan por dominio. Las consultas públicas usan un cliente anónimo sin cookies del administrador y `cache: no-store`. No se añade una capa de repositorios genéricos.
+Organize project, column and task queries by domain. Public queries use an anonymous client without administrator cookies and with `cache: no-store`. No generic repository layer is added.
 
-Las sesiones SSR usan cookies. `proxy.ts` renueva y verifica la sesión en `/admin` y sus subrutas con `getClaims()`, transmitiendo las cookies y cabeceras de no caché. Las páginas verifican al usuario mediante `getUser()` y autorizan por separado. Los formularios usan Server Actions; solo las acciones escriben cookies desde el cliente de servidor.
+SSR sessions use cookies. The initial `proxy.ts` implementation renews and verifies sessions on `/admin` and its subroutes with `getClaims()`, forwarding cookies and no-cache headers. Pages verify the user through `getUser()` and authorize separately. Forms use Server Actions; only actions write cookies through the server client.
 
-Versionar las migraciones SQL y los tests de base de datos en `supabase/`. Mantener la configuración y los tipos de acceso junto al código; los tipos SQL actuales reflejan manualmente las migraciones y pueden regenerarse mediante la CLI.
+Version SQL migrations and database tests under `supabase/`. Keep configuration and access types alongside the code; the current SQL types reflect migrations manually and can be regenerated with the CLI.
 
-## Alternativas consideradas
+## Alternatives considered
 
-- Usar el starter completo de Vercel: se eligió una base manual para incorporar únicamente lo necesario al alcance.
-- Añadir un backend u ORM: se descartó por la restricción explícita y la complejidad adicional.
+- Use the full Vercel starter: a manual foundation was selected to include only what the scope required.
+- Add a backend or ORM: rejected because of the explicit restriction and additional complexity.
 
-## Consecuencias
+## Consequences
 
-La estructura sigue las convenciones de Next.js y la integración SSR de Supabase. `lib/` y la separación por dominio son decisiones organizativas del proyecto.
+The structure follows Next.js conventions and Supabase SSR integration. `lib/` and the domain separation are organizational choices for this project.
 
-Los nuevos puntos de entrada que requieran sesión deberán verificar permisos y, si necesitan renovación, quedar cubiertos por el proxy. No basta con proteger visualmente la interfaz.
+New session-dependent entry points must verify permissions and, when renewal is needed, be covered by the proxy. Protecting only the visible interface is insufficient.
 
-El tablero, el CRUD y el despliegue quedan para las fases posteriores. La elección de Vercel es una previsión; todavía no hay despliegues ni servicios remotos conectados.
+At the time of this decision, the board, CRUD and deployment were left for later phases. Vercel was a prospective hosting choice; no deployment or remote service connection had been made.
+
+## Subsequent product direction
+
+The owner has since selected administration controls on the same board used for public browsing. That experience is not implemented by this ADR, and the existing `/admin` placeholder is not a final navigation decision. Any related changes to session-refresh coverage or authorization must be proposed before implementation. See [Product requirements](../product.md).

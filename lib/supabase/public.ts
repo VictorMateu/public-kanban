@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 import { getSupabaseConfig } from "./env";
 
-// Las consultas públicas nunca heredan la sesión del administrador ni se cachean.
+// Public queries never inherit the administrator session or use shared caching.
 export function createPublicSupabaseClient() {
   const { url, key } = getSupabaseConfig();
   return createClient<Database>(url, key, {

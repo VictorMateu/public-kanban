@@ -8,7 +8,7 @@ export async function getAdministrator() {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createServerSupabaseClient();
 
-  // getUser verifica la sesión contra Auth; no se confía en getSession ni metadata.
+  // getUser verifies the session with Auth; getSession and metadata are not trusted.
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return null;
 

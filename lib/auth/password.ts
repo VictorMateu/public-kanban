@@ -1,7 +1,7 @@
 export type Credentials = { email: string; password: string };
-export type AuthFormState = { error: string | null };
+export type AuthFormState = { error: "invalidCredentials" | "signInUnavailable" | "signOutFailed" | null };
 
-// Interfaz mínima para probar la autorización sin sustituir la persistencia real.
+// Minimal interface for authorization tests without replacing actual persistence.
 export type PasswordClient = {
   auth: {
     signInWithPassword(credentials: Credentials): PromiseLike<{
@@ -40,7 +40,7 @@ export async function authenticateAdministrator(client: PasswordClient, formData
     authorized = !result.error && result.data === true;
     return authorized;
   } finally {
-    // Una identidad válida sin permiso no debe mantener una sesión en esta app.
+    // A valid identity without authorization must not retain a session in this app.
     if (!authorized) await client.auth.signOut();
   }
 }

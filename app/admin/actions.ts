@@ -9,9 +9,9 @@ export async function signIn(_previous: AuthFormState, formData: FormData): Prom
   try {
     const supabase = await createServerSupabaseClient(true);
     const authorized = await authenticateAdministrator(supabase, formData);
-    if (!authorized) return { error: "No se pudo iniciar sesión con los datos proporcionados." };
+    if (!authorized) return { error: "invalidCredentials" };
   } catch {
-    return { error: "No se pudo iniciar sesión. Comprueba la configuración y vuelve a intentarlo." };
+    return { error: "signInUnavailable" };
   }
 
   revalidatePath("/admin", "layout");
@@ -22,9 +22,9 @@ export async function signOut(): Promise<AuthFormState> {
   try {
     const supabase = await createServerSupabaseClient(true);
     const { error } = await supabase.auth.signOut();
-    if (error) return { error: "No se pudo cerrar la sesión. Vuelve a intentarlo." };
+    if (error) return { error: "signOutFailed" };
   } catch {
-    return { error: "No se pudo cerrar la sesión. Vuelve a intentarlo." };
+    return { error: "signOutFailed" };
   }
 
   revalidatePath("/admin", "layout");

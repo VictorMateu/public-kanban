@@ -1,0 +1,98 @@
+{
+  "Common": {
+    "sidebar": "Barra lateral",
+    "mainContent": "Contingut principal",
+    "skipContent": "Salta al contingut",
+    "navigation": "Navegació principal",
+    "projects": "Projectes",
+    "privateAccess": "Accés de l'administrador",
+    "footer": "Projectes, tasques i evolució.",
+    "exploreBoard": "Explora el tauler",
+    "retry": "Torna-ho a provar",
+    "viewProjects": "Mostra els projectes",
+    "backHome": "Torna a l'inici"
+  },
+  "Navigation": {
+    "label": "Navegació principal",
+    "overview": "Resum",
+    "projects": "Projectes"
+  },
+  "SidebarIllustration": {
+    "pause": "Pausa l'animació de la barra lateral",
+    "resume": "Reprèn l'animació de la barra lateral"
+  },
+  "Language": {
+    "label": "Idioma de la interfície",
+    "apply": "Aplica"
+  },
+  "Metadata": {
+    "description": "Explora els projectes del portafolis i segueix l'evolució de les seves tasques en un tauler Kanban públic."
+  },
+  "Home": {
+    "eyebrow": "Idees en moviment",
+    "introduction": "Coneix els projectes del portafolis i segueix-ne l'evolució, tasca a tasca.",
+    "projects": "Projectes",
+    "openProject": "Obre un projecte per explorar-ne el tauler.",
+    "loading": "Carregant projectes…",
+    "publishedProjects": "Projectes publicats",
+    "unavailableTitle": "Projectes no disponibles",
+    "unavailableDescription": "Ara mateix no es poden consultar els projectes. Torna-ho a provar més tard.",
+    "emptyTitle": "Encara no hi ha projectes publicats",
+    "emptyDescription": "Aquest espai reunirà els projectes del portafolis i la seva evolució. Torna aviat per descobrir-los."
+  },
+  "Project": {
+    "label": "Projecte",
+    "allProjects": "Tots els projectes",
+    "board": "Tauler",
+    "boardDescription": "Explora les tasques de cada columna.",
+    "readOnly": "Només lectura",
+    "loading": "Carregant el tauler…",
+    "unavailableTitle": "Projecte no disponible",
+    "unavailableDescription": "Ara mateix no es pot consultar aquest projecte. Torna-ho a provar més tard.",
+    "notFoundTitle": "Projecte no trobat",
+    "notFoundDescription": "El projecte que cerques no està disponible."
+  },
+  "Board": {
+    "emptyTitle": "El tauler encara no té columnes",
+    "emptyDescription": "Les columnes i les tasques d'aquest projecte apareixeran aquí quan estiguin disponibles.",
+    "region": "Columnes i tasques del tauler",
+    "taskCount": "{count, plural, one {# tasca} other {# tasques}}",
+    "emptyColumn": "Encara no hi ha tasques."
+  },
+  "Task": {
+    "priority": "Prioritat",
+    "priorityValue": "Prioritat {priority}",
+    "low": "baixa",
+    "medium": "mitjana",
+    "high": "alta",
+    "dueDate": "Data límit:"
+  },
+  "Auth": {
+    "title": "Accés de l'administrador",
+    "description": "Accés exclusiu del propietari de {appName}.",
+    "email": "Correu electrònic",
+    "password": "Contrasenya",
+    "signIn": "Inicia la sessió",
+    "signingIn": "Iniciant la sessió…",
+    "signOut": "Tanca la sessió",
+    "signingOut": "Tancant la sessió…",
+    "adminTitle": "Administració",
+    "verified": "Sessió d'administrador verificada. La gestió del tauler s'implementarà en una fase posterior.",
+    "notConfigured": "L'accés de l'administrador no està disponible en aquest moment.",
+    "invalidCredentials": "No s'ha pogut iniciar la sessió amb les dades proporcionades.",
+    "signInUnavailable": "No s'ha pogut iniciar la sessió. Torna-ho a provar més tard.",
+    "signOutFailed": "No s'ha pogut tancar la sessió. Torna-ho a provar."
+  },
+  "Error": {
+    "title": "No s'ha pogut carregar el contingut",
+    "description": "Hi ha hagut un problema en carregar el contingut. Torna-ho a provar d'aquí a uns instants."
+  },
+  "NotFound": {
+    "title": "Pàgina no trobada",
+    "description": "La pàgina que cerques no està disponible."
+  },
+  "Construction": {
+    "status": "En construcció",
+    "description": "El tauler està en construcció. Aquí podràs conèixer els projectes del portafolis, les seves tasques i la seva evolució."
+  }
+}

@@ -1,11 +1,106 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: Arial, Helvetica, sans-serif;
+:root {
+  --palette-cream: #faf4ee;
+  --palette-peach: #ebcdbb;
+  --palette-honey: #e8b66d;
+  --palette-sage: #dce6d3;
+  --palette-espresso: #49382f;
+  --palette-peach-soft: #f5e4da;
+  --palette-honey-soft: #fbf9c9;
+  --palette-sage-soft: #e8efdf;
 }
 
-body {
-  background: var(--color-slate-50);
-  color: var(--color-slate-950);
-  font-family: var(--font-sans);
+/* Components use semantic font and color roles from this file. */
+@theme inline {
+  --font-sans: var(--font-handlee), cursive;
+  --font-heading: var(--font-dancing-script), cursive;
+  --shadow-panel: 0 12px 32px color-mix(in srgb, var(--palette-espresso) 12%, transparent);
+  --color-background: var(--palette-cream);
+  --color-foreground: var(--palette-espresso);
+  --color-surface: var(--palette-cream);
+  --color-surface-secondary: var(--palette-peach);
+  --color-accent: var(--palette-honey);
+  --color-accent-foreground: var(--palette-espresso);
+  --color-positive: var(--palette-sage);
+  --color-positive-foreground: var(--palette-espresso);
+  --color-surface-warm: var(--palette-peach-soft);
+  --color-surface-highlight: var(--palette-honey-soft);
+  --color-surface-positive: var(--palette-sage-soft);
+  --color-border: var(--palette-espresso);
+  --color-focus: var(--palette-espresso);
+}
+
+@layer base {
+  body {
+    background: var(--palette-cream);
+    color: var(--palette-espresso);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    font-synthesis: none;
+    line-height: 1.6;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-heading);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.3;
+  }
+
+  h1 {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-bold);
+  }
+
+  :where(h2, h3) {
+    font-size: var(--text-2xl);
+  }
+}
+
+.workspace-stage {
+  --workspace-inset: clamp(0.5rem, 1vw, 1rem);
+  --workspace-sidebar-width: 5rem;
+
+  display: grid;
+  grid-template-columns: calc(var(--workspace-sidebar-width) + var(--workspace-inset)) minmax(0, 1fr);
+  min-height: 100svh;
+  background-color: var(--palette-peach);
+  background-image:
+    radial-gradient(ellipse at 85% 10%, color-mix(in srgb, var(--palette-honey) 45%, transparent), transparent 55%),
+    radial-gradient(ellipse at 10% 90%, color-mix(in srgb, var(--palette-espresso) 12%, transparent), transparent 60%);
+}
+
+.workspace-sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: sticky;
+  top: var(--workspace-inset);
+  align-self: start;
+  height: calc(100svh - 2 * var(--workspace-inset));
+  margin: var(--workspace-inset) 0 var(--workspace-inset) var(--workspace-inset);
+  padding: 2rem 0.75rem;
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--palette-cream) 80%, transparent);
+  border-radius: clamp(1rem, 1.5vw, 1.5rem);
+  background: linear-gradient(155deg, var(--palette-peach), var(--palette-peach-soft));
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--palette-espresso) 12%, transparent);
+}
+
+.workspace-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+@media (width >= 48rem) {
+  .workspace-stage {
+    --workspace-sidebar-width: 19rem;
+  }
+
+  .workspace-sidebar {
+    padding: 3rem 2rem 1rem;
+  }
 }
