@@ -494,3 +494,168 @@ At the owner's request, the 13 component/CSS files were grouped into `layout`, `
 ### Commit handoff
 
 The owner subsequently authorized committing the pending work by responsibility: `f075749` contains component organization and import updates; `f4734ed` contains the sidebar animation, source sheets, runtime media, controls, translations and tests. The related development, product and validation documentation is recorded in a separate commit. Staged diffs were reviewed for scope, whitespace, credentials and generated/environment files; the animation CSS's redundant final blank line was removed. Ignored local source PNGs and encoding recipes remain outside Git and were preserved. No push was requested or performed. Visual acceptance remains pending owner review.
+
+## Project CRUD preparation — 2026-11-14
+
+The owner requested starting project CRUD interactively in the `feat/project-crud` worktree, raising unresolved product and security decisions before implementing them. `lib/projects/input.ts` prepares validation for the existing name, slug and description fields. It returns typed field errors, trims the name, preserves nonempty description text, represents absent/empty descriptions as null and excludes identity, publication, ordering and timestamp fields. It rejects duplicate fields, file inputs and null bytes; text lengths count Unicode code points to match PostgreSQL. Slug validation reuses the existing URL contract. Database uniqueness still needs enforcement and error handling in future mutation actions.
+
+Six new input tests passed. `npm ci --no-audit --no-fund`, `npm run lint`, `npm run typecheck`, `npm test` (40 tests) and `npm run build` passed in the worktree without Supabase configuration. Installation reported the existing ESLint support warning and three dependency lifecycle scripts lacking npm approval; no dependencies or lockfile changes were introduced. These checks do not establish successful database writes or a usable CRUD interface.
+
+No UI, authentication, query, schema or policy behavior changed. No Supabase instance was contacted, and no HTTP integration, SQL suite, browser or visual checks were run. No records, users, administrator authorization, migrations, commits, pushes or deployments were changed. The input validator is not connected to a Server Action yet. The first pending owner decision is whether this CRUD increment uses existing project fields or also models objectives and the repository link. Shared-route session handling and deletion behavior still need concrete proposals before the corresponding implementation.
+
+## Zod adoption and strict typing — 2026-11-14
+
+The owner explicitly selected Zod and prohibited `any`. `npm view zod version` returned 4.6.7; `npm install --save-exact zod@4.6.7 --no-audit --no-fund` declared that exact version as a direct runtime dependency. The existing lockfile already contained the same version transitively; no unrelated dependency upgrade was made. npm again reported three dependency lifecycle scripts without approval; no script approval or workaround was added.
+
+Project details now use a strict Zod schema and inferred input/output types, with output compatibility checked against the Supabase insert type. Existing six input tests continue to pass; a seventh rejects untrusted object shapes, type coercion and extra protected fields at the schema boundary. The schema preserves the existing validation behavior, including Unicode code-point length limits. The form adapter still does not authorize or write data.
+
+`strict` remains enabled; `noUncheckedIndexedAccess` is now enabled. Type-aware ESLint rejects explicit `any` and unsafe assignments, arguments, calls, member access and returns. In-memory negative samples passed through the real ESLint configuration triggered all six rules; no invalid fixture file was written. `npm run lint`, `npm run typecheck`, `npm test` (41 tests) and `npm run build` passed without Supabase configuration. `git diff --check` passed with line-ending conversion notices only.
+
+An exploratory `npx tsc --noEmit --noUncheckedIndexedAccess --exactOptionalPropertyTypes` failed on existing Supabase RPC/cookie and environment type contracts. `exactOptionalPropertyTypes` was not enabled in this increment to avoid unrelated authentication and SDK changes. Checked index access alone passed and is enabled; this does not weaken TypeScript strict mode or the prohibition of `any`.
+
+The typing policy and dependency decision are recorded in AGENTS.md, development/product documentation and the dated update to ADR 0001. No UI, database schema, policies, authentication behavior or existing data changed. No database, HTTP integration, browser or visual checks were run for this input/configuration change. No commits, pushes, remote connections or deployments were made. Project CRUD actions/forms and the previously raised field-scope decision remain pending.
+## Rich project content implementation — 2026-11-14
+
+The owner confirmed Tiptap, JSONB content and private Supabase Storage with controlled Next.js delivery. The decision is recorded as a dated accepted update in ADRs 0001/0002, preserving their historical scope. Tiptap React, PM and StarterKit were installed at exactly 3.34.0. The application has not adopted an image-processing dependency; Sharp 0.35.5 is proposed for the next upload increment. npm repeated the three existing unapproved lifecycle-script notices; no script approvals, unrelated upgrades, commits or pushes were made.
+
+The protected /admin working prototype supports draft creation, project selection, rich description/objectives, optional HTTPS repository, detail updates and separate publish/hide actions. All actions verify the administrator, validate allowlisted fields and rely on RLS. Updates reject stale updated_at values. Public rich text is rendered with semantic React nodes; card summaries and metadata use plain text. Image binaries are read through /project-images/:id with an explicit authorized preview mode and non-cacheable responses. Image upload and project deletion are not exposed.
+
+### Application checks
+
+- npm run lint: passed with zero warnings after the final source changes.
+- npm run typecheck: passed; the production build also completed its TypeScript check.
+- npm test: 47 tests passed. New coverage includes the actual Tiptap schema/JSON round trip, default link attributes, formatted hard breaks, nested lists, Unicode/text/byte/node/depth limits, cycles, executable links, arbitrary image sources/attributes, duplicate marks, optional content and forged/duplicate form fields.
+- npm run build: passed using public local Supabase configuration supplied only to the validation process. No environment file was created or printed. The controlled image route and existing pages were generated as dynamic routes.
+- git diff --check: passed; Git reported LF-to-CRLF conversion notices only.
+
+An initial editor round-trip test caught a missing nullable title attribute on Tiptap links; the explicit schema was corrected and the test passed. Regenerating database types correctly returned SQL TEXT CHECK priorities as string rather than a literal union; task reads now narrow them with Zod instead of asserting a narrower generated type. The temporary formatter invocation first failed due to Windows shell quoting, then ran successfully through stdin using the existing TypeScript printer; no formatter dependency was added.
+
+### Database validation and local application
+
+The running local Storage version exposes operation-aware policy helpers. Before applying the migration, a transaction applied its DDL/backfill plus access assertions and rolled everything back. A unique pre-migration legacy fixture included whitespace, a newline and supplementary Unicode; its original text, name, slug, ordering, publication and timestamps were compared with the migrated row. The owner instance had no existing project rows at this check, so migration preservation evidence is from that explicit fixture, not an assertion about a populated project collection.
+
+The focused tests/project-content-db.sql assertions passed in that transaction and again against the migrated schema. They cover anonymous/unauthorized/admin access, pending/unattached images, authorized private preview, signing/listing denial, hiding, removal of saved references and database constraints. They create no users and do not modify administrator authorization. All fixture rows and temporary functions roll back. This standalone test remains outside supabase/tests so it does not change the original pgTAP suite's disposable-database prerequisites.
+
+After those checks, npx supabase@2.122.0 migration up --local applied only 20261114000100_project_rich_text.sql. npx supabase@2.122.0 db lint --local reported no schema errors. No remote migration, reset or deletion of existing data was performed. Types were regenerated from the actual migrated public schema through the same pinned CLI, then formatted with the already installed TypeScript printer. Older migration files were not edited.
+
+### HTTP integration
+
+A temporary local production server on port 3015 ran npm run test:public: 24 tests passed with no skips, including the existing public-page and localization suites. Tests run sequentially to preserve shared population checks. The new typed HTTP test uses the existing local administrator and a short-lived, memory-only local token; no credentials are printed, persisted or sent off loopback, and no users are created.
+
+A unique 1-pixel WebP was uploaded through Storage with administrator authorization. Assertions verified real byte-for-byte downloads, private preview, denial of draft reads even with administrator cookies on the public path, semantic rich-text rendering, no signed redirects, denial of signed-URL generation for both anonymous and administrator clients, and immediate rejection of the same URL after hiding. The object was removed through Storage first, followed only by its specific fixture asset/project IDs. Data, user and administrator counts matched their initial values. The temporary production server was stopped.
+
+HTTP tests did not exercise project Server Action submissions or a browser editor session. No browser, responsive-layout, focus, keyboard interaction or visual acceptance review was performed. Provisional /admin placement, scoped system-font typography, toolbar presentation, image upload/normalization/lifecycle and final shared-route administration remain pending. Deletion still needs the owner's descendant/file behavior decision. These successful checks do not mark the CRUD phase or UI as accepted.
+
+## Shared project administration and Sharp uploads - 2026-11-14
+
+The owner confirmed that /admin is only for authentication, project creation
+opens from Projects, and project/task administration belongs in the shared
+visitor-facing views. Sharp 0.35.5 was accepted as a direct dependency.
+The project listing now includes owner-only draft access and a create-form
+button; details expose editing/publication with private previews. The
+existing session proxy covers these routes while private reads/actions
+continue independent server authorization and RLS. Task mutations are not
+implemented by this increment. No new migration was needed for these
+follow-up changes.
+
+### Final application and database results
+
+- npm run lint: passed with zero warnings.
+- npm run typecheck: passed.
+- npm test: 53 tests passed, no skips. New image cases verify real JPEG/PNG/
+  WebP processing, orientation, resize without enlargement, metadata removal,
+  invalid/signature-spoofed/truncated input, input byte/pixel limits, bounded
+  streamed multipart parsing and rejection of a real two-frame WebP.
+- npm run build: passed with public loopback Supabase configuration supplied
+  only to the child process; no environment file or credential was printed.
+- npm run test:public: 27 tests passed, no skips, against the final production
+  build on temporary loopback port 3015. The temporary server was stopped.
+- tests/project-content-db.sql through local psql with ON_ERROR_STOP=1:
+  access assertions passed and the transaction rolled back.
+- npx supabase@2.122.0 db lint --local: no schema errors.
+- npm audit --omit=dev --json: zero production vulnerabilities. Installation
+  reported seven moderate findings in the full dependency tree; this result
+  does not claim a clean development-dependency audit and no automatic audit
+  fixes or dependency upgrades were performed.
+
+HTTP coverage now exercises owner listing/detail access to a draft and its
+board content; public HTML/RSC excludes private fixture data. /admin sends
+an authorized owner to Projects. The tests submit actual Next Server Action
+requests to create, edit, publish and hide a separate fixture project,
+verify redirects to its validated slug, reject unauthorized/stale writes
+and cross-project image references, and confirm protected publication and
+position fields cannot be set by the details form. The upload Route Handler
+rejects unauthenticated/cross-origin/spoofed/nonexistent-project requests;
+a real PNG upload becomes a ready WebP asset, strips metadata, remains
+private before a saved reference, and supports authorized preview.
+Existing signed-URL denial and immediate-hide assertions also pass.
+
+Only test-specific objects and fixture IDs were removed, objects before
+asset rows. Unique fixture project descendants were removed through their
+existing parent cascade. Counts for projects, assets, columns, tasks, users
+and administrator authorization matched the starting state. No users were
+created and no administrator registry or existing user data was changed.
+The original empty-database/user-creating pgTAP suite was not run.
+
+Initial validation caught missing shared-view bindings and a TypeScript
+parameter property incompatible with Node strip-only tests; these were
+corrected. HTTP checks caught an Origin comparison using Next's internal
+hostname instead of the browser-facing Host; matching now checks the
+canonical Origin, Host and protocol and still fails closed. The test wire
+encoder was corrected to send referenced form fields before the root part,
+and assertions were aligned with Next's streamed 200 response plus
+x-action-redirect. All final checks above ran after those corrections.
+
+### Limits and acceptance
+
+The form now supplies expanded/collapsed semantics, a controlled region,
+loading/status/error messages, labels and focus on the opened heading.
+These are implementation/static and HTTP checks. No browser, responsive,
+keyboard, focus or visual interaction verification was performed; toolbar,
+inline-form presentation and scoped rich-text typography await owner review.
+Real HTTPS owner login and expired-session renewal remain deployment checks.
+
+Sharp processing runs only on the server. Upload default limits and the
+measured Windows package footprint are recorded in development.md; no
+production-artifact size or CPU/memory benchmark is claimed. Failure-path
+compensation is implemented but was not tested with injected Storage/network
+faults. Successful uploads abandoned before a document save, or removed
+from documents, retain private files; broad cleanup and project deletion
+still need an explicit lifecycle decision. Navigating away can discard
+unsaved changes. No commits, pushes, remote migrations or deployment were
+performed. Validation does not mark the CRUD phase or UI accepted.
+
+## Commit and review preparation - 2026-11-14
+
+The owner requested commits, a WIP designation for UI work, and a review
+URL. The logic/storage changes and the shared UI were committed separately;
+the UI commit retains WIP status and does not establish visual acceptance.
+
+Fresh verification before committing:
+
+- `npm run lint`: passed with no warnings.
+- `npm run typecheck`: passed.
+- `npm test`: 53 passed, zero failures or skips.
+- `npm run build`: passed with local public Supabase configuration supplied
+  through the child process environment.
+- `npm run test:public`: 27 passed, zero failures or skips, against a
+  temporary production server at 127.0.0.1:3015. The suite used the existing
+  local administrator, created no users, cleaned up its specific fixtures
+  and verified unchanged population counts. That server was stopped.
+- `git diff --check` and staged whitespace checks passed. Changed files and
+  each staged code group were inspected for credential literals, unsafe
+  typing, generated artifacts and environment files; none were found.
+
+A separate development server was then started on loopback port 3015 for
+the owner's interaction review. HTTP smoke checks returned 200 for
+/projects and /admin/login, and 307 from /admin to /admin/login without a
+session. The rendered projects response did not show unavailable-database
+feedback. The development server remains running for review. No browser,
+responsive, keyboard/focus or real HTTPS login verification is claimed.
+
+Remote publication could not be prepared against an existing environment:
+the repository and main checkout have no linked hosting project or remote
+Supabase project, available Supabase configuration is loopback-only, and
+no deployment credentials are configured. The local URL is explicitly a
+local review environment. No push, remote migration, user creation or
+remote deployment has been performed in this preparation step.

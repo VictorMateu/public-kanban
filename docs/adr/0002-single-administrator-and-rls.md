@@ -66,3 +66,35 @@ The project now shares cookie options across the server, proxy and browser Auth 
 Retaining dependency defaults alone would allow production Auth cookies without `Secure`. Requiring HTTPS without an exception would prevent the existing local Supabase setup. The selected policy preserves local development while requiring HTTPS for production authentication. Browser-readable Auth cookies remain part of the existing Supabase SSR design; switching to a server-only cookie/session architecture was not selected.
 
 Consequences: use `npm run dev` for HTTP authentication on localhost; production builds require HTTPS for Auth cookie delivery even when tested locally. LAN HTTP Supabase configurations must move to HTTPS or an explicit loopback origin. Tests exercise cookie creation/deletion through the installed SSR adapter and reject non-loopback HTTP configuration. A real HTTPS deployment and successful owner login/session renewal still require environment-specific verification.
+
+## Project image storage update — 2026-11-14
+
+- Status: private Storage and controlled Next.js delivery accepted by the owner on 2026-11-14.
+- Scope: project rich-text images; implementation requires policy tests before enabling access.
+
+Project images use a private Supabase Storage bucket. Uploads and removal require the existing single administrator authorization. Public reads must follow the parent project's publication and saved document references; drafts and unattached uploads remain private. Public delivery must remain independent of administrator cookies, with a separate authorized preview path. The application must not issue reusable signed image URLs or expose privileged keys.
+
+A Next.js Route Handler checks access and sends non-cacheable responses. Storage RLS must enforce equivalent visibility and restrict allowed Storage operations so a public SELECT policy cannot also authorize signed-URL creation. This needs a compatible Storage version with operation-aware helpers; unsupported environments must fail closed. A Route Handler alone does not protect an object if Storage permissions allow another access path.
+
+A public bucket was rejected because possession of its URL bypasses read policies. Short-lived signed URLs were considered but retain an access window after hiding. Controlled delivery increases application bandwidth and prevents shared image caching. It cannot retract files already downloaded by a visitor.
+
+Image uploads and database changes are not one atomic transaction. The implementation must track asset ownership, validate images and resource limits, and handle failed/cancelled uploads without deleting existing user data. No automatic broad cleanup or remote operation is authorized by this decision.
+
+## Shared administration implementation - 2026-11-14
+
+The owner confirmed placing project controls in the existing shared views.
+The existing session-refresh proxy now also matches /projects and
+/project-images. Refresh does not authorize access: every private query,
+mutation, preview and upload verifies the Auth user and is_admin; database
+and Storage RLS remain enforced. Anonymous project queries and metadata
+remain session independent. Private views are dynamic and proxy responses
+are private/no-store. Draft metadata uses generic text and noindex.
+
+Cookie-authenticated multipart uploads additionally require a same-origin
+Origin header. The Node Route Handler bounds actual body bytes before
+multipart parsing, checks the project and raster signature, then decodes
+and normalizes before creating a pending asset. Storage upload precedes
+the ready state. Failure compensation addresses only the new asset's exact
+object path and ID; failed removal preserves the pending record for later
+inspection. Successful but unsaved uploads remain private; no broad orphan
+cleanup or deletion of existing assets is introduced.

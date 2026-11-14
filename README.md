@@ -8,11 +8,11 @@ A public Kanban for exploring my projects, their progress and supporting informa
 - **Phase 2 validated locally:** Supabase schema, password authentication, single-administrator authorization and RLS.
 - **Phase 3 visual prototype; acceptance pending:** a cozy full-viewport layout provides Overview/Projects navigation and a public project listing. Overview KPIs await definition; login and 404 pages share the visual direction without a language selector.
 - The interface supports English (default), Spanish and Catalan through `next-intl`, with a cookie preference and unchanged URLs.
-- Administration CRUD and the additional [product requirements](docs/product.md) are not implemented. No remote services are connected or deployments made.
+- Project controls in the shared listing/detail views support creating drafts, rich-text description/objectives, repository links, updates, publishing and hiding. Private image upload/delivery uses server-side Sharp normalization. Project deletion, file cleanup policy and visual/interaction acceptance remain pending. See [current scope](docs/product.md). No remote services are connected or deployments made.
 
 ## Stack and local development
 
-Next.js 16.4.3, React 19.3.1, strict TypeScript, Tailwind CSS 4.3.3 and Supabase PostgreSQL/Auth. Use Node.js 24.x and npm 11.x; Docker is required for local Supabase.
+Next.js 16.4.3, React 19.3.1, strict TypeScript without `any`, Zod input validation, Tailwind CSS 4.3.3 and Supabase PostgreSQL/Auth. Use Node.js 24.x and npm 11.x; Docker is required for local Supabase.
 
 ```sh
 npm ci

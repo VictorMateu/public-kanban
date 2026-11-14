@@ -18,6 +18,7 @@
 | @supabase/ssr | 0.12.7 |
 | server-only | 0.0.1 |
 | next-intl | 4.14.9 |
+| Zod | 4.6.7 |
 
 Type packages and transitive dependencies are also pinned in `package.json` and `package-lock.json`. Install with `npm ci`; use `npm install` only for intentional, confirmed dependency changes.
 
@@ -348,3 +349,133 @@ The owner makes project decisions. ADRs, documentation and comments should descr
 Keep the README concise. Use [Product requirements](product.md) for defined requirements and open choices, [Future ideas](ideas.md) for possibilities and [Validation](validation.md) for dated evidence. Propose ADRs for important architecture, security, dependency, functional or UX decisions. Keep proposals and accepted decisions distinguishable.
 
 References: [Next.js](https://nextjs.org/docs/app/getting-started/installation), [Tailwind with Next.js](https://tailwindcss.com/docs/installation/framework-guides/nextjs), [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client) and [local CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
+
+## Project input validation preparation
+
+`lib/projects/input.ts` exports a strict Zod schema for existing editable project details. `ProjectDetailsInput` and `ProjectDetails` are inferred from the schema, and `satisfies` checks output compatibility with the Supabase insert contract without widening the inferred type. The `FormData` adapter returns either the typed allowlisted payload or stable field error codes. The schema rejects unknown object keys and does not coerce input types; the adapter excludes unrelated form fields and preserves duplicate values as invalid input. Publication, identity, ordering and timestamps are excluded. Files and null bytes are invalid; name and description limits count Unicode code points. This validator does not authorize requests, check slug uniqueness or write to Supabase, and currently has no form or mutation caller.
+
+## Strict typing and runtime validation
+
+The owner selected Zod for new runtime input validation. Pin it as a direct runtime dependency and infer input/output types from schemas rather than maintaining duplicate form contracts. Treat external input as `unknown` until validated or narrowed. Do not use `any`, `as any`, `z.any()` or error suppressions to bypass the typing policy. Existing authentication validation is unchanged by the project-input work.
+
+TypeScript enables `strict` and `noUncheckedIndexedAccess`. ESLint uses TypeScript project information for `.ts`/`.tsx` files and rejects explicit `any` plus unsafe assignments, arguments, calls, property access and returns. Type-aware linting adds a TypeScript analysis step; run `npm run lint` as well as `npm run typecheck`, since they check different properties. Generated files and third-party dependency declarations remain outside the application lint scope. The dependency decision is recorded in ADR 0001.
+## Project rich-text prototype
+
+Tiptap React, PM and StarterKit are direct dependencies pinned to 3.34.0. No Tiptap hosted service, collaboration package, shadcn/ui adoption or separate backend is introduced. The custom image node stores only an asset UUID and required alternative text; external HTML image sources are not imported. The editor extension schema and the Zod persistence schema are tested together. Recursive list types are explicit only at the recursive boundary; document, leaf, mark and form types are inferred from Zod.
+
+Project controls use the shared listing/detail views, with session refresh covering those routes and private queries authorized separately. /admin only verifies authentication and redirects to Projects. Each Server Action verifies the current Auth user and is_admin with its own writable server client, allowlists/validates inputs and lets RLS enforce writes. Draft creation does not accept publication, identity, ordering or timestamps from the editable payload. Updates/publication compare the submitted updated_at value to reject stale writes. Publication is a separate saved-state operation; users should save edits before changing visibility. The form is not an autosave editor and does not yet intercept navigation with unsaved changes.
+
+Migration 20261114000100 adds JSONB fields, repository_url, project_assets and the private project-images bucket. Its backfill preserves original descriptions and timestamps; the legacy description remains the plain-text summary used by cards and metadata. Original migration files are unchanged. project_assets uses ON DELETE RESTRICT to avoid losing the asset inventory when a parent is removed; project deletion is not offered until file/descendant deletion semantics are confirmed.
+
+Image delivery uses GET /project-images/:id and private, no-store responses. Normal requests use an anonymous client even when administrator cookies are present. Explicit preview=1 requests verify the administrator with a writable server client. Storage RLS independently checks publication, ready state and saved document references. Its SELECT policies allow download operations and administrator removal only, denying listing, signed URLs and transformation paths. A compatible storage.allow_only_operation helper is required; the migration fails closed when it is missing. The bucket permits WebP only, with a 2 MiB limit. The editor exposes image upload after the draft has been saved; the accepted Sharp implementation and limits are described below.
+
+### Focused database and HTTP checks
+
+The original pgTAP suite still requires its own empty disposable database and user-creation authorization. Do not run it against the populated owner instance. The new standalone rollback-only test in tests/project-content-db.sql uses unique fixture UUIDs and the existing administrator, without creating users or changing administrator permissions. It does not upload binary data. On this local instance it can be run with:
+
+```powershell
+Get-Content -Raw tests/project-content-db.sql | docker exec -i supabase_db_portfolio-kanban psql -U postgres -d postgres -v ON_ERROR_STOP=1
+```
+
+npm run test:public now includes the typed tests/project-content-http.ts test, sequentially with the existing HTTP tests because they share fixture population checks. It requires a local Next.js server, local Supabase, an existing administrator and the public URL/publishable key in the environment or ignored .env.local. KANBAN_TEST_URL defaults to http://127.0.0.1:3000. The new test rejects non-loopback targets. It uses a short-lived token for the existing local administrator signed with the local Auth container's key, held only in process memory. It never logs/persists the token or key, creates users or changes administrator authorization. It uploads unique WebP/PNG fixtures, exercises the real upload route and project Server Actions, and removes only that run's objects, assets and projects in order. The typed integration suite requires a production build for its Server Action manifest. Public/private delivery, signed-URL denial, hiding and preservation of user/data counts are asserted. This is HTTP verification, not browser interaction or visual acceptance.
+
+## Image-processing dependency proposal - 2026-11-14
+
+Historical proposal, subsequently accepted by the owner on the same date;
+see the implementation section below. This assessment records purpose,
+alternatives, trade-offs and measured weight as required by AGENTS.md.
+
+Sharp 0.35.5 would run only in server upload processing to decode JPEG, PNG
+and WebP input, enforce dimensions, resize, encode WebP and omit metadata
+before sending output to private Storage. It provides native image
+processing through libvips. The trade-offs are platform-specific binaries,
+CPU/memory use while decoding and an additional directly maintained
+dependency. Byte/pixel limits and upload tests remain necessary.
+
+Alternatives include browser Canvas preprocessing (no additional package,
+but browser-dependent output and no authoritative server input validation)
+and Supabase delivery transformations (managed resizing, but a paid feature
+that does not replace validating and normalizing incoming uploads and
+would change the selected controlled-delivery design). No alternative has
+been adopted.
+
+Local measurements in the Windows x64 worktree: npm ls resolves Sharp
+0.35.5 through Next.js 16.4.3. The installed sharp folder contains
+1,064,752 bytes and @img/sharp-win32-x64 contains 19,812,379 bytes, totaling
+20,877,131 bytes (about 19.9 MiB). This is an uncompressed disk measurement
+of those two folders, not the full dependency closure, a browser bundle
+size or a deployment artifact measurement. npm registry unpacked sizes
+are 962,168 and 19,812,379 bytes respectively; local generated files can
+explain a difference from registry sizes.
+
+The proposed server-only import would add no Sharp code to the browser
+bundle. Matching the existing version may reuse this local installation;
+that does not guarantee an unchanged production artifact. Deployment OS,
+architecture and Next.js file tracing must be measured once the actual
+upload implementation and deployment target exist. CPU/memory use has
+not been benchmarked.
+
+References: [Sharp](https://sharp.pixelplumbing.com/),
+[output and metadata](https://sharp.pixelplumbing.com/api-output/),
+[platform installation](https://sharp.pixelplumbing.com/install/),
+[Canvas output](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)
+and [Supabase transformations](https://supabase.com/docs/guides/storage/serving/image-transformations).
+
+## Shared project controls and image upload implementation - 2026-11-14
+
+Sharp 0.35.5 is now accepted as a direct dependency; the earlier assessment
+above remains the proposal and measurement history. ProjectManagement
+lazily loads the rich form after opening its button. Creation is in
+/projects; editing and publication are in /projects/[slug]. /admin now
+verifies authentication and redirects to /projects. Sign-in redirects
+there, and sign-in/out invalidate the shared root layout. The proxy now
+renews sessions on /admin, /projects and /project-images. Public queries
+and metadata continue using anonymous clients; separately authorized
+managed queries can return drafts and private board content to the owner.
+
+Project actions live in app/projects/actions.ts, not under /admin. They
+continue independent server authorization, strict Zod validation, RLS,
+asset ownership checks and optimistic updated_at matching. Successful
+saves redirect to the server-validated slug in the shared project view.
+
+POST /project-images runs in Node, requires a same-origin Origin header
+and administrator session, bounds actual streamed body bytes to 8 MiB plus
+64 KiB multipart overhead, and validates a single file and project UUID.
+Input images are JPEG/PNG/WebP up to 8 MiB and 25 million pixels. Signature,
+declared MIME and decoded format must agree; animation is rejected. Sharp
+applies orientation, resizes without enlargement to fit 4,096 by 4,096,
+encodes WebP at quality 82/effort 4 with a ten-second processing timeout,
+and strips metadata. Output is capped at 2 MiB. These conservative upload
+parameters are implementation defaults within the approved image scope.
+
+The pending asset belongs to an existing project; only after successful
+Storage upload is it marked ready. Compensation removes only the exact
+asset created by that request, object first. Failed cleanup preserves the
+pending row. Successful unsaved uploads and removed document nodes retain
+private stored files. There is no automatic orphan cleanup or existing-file
+delete UI. This avoids assuming a deletion policy; file lifecycle and
+project deletion remain explicit follow-up decisions. Save the initial
+draft before attaching images. Saving and closing the form are disabled
+while its upload is pending. No autosave or navigation-discard guard is
+implemented.
+
+## Current review environment - 2026-11-14
+
+The project CRUD working prototype is available locally at
+http://127.0.0.1:3015/projects, with authentication at
+http://127.0.0.1:3015/admin/login. It runs this worktree with
+`npm run dev -- -p 3015 -H 127.0.0.1` and the existing local Supabase
+instance. Public Supabase configuration is injected only into the server
+process; no environment or credential file is committed. The listener is
+restricted to loopback. Development mode allows local HTTP authentication;
+production authentication still requires HTTPS.
+
+This is a temporary local review session. It depends on this computer and
+the local Supabase containers remaining available. It is not a remote
+deployment or a publicly shareable URL. No hosting account is connected,
+no remote Supabase project is linked, and the deployment provider remains
+unselected. A remote review environment needs the owner's hosting and
+Supabase environment choice, credentials, a migration/configuration plan,
+and an existing authorized administrator. Do not publish the loopback
+Supabase URL or automatically create remote users. UI acceptance remains
+pending; the UI implementation commit is explicitly marked WIP.

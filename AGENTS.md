@@ -45,6 +45,14 @@ The owner decides:
 - Architecture and security.
 - Adding, replacing or upgrading dependencies.
 
+Before proposing or incorporating a library, explain its purpose in this
+project, meaningful alternatives, advantages and disadvantages, and its
+weight. Distinguish browser bundle/download cost from server installation
+and deployment size, transitive dependencies, and runtime resource use.
+Identify measured values, estimates and unknowns; report the relevant
+version and measurement context. Existing transitive installation does
+not replace confirmation for adopting a direct application dependency.
+
 The agent may resolve internal implementation details within confirmed
 decisions and scope.
 
@@ -114,7 +122,12 @@ interaction or browser APIs require them.
 Keep components small and descriptive. Separate presentation, domain
 logic and data access without premature abstractions.
 
-Use typed boundaries. Avoid `any` unless its necessity is explained.
+Use strictly typed boundaries. Do not use `any`, `as any` or `z.any()`,
+and do not suppress type or lint errors to bypass this rule. Accept
+external data as `unknown` until it is validated or narrowed. Use Zod
+for new runtime input validation and infer input/output types from its
+schemas. Keep TypeScript strict mode, checked index access and type-aware
+ESLint rules against unsafe values enabled.
 
 shadcn/ui is the preferred UI-library candidate. Confirm its adoption,
 configuration and dependencies before installing or generating components.

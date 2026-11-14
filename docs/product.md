@@ -127,7 +127,8 @@ The Overview content remains blank pending KPI definitions. The known project-40
 
 ### Existing boundaries
 
-- Keep Next.js App Router, strict TypeScript, Supabase PostgreSQL/Auth and one authorized administrator.
+- Keep Next.js App Router, strict TypeScript without `any`, Supabase PostgreSQL/Auth and one authorized administrator.
+- Use Zod for new runtime input validation and infer types from its schemas.
 - Use Tailwind CSS; shadcn/ui is the preferred candidate for component tooling, with adoption and configuration still requiring confirmation.
 - Keep a single application without an independent backend or additional ORM.
 - Do not add public registration, multiuser collaboration, payments or microservices.
@@ -142,8 +143,8 @@ The Overview content remains blank pending KPI definitions. The known project-40
 | Project foundation | Phase 1 complete |
 | Supabase integration, Auth and initial RLS | Phase 2 validated locally; owner account manually authorized locally |
 | Public project listing and read-only boards | Listing available at `/projects`; existing board routes preserved; Overview content remains empty until KPIs are defined |
-| Administration | Sign-in, authorization and sign-out exist; administration CRUD is not implemented |
-| Project information | Existing schema has name, slug, description, publication, ordering and timestamps; objectives and repository link are not implemented |
+| Administration | Protected project prototype supports draft creation, selection, details updates, publishing and hiding; deletion and final shared-interface placement remain pending |
+| Project information | Description and objectives use optional rich-text JSONB; repository is optional HTTPS; the editor and public rendering are implemented, while image upload/processing remains pending |
 | Columns | Currently stored per project; reusable definitions and propagation choices are not implemented |
 | Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
 | New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
@@ -173,3 +174,48 @@ Interface internationalization is implemented. The owner subsequently approved r
 The name, base layout and typography are committed. The current iteration reviews code structure and security, implements the owner-selected sidebar and Projects page, enlarges the sidebar elements, adapts login/404/error presentation and removes the visible language selector. The owner authorized committing this work by responsibility and approved production-secure Auth cookies plus HTTPS Supabase origins with explicit local HTTP exceptions. No schema, dependency or administration-CRUD change is included. KPI definitions and visual acceptance remain pending.
 
 Successful tests do not imply acceptance of provisional product or design decisions. Phase 3 remains pending acceptance until the owner reviews those decisions. Future phases, deployments and remote operations require explicit confirmation.
+
+### Project CRUD increment — scope confirmed on 2026-11-14
+
+The owner requested starting project CRUD interactively and confirmed that objectives and a repository link are included in this increment. Zod and strict typing without `any` have also been selected. The owner subsequently confirmed optional supporting fields, HTTPS repository URLs, Tiptap, JSONB content and private image delivery as recorded below. Shared-route administrator access was subsequently confirmed as recorded below. Project deletion behavior still requires a decision.
+### Rich project content — confirmed on 2026-11-14
+
+The owner selected a substantial visual rich-text editor for description and objectives, including image support. Tiptap, strict Zod-validated JSONB documents, Supabase Storage in a private bucket and controlled image delivery through Next.js are confirmed (ADRs 0001 and 0002). Optional description/objectives/repository values may be empty even when publishing. The repository is an optional HTTPS URL, without embedded credentials, at most 2,048 characters and not restricted to a provider. Supporting information follows project publication.
+
+The initial /admin editor prototype has been superseded by the owner-confirmed shared project views described below. Image processing dependencies, detailed upload limits and lifecycle behavior must remain explicit in implementation status. Deleting projects still needs a decision about the existing cascading deletion of columns and tasks.
+
+### Rich-text implementation status — 2026-11-14
+
+The shared Projects listing provides draft creation and project selection; the shared detail view provides editing and separate publish/hide actions. Deletion is not exposed. Public queries remain anonymous and session-independent; administrator previews use an explicit private image request. Session refresh covers /admin, /projects and /project-images, with independent server authorization for private operations.
+
+Supported documents include paragraphs, level 2/3 headings, bold/italic/strike/inline code, HTTPS links, nested lists, paragraph-only quotes, code blocks, dividers and stable image references. List items contain paragraphs and nested lists; images are top-level blocks. Limits are 50,000 Unicode code points, 200,000 serialized UTF-8 bytes, 2,000 typed nodes, structural depth 24 and 20 image nodes per field. Empty textual content is null unless it contains an image. Cards display a 240-character plain summary and metadata uses plain text. The original description column remains a derived plain-text compatibility field capped at its existing 5,000-character limit.
+
+A scoped system font is provisionally used inside rich content so real bold and italic faces are visible, without changing shell typography or adding fonts. The form presentation, toolbar and typography require owner visual review; its placement in shared project views is confirmed. No browser or responsive/keyboard interaction review has been performed yet.
+
+The additive local migration, controlled download route and Sharp upload processing are implemented and tested with real image bytes. Sharp 0.35.5 is an accepted direct server dependency. Uploads accept JPEG/PNG/WebP and normalize to WebP without metadata, within the source/output limits recorded below. File cleanup and project deletion remain pending decisions.
+
+## Shared project management follow-up - 2026-11-14
+
+The owner confirmed project creation from a button in Projects, opening the
+form in that view, and editing through the shared project detail view.
+/admin has no project-management role; it authenticates and redirects to
+Projects. This supersedes the earlier provisional /admin editor placement.
+Authenticated administrators see drafts and visibility labels in Projects,
+and an edit button on project details. Visitors retain published-only
+access. Task CRUD will follow the same shared-view direction but is not
+implemented by this project increment.
+
+Sharp 0.35.5 has been accepted and incorporated for image upload processing.
+The editor accepts JPEG, PNG and WebP after the first draft save; uploads
+are at most 8 MiB and 25 million pixels, single-frame, and normalized to
+WebP with no retained metadata, at most 4,096 pixels per side and 2 MiB.
+Images are inserted as root document blocks with required alternative text.
+Saving applies document references; removing a node does not delete the
+stored file. Successful uploads abandoned before saving remain private.
+No existing files are automatically deleted. Project deletion and its
+column/task/file behavior still require the owner's decision.
+
+The form opens inline, without a new route or modal dependency. This is a
+provisional presentation within the confirmed placement. Toolbar, rich-text
+font, focus and responsive behavior still require visual/interaction
+review before acceptance.

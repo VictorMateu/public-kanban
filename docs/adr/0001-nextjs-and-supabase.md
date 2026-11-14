@@ -36,3 +36,51 @@ At the time of this decision, the board, CRUD and deployment were left for later
 ## Subsequent product direction
 
 The owner has since selected administration controls on the same board used for public browsing. That experience is not implemented by this ADR, and the existing `/admin` placeholder is not a final navigation decision. Any related changes to session-refresh coverage or authorization must be proposed before implementation. See [Product requirements](../product.md).
+
+## Runtime validation and typing update — 2026-11-14
+
+- Status: accepted by the owner on 2026-11-14.
+- Scope: project input validation, dependency selection and application typing checks.
+
+The owner selected Zod, a library they know and have experience with, and explicitly prohibited `any`. The project uses pinned Zod 4.6.7 as a direct runtime dependency. The project-details schema validates external input and supplies inferred input/output types; its output is checked against the existing database insert contract. External values remain `unknown` until validated or narrowed. A strict object schema rejects unexpected keys, while the form adapter submits only explicitly editable fields.
+
+The initial handwritten project validator was the available alternative. It avoided a direct validation dependency but required separate type definitions and runtime checks. Zod is selected for schema-based runtime validation and type inference. It was already present transitively in the lockfile; declaring it directly makes the application dependency explicit. Existing authentication validation is not migrated in this increment.
+
+TypeScript retains strict mode and enables checked index access. Type-aware ESLint rejects explicit `any` and unsafe assignments, arguments, calls, member access and returns. Suppressions and `z.any()` must not bypass the policy. These checks apply to application source and tests; they do not claim that third-party declarations contain no `any`. Type-aware linting adds analysis cost, while database constraints, RLS and server authorization remain necessary and unchanged.
+## Rich project content update — 2026-11-14
+
+- Status: accepted by the owner on 2026-11-14; implementation and UI acceptance remain separate.
+- Scope: project descriptions and objectives, editor dependencies, persistence and image integration.
+
+The project uses Tiptap as its visual rich-text editor. Structured documents are stored as JSONB and validated at runtime with strict Zod schemas and inferred TypeScript types. Supported formatting is allowlisted; external editor output is untrusted until validated. Public rendering uses semantic React elements rather than injecting authored HTML. Plain-text extraction supplies cards and metadata. Existing descriptions must be preserved during migration.
+
+Image binaries belong in Supabase Storage, with stable asset references in documents rather than base64 or expiring URLs. The owner selected a private bucket and controlled delivery through a Next.js Route Handler; see ADR 0002 for access requirements. Image optimization must not require Supabase's paid transformation feature.
+
+Alternatives considered were Markdown/plain text, HTML persistence and a public image bucket. The owner selected a visual editor for authoring comfort and JSONB for explicit structure and validation. This adds client-side editor code, schema/version compatibility, accessible toolbar work and an upload/file-lifecycle integration. This decision does not adopt collaboration, cloud editor services, AI features or unrelated editor plugins.
+
+The first review method is a working editor prototype in the existing protected /admin page. Its location and presentation are provisional; final management still belongs in the shared project interface. No new authentication boundary is implied by this prototype.
+
+## Shared project administration and image processing update - 2026-11-14
+
+- Status: accepted by the owner on 2026-11-14; visual acceptance remains pending.
+- Scope: project CRUD placement and Sharp adoption within the current increment.
+
+The owner confirmed that administration uses the visitor-facing project and
+task views with additional owner controls. Project creation opens a form
+from a button in Projects; project editing belongs in the project view.
+The earlier /admin editor prototype is superseded. /admin is only an
+authentication entry that redirects authorized users to /projects, and
+sign-in also redirects there. Task mutation controls remain outside this
+project increment.
+
+Sharp 0.35.5 is accepted as a pinned direct server dependency for image
+upload normalization. It decodes allowlisted raster input, resizes, applies
+orientation, encodes WebP and omits metadata. Alternatives are browser
+Canvas preprocessing and Supabase delivery transformations. Canvas cannot
+replace server validation; managed transformations add paid-service
+requirements and do not normalize incoming stored files. Native binaries
+add platform/deployment concerns and decoding consumes CPU/memory.
+The measured local two-folder footprint is about 19.9 MiB; this version
+already existed through Next.js. Sharp remains outside browser imports.
+Deployment size and runtime resource measurements remain environment
+specific; see the dated assessment in development.md.
