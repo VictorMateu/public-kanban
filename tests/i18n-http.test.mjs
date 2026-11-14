@@ -61,7 +61,8 @@ for (const locale of ["en", "es", "ca"]) {
     assert.doesNotMatch(main[1], /<video\b|<canvas\b/, "The provisional overview must not render media or a simulated chart");
     assert.ok(home.renderedHtml.includes(`aria-label="${catalogs[locale].Common.mainContent}"`));
     assert.equal((home.renderedHtml.match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);
-    assert.doesNotMatch(home.renderedHtml, /role="img"[^>]*aria-label=/, "Anonymous visitors must not see an administrator indicator");
+    assert.ok(!home.renderedHtml.includes(`aria-label="${catalogs[locale].Auth.accountMenu}"`), "Anonymous visitors must not receive account controls");
+    assert.ok(!home.renderedHtml.includes(`aria-label="${catalogs[locale].Auth.sessionActive}"`), "Anonymous visitors must not receive a mobile administrator indicator");
     const sidebar = home.renderedHtml.match(/<aside\b[^>]*>([\s\S]*?)<\/aside>/)?.[1];
     assert.ok(sidebar, "The shared sidebar should contain the mobile disclosure and language form");
     const disclosure = sidebar.match(/<button\b(?=[^>]*aria-expanded="false")(?=[^>]*aria-controls="([^"]+)")[^>]*>/);
@@ -90,6 +91,8 @@ for (const locale of ["en", "es", "ca"]) {
     const login = await page("/admin/login", headers);
     assert.equal(login.response.status, 200);
     assertSharedLayout(login.renderedHtml);
+    assert.ok(!login.renderedHtml.includes(`aria-label="${catalogs[locale].Auth.accountMenu}"`), "The anonymous login page must not expose account controls");
+    assert.ok(!login.renderedHtml.includes(`aria-label="${catalogs[locale].Auth.sessionActive}"`), "Anonymous visitors must not receive a mobile administrator indicator");
     assert.doesNotMatch(login.renderedHtml, /aria-current="page"/);
     assert.equal((login.renderedHtml.match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);
     assert.ok(login.html.includes(`<html lang="${locale}"`));

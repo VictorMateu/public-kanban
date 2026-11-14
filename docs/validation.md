@@ -1,5 +1,45 @@
 # Local validation
 
+## Mobile session indicator and navigation logout correction - 2026-11-14
+
+The owner rejected the separate mobile account dropdown and requested a static session sphere in the top bar with sign-out inside the main navigation disclosure. Below 48rem, the server-verified shell now supplies the noninteractive indicator beside the navigation toggle and the shared sign-out form below the language selector. The external account row is hidden, so it adds no mobile content spacing. From 48rem upwards the previous account dropdown remains available, while the mobile status and logout are hidden. The brand scales down below 360px to accommodate the controls. A shared account icon avoids duplicate artwork; session/authorization and redirect behavior are unchanged.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Passed |
+| `npm test` | All 41 tests passed |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | All eight cases passed, including absence of account controls and the static mobile indicator for anonymous visitors |
+| `node work/mobile-session-qa.mjs` | Isolated responsive component fixture passed |
+| `node work/overview-qa.mjs` | Anonymous Overview/sidebar regression matrix passed |
+| `git diff --check` | Passed |
+
+The focused Chrome fixture bundles the actual sidebar, account icon, desktop account disclosure and shared logout form, with real catalogs/styles and a deliberately failing logout action. Mobile checks passed at 320px (English), 360px (Spanish) and 390px (Catalan): no horizontal overflow or brand/status overlap, static indicator outside buttons/links and keyboard order, no action on indicator activation, no visible external account trigger, touch opening without moving content, a visible 44px-minimum logout target, pending/error feedback, retry focus and Escape focus restoration. A mobile screenshot was visually inspected. Desktop checks at 768px and 1440px retained account opening, keyboard focus, hover continuity, click pin/unpin, outside dismissal, reduced motion and logout failure handling. No browser exceptions or console errors were observed. These local fixture scripts are not part of the committed test suite and do not establish live administrator authentication or logout.
+
+No database records, users, dependencies or schema changes were introduced. Live owner-session verification and visual acceptance of this corrected mobile arrangement remain pending. The earlier account-disclosure evidence below records the prior mobile design and is superseded by this correction for placement and interaction only.
+
+## Overview authentication landing and account disclosure - 2026-11-14
+
+The owner requested returning to Overview after sign-in and a cozy administrator-only account disclosure with sign-out, including touch access on mobile. Successful sign-in and sign-out now revalidate the shared root layout and redirect to `/`. Already-authorized requests to the login page and legacy `/admin` route also redirect to Overview; the legacy route still requires administrator authorization. The existing sign-out form moved into `components/auth` and is mounted through the server-verified shared shell. No settings feature, dependencies, schema changes or session-refresh matcher changes are included. Settings placement is documented as deferred work in the existing product/ideas documents.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed without warnings |
+| `npm run typecheck` | Passed |
+| `npm test` | All 41 tests passed, including seven new action-flow cases |
+| `npm run build` | Production build passed |
+| `KANBAN_TEST_URL=http://127.0.0.1:3004 node --test tests/i18n-http.test.mjs` | All eight production HTTP cases passed |
+| `node work/account-menu-qa.mjs` | Isolated component browser fixture assertions passed |
+| `node work/overview-qa.mjs` | Existing anonymous Overview/sidebar responsive assertions passed |
+| `git diff --check` | Passed |
+
+The action tests execute the actual action module using the installed TypeScript compiler with framework and Supabase-client adapters replaced in memory. They retain the real credential/administrator-authentication function. They verify successful owner sign-in and sign-out refresh the layout before redirecting to Overview; non-administrator sign-in cleans up its session; failed/unavailable authentication does not redirect; and failed/unavailable logout reports an error instead of claiming a public session. These are isolated unit assertions, not live Auth or cookie round-trip tests.
+
+The account browser fixture bundles the actual account disclosure and sign-out components with the installed tooling, real message catalogs and styles, a temporary isolated Chrome profile and a deliberately failing test action. It adds no application route or authorization bypass. Checks passed at 320px (English), 390px (Spanish), 768px (Catalan) and 1440px (English): touch/click opening, viewport bounds, 44px minimum logout target, unchanged content geometry, keyboard activation/Tab order, visible focus, Escape and focus restoration. Desktop checks covered hover opening, pointer travel into the panel, hover dismissal, click pin/unpin, outside dismissal, reduced motion and pending/error/retry-focus behavior. Disabling the submit button initially caused focus loss to close the panel; the implementation now keeps feedback visible for that specific blur and restores focus after a failure. No browser exceptions or console errors were observed. Mobile and desktop fixture screenshots were visually inspected. The local browser scripts/artifacts under `work/` remain outside the committed test suite.
+
+The HTTP cases verify anonymous visitors receive no account controls on Overview or login and retain localized invalid-sign-in handling, locale isolation and protected-route redirects. The anonymous Overview/sidebar matrix again passed at 320-1440px across the three locales. Local Supabase was available, but no real administrator session or successful end-to-end login/logout was used: live cookie changes, authorized HTML, the already-authorized login redirect and the authorized legacy-route redirect remain pending a manual owner-session check. No users, fixture records, migrations or administrator assignments were created. The database-backed public fixture suite was not run. Visual acceptance of this disclosure remains pending the owner's review.
+
 ## Responsive presentation-only Overview - 2026-11-14
 
 The owner approved the first Overview implementation while another thread defines the database. The page now contains an introduction and personal website link, four project metrics, four task metrics, and an activity panel with entity and month/day controls. Every metric remains an em dash with an accessible pending label. The activity area has no sample values, chart marks, dates or numeric axes. The server-only Overview query returns only a pending status and records future data work as TODOs; it does not access Supabase.

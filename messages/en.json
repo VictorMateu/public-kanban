@@ -88,7 +88,10 @@
     "notConfigured": "Administrator sign-in is currently unavailable.",
     "invalidCredentials": "Unable to sign in with the provided credentials.",
     "signInUnavailable": "Unable to sign in. Please try again later.",
-    "signOutFailed": "Unable to sign out. Please try again."
+    "signOutFailed": "Unable to sign out. Please try again.",
+    "accountMenu": "Account options",
+    "accountTitle": "Your little corner",
+    "accountDescription": "See the garden as a visitor."
   },
   "Error": {
     "title": "Unable to load the content",

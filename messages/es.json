@@ -87,7 +87,10 @@
     "notConfigured": "El acceso del administrador no está disponible en este momento.",
     "invalidCredentials": "No se pudo iniciar sesión con los datos proporcionados.",
     "signInUnavailable": "No se pudo iniciar sesión. Vuelve a intentarlo más tarde.",
-    "signOutFailed": "No se pudo cerrar la sesión. Vuelve a intentarlo."
+    "signOutFailed": "No se pudo cerrar la sesión. Vuelve a intentarlo.",
+    "accountMenu": "Opciones de tu cuenta",
+    "accountTitle": "Tu rinconcito",
+    "accountDescription": "Vuelve a ver el jardín como visitante."
   },
   "Error": {
     "title": "No se ha podido cargar el contenido",

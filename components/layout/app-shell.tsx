@@ -7,6 +7,9 @@ import { SidebarNavigation } from "./sidebar-navigation";
 import { SidebarIllustration } from "../illustrations/sidebar-illustration";
 import { LanguageSwitcher } from "../shared/language-switcher";
 import { getAdministrator } from "../../lib/auth/server";
+import { AccountMenu } from "../auth/account-menu";
+import { SessionIndicator } from "../auth/account-icon";
+import { SignOutForm } from "../auth/sign-out-form";
 
 export async function AppShell({ children }: { children: ReactNode }) {
   const t = await getTranslations("Common");
@@ -21,10 +24,11 @@ export async function AppShell({ children }: { children: ReactNode }) {
       </a>
       <WorkspaceSidebar
         label={t("sidebar")}
+        mobileStatus={administrator ? <SessionIndicator label={auth("sessionActive")} /> : undefined}
         brand={
-          <Link href="/" title={t("backHome")} className="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus md:gap-4">
-            <Image src="/brand/logo.svg" alt="" width={40} height={40} className="size-10 shrink-0 object-contain" />
-            <p className="font-heading text-2xl font-semibold md:text-3xl">{t("appName")}</p>
+          <Link href="/" title={t("backHome")} className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus min-[360px]:gap-3 md:gap-4">
+            <Image src="/brand/logo.svg" alt="" width={40} height={40} className="size-8 shrink-0 object-contain min-[360px]:size-10" />
+            <p className="font-heading text-xl font-semibold min-[360px]:text-2xl md:text-3xl">{t("appName")}</p>
           </Link>
         }
       >
@@ -32,17 +36,15 @@ export async function AppShell({ children }: { children: ReactNode }) {
         <div className="mt-auto flex shrink-0 flex-col gap-4 pt-6">
           <SidebarIllustration />
           <LanguageSwitcher />
+          {administrator && <SignOutForm className="md:hidden" />}
         </div>
       </WorkspaceSidebar>
       <div className="workspace-content">
         {administrator && (
-          <div className="flex shrink-0 justify-end px-4 pt-4 sm:px-8">
-            <span role="img" aria-label={auth("sessionActive")} title={auth("sessionActive")} className="flex size-11 items-center justify-center rounded-full border border-border/30 bg-positive text-foreground">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" focusable="false" className="size-6">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
-              </svg>
-            </span>
+          <div className="hidden shrink-0 justify-end px-4 pt-4 sm:px-8 md:flex">
+            <AccountMenu>
+              <SignOutForm />
+            </AccountMenu>
           </div>
         )}
         {children}

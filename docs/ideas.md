@@ -42,6 +42,10 @@ The observations below describe the code at Overview commit `3a31cbc`. Before st
 
 Reassess these four items after the other threads finish: some may already have been resolved or superseded. Record the actual changes and remaining work in the existing development/validation documents. Keep changes focused and run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` after implementation, plus relevant authorized integration checks and UI review. Do not run database suites against the owner's data without checking prerequisites and authorization. These maintenance items do not authorize database redesign, new dependencies, deployment or unrelated refactoring.
 
+## Future administrator settings placement
+
+Mobile access to future settings was initially discussed for the account disclosure alongside sign-out. The owner subsequently removed that mobile account disclosure, moved sign-out into the main navigation panel and made the header sphere noninteractive. Revisit settings placement against that corrected mobile design when concrete settings exist. A settings feature is not currently needed or approved for implementation. Desktop necessity and placement remain undecided: consider the account disclosure or the main navigation only after concrete settings exist. Do not add an empty settings destination or a new navigation item solely to reserve space. See the [account disclosure decision](product.md#owner-account-disclosure-and-sign-in-landing).
+
 ## Initial system tasks or project templates
 
 Optionally create a reusable starting set of tasks when initiating a project, such as architecture, structure or initial decisions.

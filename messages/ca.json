@@ -87,7 +87,10 @@
     "notConfigured": "L'accés de l'administrador no està disponible en aquest moment.",
     "invalidCredentials": "No s'ha pogut iniciar la sessió amb les dades proporcionades.",
     "signInUnavailable": "No s'ha pogut iniciar la sessió. Torna-ho a provar més tard.",
-    "signOutFailed": "No s'ha pogut tancar la sessió. Torna-ho a provar."
+    "signOutFailed": "No s'ha pogut tancar la sessió. Torna-ho a provar.",
+    "accountMenu": "Opcions del teu compte",
+    "accountTitle": "El teu raconet",
+    "accountDescription": "Torna a veure el jardí com a visitant."
   },
   "Error": {
     "title": "No s'ha pogut carregar el contingut",

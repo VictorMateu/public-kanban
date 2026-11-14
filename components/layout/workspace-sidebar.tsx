@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
-export function WorkspaceSidebar({ brand, children, label }: { brand: ReactNode; children: ReactNode; label: string }) {
+export function WorkspaceSidebar({ brand, children, label, mobileStatus }: { brand: ReactNode; children: ReactNode; label: string; mobileStatus?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -31,6 +31,8 @@ export function WorkspaceSidebar({ brand, children, label }: { brand: ReactNode;
         }
       }}
       onBlur={event => {
+        // A pending logout disables its button; keep its feedback visible.
+        if (event.relatedTarget === null && event.target instanceof HTMLButtonElement && event.target.disabled) return;
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
       onKeyDown={event => {
@@ -41,23 +43,26 @@ export function WorkspaceSidebar({ brand, children, label }: { brand: ReactNode;
         }
       }}
     >
-      <div className="flex shrink-0 items-center justify-between gap-3">
+      <div className="flex shrink-0 items-center justify-between gap-2">
         {brand}
-        <button
-          ref={toggleRef}
-          type="button"
-          aria-expanded={open}
-          data-open={open}
-          aria-controls={panelId}
-          aria-label={t(open ? "closeMenu" : "openMenu")}
-          onClick={() => setOpen(!open)}
-          className="workspace-menu-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-border/15 bg-surface/80 text-foreground hover:bg-accent/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:hidden"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true" focusable="false" className="size-6">
-            <path d="M6 8.5h12" className="workspace-menu-stroke workspace-menu-stroke-top" />
-            <path d="M6 15.5h12" className="workspace-menu-stroke workspace-menu-stroke-bottom" />
-          </svg>
-        </button>
+        <div className="flex shrink-0 items-center gap-2 md:hidden">
+          {mobileStatus}
+          <button
+            ref={toggleRef}
+            type="button"
+            aria-expanded={open}
+            data-open={open}
+            aria-controls={panelId}
+            aria-label={t(open ? "closeMenu" : "openMenu")}
+            onClick={() => setOpen(!open)}
+            className="workspace-menu-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-border/15 bg-surface/80 text-foreground hover:bg-accent/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:hidden"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true" focusable="false" className="size-6">
+              <path d="M6 8.5h12" className="workspace-menu-stroke workspace-menu-stroke-top" />
+              <path d="M6 15.5h12" className="workspace-menu-stroke workspace-menu-stroke-bottom" />
+            </svg>
+          </button>
+        </div>
       </div>
       <div
         id={panelId}

@@ -6,7 +6,7 @@ A public Kanban for exploring my projects, their progress and supporting informa
 
 - **Phase 1 complete:** Next.js App Router, strict TypeScript, Tailwind CSS and ESLint.
 - **Phase 2 validated locally:** Supabase schema, password authentication, single-administrator authorization and RLS.
-- **Phase 3 visual prototype; acceptance pending:** a cozy full-viewport layout provides Overview/Projects navigation, a public project listing, a sidebar language selector, a collapsible mobile menu without decorative media and an icon for the verified administrator session. Overview now has a responsive presentation-only summary with pending metrics and an activity placeholder; login and 404 pages share the visual direction.
+- **Phase 3 visual prototype; acceptance pending:** a cozy full-viewport layout provides Overview/Projects navigation, a public project listing, a sidebar language selector, a collapsible mobile menu without decorative media and a desktop account disclosure and mobile-menu sign-out for the verified administrator session. Overview now has a responsive presentation-only summary with pending metrics and an activity placeholder; login and 404 pages share the visual direction.
 - The interface supports English (default), Spanish and Catalan through `next-intl`, with a cookie preference and unchanged URLs.
 - Administration CRUD and the additional [product requirements](docs/product.md) are not implemented. No remote services are connected or deployments made.
 
