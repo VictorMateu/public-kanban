@@ -1,5 +1,8 @@
 import "server-only";
 
+import { getAdministrator } from "../auth/server";
+import { createServerSupabaseClient } from "../supabase/server";
+
 import { createPublicSupabaseClient } from "../supabase/public";
 import type { Database } from "../supabase/database.types";
 
@@ -17,5 +20,22 @@ export async function getPublishedProjectBySlug(slug: string): Promise<Project |
   const { data, error } = await createPublicSupabaseClient()
     .from("projects").select("*").eq("is_published", true).eq("slug", slug).maybeSingle();
   if (error) throw new Error("Unable to query the project.", { cause: error });
+  return data;
+}
+
+// Private queries authorize independently; public queries above always stay anonymous.
+export async function listManagedProjects(): Promise<Project[]> {
+  const client = await createServerSupabaseClient();
+  if (!await getAdministrator(client)) throw new Error("Administrator authorization required.");
+  const { data, error } = await client.from("projects").select("*").order("position").order("id");
+  if (error) throw new Error("Unable to query managed projects.", { cause: error });
+  return data;
+}
+
+export async function getManagedProjectBySlug(slug: string): Promise<Project | null> {
+  const client = await createServerSupabaseClient();
+  if (!await getAdministrator(client)) throw new Error("Administrator authorization required.");
+  const { data, error } = await client.from("projects").select("*").eq("slug", slug).maybeSingle();
+  if (error) throw new Error("Unable to query the managed project.", { cause: error });
   return data;
 }

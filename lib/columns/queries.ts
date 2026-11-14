@@ -1,5 +1,8 @@
 import "server-only";
 
+import { getAdministrator } from "../auth/server";
+import { createServerSupabaseClient } from "../supabase/server";
+
 import { createPublicSupabaseClient } from "../supabase/public";
 import type { Database } from "../supabase/database.types";
 
@@ -11,5 +14,13 @@ export async function listPublishedColumns(projectId: string): Promise<KanbanCol
     .from("columns").select("*").eq("project_id", projectId)
     .order("position").order("id");
   if (error) throw new Error("Unable to query columns.", { cause: error });
+  return data;
+}
+
+export async function listManagedColumns(projectId: string): Promise<KanbanColumn[]> {
+  const client = await createServerSupabaseClient();
+  if (!await getAdministrator(client)) throw new Error("Administrator authorization required.");
+  const { data, error } = await client.from("columns").select("*").eq("project_id", projectId).order("position").order("id");
+  if (error) throw new Error("Unable to query managed columns.", { cause: error });
   return data;
 }
