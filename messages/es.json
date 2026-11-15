@@ -175,5 +175,12 @@
     "visibility": "Publicado",
     "publishOnSave": "Al guardar, el proyecto y su contenido serán públicos.",
     "draftOnSave": "Al guardar, el proyecto será privado. Solo tú podrás verlo."
+  },
+  "ProjectInformation": {
+    "title": "Información del proyecto",
+    "open": "Ver información del proyecto",
+    "close": "Cerrar información",
+    "description": "Descripción",
+    "empty": "Todavía no se ha añadido información adicional."
   }
 }

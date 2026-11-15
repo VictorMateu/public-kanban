@@ -175,5 +175,12 @@
     "visibility": "Publicat",
     "publishOnSave": "En desar, el projecte i el seu contingut seran públics.",
     "draftOnSave": "En desar, el projecte serà privat. Només tu el podràs veure."
+  },
+  "ProjectInformation": {
+    "title": "Informació del projecte",
+    "open": "Veure informació del projecte",
+    "close": "Tancar informació",
+    "description": "Descripció",
+    "empty": "Encara no s’ha afegit informació addicional."
   }
 }

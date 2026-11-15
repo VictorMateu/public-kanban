@@ -89,9 +89,10 @@ test("public project pages use real local data and preserve existing users", asy
       const result = await page(`/projects/${marker}-published`);
       assert.equal(result.status, 200);
       const htmlWithoutComments = result.renderedHtml.replace(/<!--[\s\S]*?-->/g, "");
-      for (const text of [names.published, firstTask, secondTask, "Descripción de tarea", "Priority high", "Priority low", "Priority medium", "Nov 1, 2026", "No tasks yet.", "Read only"]) {
+      for (const text of [names.published, firstTask, secondTask, "Descripción de tarea", "Priority high", "Priority low", "Priority medium", "Nov 1, 2026", "No tasks yet."]) {
         assert.ok(htmlWithoutComments.includes(text), "Expected public board content should be rendered");
       }
+      assert.doesNotMatch(result.renderedHtml, />Read only<\/span>/);
       assert.ok(result.html.indexOf(`${marker}-first-column`) < result.html.indexOf(`${marker}-empty-column`), "Column positions should define board order");
       assert.ok(result.html.indexOf(`${marker}-empty-column`) < result.html.indexOf(`${marker}-later-column`), "Later columns should follow earlier columns");
       assert.ok(result.html.indexOf(firstTask) < result.html.indexOf(secondTask), "Task positions should define card order");

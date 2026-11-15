@@ -7,6 +7,8 @@ import { readRichText, richTextToPlainText } from "../../../lib/projects/rich-te
 import { ProjectBoard } from "../../../components/projects/project-board";
 import { getAdministrator } from "../../../lib/auth/server";
 import { ProjectManagement } from "../../../components/projects/project-management";
+import { ProjectInformation } from "../../../components/projects/project-information";
+import { RichTextContent } from "../../../components/projects/rich-text-content";
 import { getManagedProjectBySlug, getPublishedProjectBySlug } from "../../../lib/projects/queries";
 import { isProjectSlug } from "../../../lib/projects/slug";
 import { isSupabaseConfigured } from "../../../lib/supabase/env";
@@ -43,16 +45,30 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   const administrator = Boolean(await getAdministrator());
   const project = administrator ? await getManagedProjectBySlug(slug) : await getProject(slug);
   const form = await getTranslations("ProjectForm");
+  const information = await getTranslations("ProjectInformation");
   const { edit, saved } = await searchParams;
   if (!project) notFound();
   return (
     <main id="main-content" className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
-      <h1 className="sr-only">{project.name}</h1>
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div>
         <Link href="/projects" className="inline-flex min-h-11 items-center gap-2 rounded-sm text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus">
           <span aria-hidden="true">←</span> {t("allProjects")}
         </Link>
-        {administrator && <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+      </div>
+      <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <h1 className="min-w-0 text-3xl wrap-anywhere sm:text-4xl">{project.name}</h1>
+          <ProjectInformation>
+            <div className="space-y-6">
+              <p className="text-2xl wrap-anywhere">{project.name}</p>
+              {project.description_content || project.description ? <section><h3 className="mb-3 text-xl">{information("description")}</h3><RichTextContent preview={administrator} document={readRichText(project.description_content, project.description)} /></section> : null}
+              {project.objectives_content && <section><h3 className="mb-3 text-xl">{t("objectives")}</h3><RichTextContent preview={administrator} document={readRichText(project.objectives_content)} /></section>}
+              {project.repository_url && <a href={project.repository_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t("repository")}</a>}
+              {!project.description_content && !project.description && !project.objectives_content && !project.repository_url && <p>{information("empty")}</p>}
+            </div>
+          </ProjectInformation>
+        </div>
+        {administrator && <div className="flex flex-wrap items-center justify-end gap-3">
           <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form(project.is_published ? "published" : "draft")}</span>
           <ProjectManagement key={project.updated_at} project={project} initiallyOpen={edit === "1"} className="w-auto" />
         </div>}
@@ -61,7 +77,6 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       <section aria-labelledby="board-heading" className="mt-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/20 pb-4">
           <h2 id="board-heading" className="text-2xl">{t("board")}</h2>
-          <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{t("readOnly")}</span>
         </div>
         <Suspense fallback={<p role="status" className="rounded-xl border border-slate-200 bg-white p-8 text-slate-600">{t("loading")}</p>}>
           <ProjectBoard projectId={project.id} administrator={administrator} />

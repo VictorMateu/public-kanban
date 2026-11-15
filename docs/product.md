@@ -285,3 +285,21 @@ Images during creation are requested but their staging and failure
 lifecycle await the owner decision described in ADR 0002. The current
 upload still requires an existing project; no automatic draft-on-upload
 or temporary Storage policy has been introduced.
+
+
+### Project title, information and requested data fields - 2026-11-15
+
+The owner requested a visible title with an adjacent information icon.
+The icon opens description, objectives and repository in a cozy native
+dialog, including an empty-information state. The verified administrator
+has an Edit project button beside the title; visitors have no edit
+control. The fixed Read only badge is removed. The board remains the
+primary page content. Visual review remains pending.
+
+The owner also requested a lifecycle status with Active / in development,
+Maintenance, Completed and Cancelled, plus an independent hidden flag.
+These data fields are not implemented yet: hidden access semantics and
+the default status for existing projects require confirmation. ADR 0001
+contains the concrete migration/access proposal. The currently implemented
+visibility model still has only is_published. The creation-image staging
+proposal remains pending and is not included in this UI adjustment.

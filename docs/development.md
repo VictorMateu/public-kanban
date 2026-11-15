@@ -564,3 +564,22 @@ controls above the board. Supporting rich content remains editable and
 stored; its former visible detail sections are removed. Public metadata
 continues to use the existing session-independent published query.
 Creation image staging is a proposal in ADR 0002, not implemented.
+
+
+## Project information dialog - 2026-11-15
+
+The detail shows the project title and ProjectInformation icon, with
+administrator-only edit controls in the same header. ProjectInformation
+is a client trigger/dialog shell receiving server-rendered RichTextContent
+as children. Description, objectives, repository and the empty-information
+message use existing authorization and next-intl catalogs. Public drafts
+remain inaccessible before any information component is constructed.
+
+ProjectDialog is shared by information and ProjectManagement. It owns
+native dialog synchronization, initial heading focus, Tab cycling, Escape,
+focus/scroll restoration, header X and footer Close. Editing supplies
+save actions and busy guards; information has only dismissal controls.
+The existing CSS animation and reduced-motion treatment apply to both.
+The Read only badge is no longer rendered. No dependency or database
+change is introduced. Requested status/is_hidden fields remain a proposal
+in ADR 0001 until the owner confirms their data/access semantics.

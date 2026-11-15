@@ -202,6 +202,9 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       assert.ok(!html.includes("<strong>Rich HTTP fixture</strong>"));
       assert.ok(!html.includes('alt="Fixture diagram"'));
       assert.ok(html.includes("Private board fixture task"));
+      assert.ok(html.includes('aria-label="View project information"'));
+      assert.doesNotMatch(html, />Read only<\/span>/);
+      assert.doesNotMatch(html, />Edit project<\/button>/);
       const result = await fetch(origin.origin + publicPath, { redirect: "manual" });
       assert.equal(result.status, 200);
       assert.equal(result.headers.get("location"), null);

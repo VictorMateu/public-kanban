@@ -852,3 +852,44 @@ Creation image staging remains a proposal awaiting owner confirmation;
 it was not implemented or tested. No new dependency or schema/policy
 change is included. Full screen-reader, physical-device and cross-browser
 review remain unperformed; UI acceptance remains pending.
+
+## Project information modal and visible title - 2026-11-15
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 54 passed, no failures or skips.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+Local production HTTP checks ran with node --test --test-concurrency=1
+tests/project-content-http.ts tests/public-http.test.mjs against a temporary
+127.0.0.1:3016 server. Final result: 18 passed, 2 skipped, no failures.
+The first run exposed an obsolete public-board assertion requiring the
+Read only badge; it was updated to assert the requested removal. The
+skipped empty-after-cleanup checks require an empty database. Authorization,
+draft HTML/RSC privacy, board data, image access and fixture population
+preservation passed. Only this run's fixtures were removed; the temporary
+production process was stopped. No users or migrations were created.
+
+The ad hoc headless Edge check ran as
+`node "$env:TEMP/project-garden-information-browser-check.cjs"`. At
+1440x1000, 390x844 and 320x640 it verified a visible title, adjacent labelled
+44px information icon, no Read only badge, rich description/objectives and
+repository inside the modal, viewport fit, internal scrolling, heading
+focus, Tab/Shift+Tab cycling, Escape/footer closure and opener restoration.
+Visitors had no edit action; the existing administrator could view an
+empty private information state and open editing. Anonymous access to
+the same private project returned 404. Desktop/mobile modal screenshots
+were inspected. Two exact temporary project fixtures were removed and
+before/after project/asset/column/task/user/administrator counts matched.
+
+The existing project-garden-cozy-modal-check.cjs browser regression also
+passed after sharing ProjectDialog: keyboard opening, editor-focused
+Escape, focus/scroll restoration, responsive footer, animation/reduced
+motion, bold editing and dismissal blocked during an intercepted save.
+The request was made invalid before forwarding, so it created no project.
+No cross-browser, physical-device or full screen-reader review is claimed.
+
+The status/is_hidden migration and access semantics are still proposals
+in ADR 0001, not implementation or applied migration. Visual acceptance
+remains pending. The local review server remains at 127.0.0.1:3015.

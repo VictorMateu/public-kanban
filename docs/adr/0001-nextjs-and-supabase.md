@@ -131,3 +131,67 @@ when saving. Save redirects no longer request automatic modal opening.
 The detail removes supporting-information sections while retaining the
 board, compact administration/navigation controls, accessible project
 heading and existing published metadata. Visual acceptance is pending.
+
+
+## Project title and information modal - 2026-11-15
+
+The owner requested a visible project title with an adjacent information
+icon, a modal for supporting information, an edit action for the signed-in
+owner and removal of the Read only badge. The detail keeps the board as
+its primary content and exposes description, objectives and repository in
+a separate native dialog. Empty information has a translated message.
+Only the verified administrator receives the edit control. Information
+and editing share ProjectDialog for the cozy entrance, scrolling footer,
+keyboard focus containment/restoration and dismissal guards. Rich content
+is rendered by the existing server renderer and image routes keep their
+existing access checks. This supersedes the screen-reader-only title and
+absence of an information presentation from the preceding prototype.
+Exact appearance remains provisional pending owner review.
+
+## Project lifecycle and hidden flag proposal - 2026-11-15
+
+- Status: fields requested; default values and hidden access semantics
+  await owner confirmation before migration/implementation.
+
+The owner requested project status and hidden columns. The concrete
+proposal is status TEXT NOT NULL with a CHECK allowing development,
+maintenance, completed and cancelled. development represents the single
+owner label Active / in development. The proposed default is development
+for new and existing projects; assigning that value to existing projects
+needs confirmation. The alternative is a PostgreSQL enum, which gives
+generated database union types but adds a separately managed SQL type.
+Zod will validate the selected values and infer application types.
+
+Proposed additive migration, not yet created or applied:
+
+```sql
+ALTER TABLE public.projects
+  ADD COLUMN status TEXT NOT NULL DEFAULT 'development'
+    CHECK (status IN (
+      'development', 'maintenance', 'completed', 'cancelled'
+    )),
+  ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT FALSE;
+```
+
+The proposed meaning of is_hidden is unlisted: a published hidden project
+is excluded from the public listing but remains publicly readable through
+its URL and the data API. This is not a confidentiality control. Public
+list queries would require is_published AND NOT is_hidden; direct detail,
+board and image reads would retain publication authorization. The owner
+would continue to see all projects. Unpublished projects stay private
+regardless of the hidden flag. Lifecycle status is independent of both
+visibility flags. Existing visibility and content would be preserved.
+
+The meaningful alternative is hidden-as-private: hidden overrides
+publication and blocks every public response path. That requires a
+confirmed RLS/Storage/metadata plan for projects and their descendants;
+changing only the listing would be insufficient. Do not choose silently.
+
+After confirmation, affected files include a new versioned migration,
+generated Supabase types, project schemas/input/actions/queries, creation
+and edit controls, listing badges, the information modal and translations.
+Validation must cover all status values, invalid/missing/duplicate input,
+both publication/hidden combinations, anonymous and administrator reads,
+HTML/RSC/metadata and image routes, optimistic updates and preservation of
+existing rows/users. Apply only the confirmed non-destructive local
+migration; remote operations remain separately authorized.

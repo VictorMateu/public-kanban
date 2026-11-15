@@ -176,5 +176,12 @@
     "visibility": "Published",
     "publishOnSave": "Saving makes this project and its content public.",
     "draftOnSave": "Saving keeps this project private. Only you can see it."
+  },
+  "ProjectInformation": {
+    "title": "Project information",
+    "open": "View project information",
+    "close": "Close information",
+    "description": "Description",
+    "empty": "No supporting information has been added yet."
   }
 }
