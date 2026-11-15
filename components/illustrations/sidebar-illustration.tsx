@@ -7,7 +7,7 @@ import styles from "./sidebar-illustration.module.css";
 
 const sources = {
   typing: { src: "/illustrations/typing-v6.webm", durationSeconds: 3 },
-  drinking: { src: "/illustrations/drinking-v4.webm", durationSeconds: 5.459 },
+  drinking: { src: "/illustrations/drinking-v5.webm", durationSeconds: 4.066 },
 };
 
 const illustrationViewport = "(min-width: 64rem) and (min-height: 42rem)";
