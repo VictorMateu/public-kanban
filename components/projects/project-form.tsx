@@ -8,11 +8,14 @@ import type { RichTextDocument } from "../../lib/projects/rich-text";
 import { RichTextEditor } from "./rich-text-editor";
 
 type EditableProject = { id: string; name: string; slug: string; repository_url: string | null; updated_at: string; is_published: boolean };
-const control = "mt-2 min-h-11 w-full rounded-xl border border-border/60 bg-surface px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
-const actionClass = "min-h-11 rounded-xl border border-border/45 bg-accent px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-50";
+const control = "mt-2 min-h-11 w-full rounded-2xl border border-border/30 bg-surface px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+const actionClass = "project-secondary-action";
 
-export function ProjectForm({ project, description, objectives, onBusyChange, disabled = false }: {
-  onBusyChange: (busy: boolean) => void;
+export type ProjectFormStatus = { busy: boolean; pending: boolean; canSubmit: boolean };
+
+export function ProjectForm({ project, description, objectives, formId, onStatusChange, disabled = false }: {
+  formId: string;
+  onStatusChange: (status: ProjectFormStatus) => void;
   disabled?: boolean;
   project: EditableProject | null; description: RichTextDocument; objectives: RichTextDocument;
 }) {
@@ -20,11 +23,12 @@ export function ProjectForm({ project, description, objectives, onBusyChange, di
   const [state, action, pending] = useActionState(saveProject, {} satisfies ProjectFormState);
   const [uploading, setUploading] = useState({ description: false, objectives: false });
   const busy = uploading.description || uploading.objectives;
-  useEffect(() => { onBusyChange(busy || pending); }, [busy, pending, onBusyChange]);
   const [content, setContent] = useState({ description: JSON.stringify(description), objectives: JSON.stringify(objectives), descriptionValid: false, objectivesValid: false });
+  const canSubmit = !pending && !busy && !disabled && content.descriptionValid && content.objectivesValid;
+  useEffect(() => { onStatusChange({ busy: busy || pending, pending, canSubmit }); }, [busy, pending, canSubmit, onStatusChange]);
   const errorFor = (field: ProjectContentField) => state.errors?.[field] ? <p id={field + "-error"} role="alert" className="mt-1 text-sm">{t(state.errors[field])}</p> : null;
   return (
-    <form action={action} className="space-y-6" aria-label={t(project ? "edit" : "create")}>
+    <form id={formId} action={action} className="space-y-6" aria-label={t(project ? "edit" : "create")}>
       <fieldset disabled={pending || disabled} className="min-w-0 space-y-6">
         <legend className="sr-only">{t("details")}</legend>
         <input type="hidden" name="id" value={project?.id ?? ""} />
@@ -39,7 +43,6 @@ export function ProjectForm({ project, description, objectives, onBusyChange, di
         {errorFor("objectives_content")}
         <div><label htmlFor="repository-url">{t("repository")}</label><input id="repository-url" name="repository_url" type="url" maxLength={2048} defaultValue={project?.repository_url ?? ""} className={control} aria-invalid={Boolean(state.errors?.repository_url)} aria-describedby="repository-help" /><p id="repository-help" className="mt-1 text-sm">{t("repositoryHelp")}</p>{errorFor("repository_url")}</div>
         {state.error && <p role="alert">{t(state.error)}</p>}
-        <button type="submit" className={actionClass} disabled={pending || busy || disabled || !content.descriptionValid || !content.objectivesValid}>{t(pending ? "saving" : project ? "save" : "createDraft")}</button>
       </fieldset>
     </form>
   );
@@ -54,6 +57,6 @@ export function PublicationForm({ project, disabled = false, onBusyChange }: { p
     <input type="hidden" name="is_published" value={project.is_published ? "false" : "true"} />
     <p>{t(project.is_published ? "publishedHelp" : "draftHelp")}</p>
     {state.error && <p role="alert">{t(state.error)}</p>}
-    <button type="submit" disabled={pending || disabled} className={actionClass}>{t(pending ? "saving" : project.is_published ? "hide" : "publish")}</button>
+    <div className="flex justify-end"><button type="submit" disabled={pending || disabled} className={actionClass}>{t(pending ? "saving" : project.is_published ? "hide" : "publish")}</button></div>
   </form>;
 }

@@ -485,8 +485,9 @@ pending; the UI implementation commit is explicitly marked WIP.
 ProjectManagement now opens the lazily loaded project form inside a native
 HTML dialog with showModal(), replacing the provisional inline section.
 This uses the existing React client boundary and adds no dependencies.
-The modal has a labelled heading, internal vertical scrolling, a sticky
-close control and explicit left alignment for its opening button.
+The modal has a labelled heading, internal vertical scrolling and an
+explicitly aligned opening button. The later cozy styling update below
+supersedes the first left-aligned/sticky-close presentation.
 
 The browser supplies the top layer and inert background. A keyboard handler
 cycles focus at the first/last enabled visible controls and blocks Escape
@@ -498,3 +499,28 @@ separately, so modal dismissal is blocked throughout either operation and
 the form cannot save concurrently with publication. The existing translated
 closeForm message is reused. Backend authorization and data rules are not
 changed by this presentation update.
+
+## Cozy modal and rich-text presentation - 2026-11-15
+
+ProjectManagement now uses a flex dialog with a fixed header and footer;
+only project-dialog-body scrolls. The opening action and footer actions
+align right. The X and bottom Close action share pending-operation guards.
+The footer submit button targets ProjectForm by its native form attribute.
+ProjectForm reports a strictly typed busy/pending/canSubmit status, keeping
+editor validity and upload/save guards intact without moving domain logic
+into the modal. Status resets on close. Escape is handled in capture phase
+so dismissal also works when the rich-text editor owns focus.
+
+globals.css defines a 420ms opacity/14px-rise/slight-scale entrance and a
+320ms backdrop fade with gentle blur. prefers-reduced-motion disables
+these animations and the related color/shadow transitions. No animation
+dependency or JavaScript animation timer is used.
+
+RichTextEditor retains its existing commands and schema. EditorToolButton
+renders local SVG/typographic symbols with translated accessible names and
+native hover titles. The toolbar groups text, headings, lists, blocks,
+links and history, wrapping on narrow screens. Controls retain 44px
+targets, pressed states and visible focus. The field shell integrates the
+image-upload footer and uses palette-based surfaces/focus treatment. An
+empty paragraph is detected with CSS :has to display the translated
+data-placeholder hint; that hint is not persisted as project content.

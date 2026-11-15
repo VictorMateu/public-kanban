@@ -229,7 +229,8 @@ into this worktree as part of this focused correction.
 
 ### Project form modal - 2026-11-15
 
-The owner requested a left-aligned creation button and a modal form.
+The owner requested a modal form, initially with a left-aligned creation
+button. The subsequent style revision below moves actions to the right.
 Creation and editing now use a native dialog from their existing shared
 project views. The form remains lazy-loaded, with internal scrolling on
 small screens and a visible close button. Its title receives initial
@@ -239,3 +240,21 @@ and scrolling are blocked while it is open. Saving, publishing and image
 uploads block dismissal. Closing an idle form discards unsaved edits as
 before; no autosave or file-cleanup policy is added. Modal width, spacing
 and styling are a working prototype awaiting owner visual review.
+
+### Cozy modal and editor styling refinement - 2026-11-15
+
+The owner requested right-aligned actions, a gentle modal entrance, an X
+in the header, a labelled close action at the bottom, and a review of the
+rich-text fields' appearance. Creation/editing buttons now align right.
+The modal keeps its X in the header and Close/Save actions together in a
+fixed footer, with only the form body scrolling. Publication, link and
+image-upload actions also align right where space allows.
+
+The working prototype uses a short fade and soft upward/scale entrance,
+a fading blurred backdrop, warm cream/peach surfaces and honey accents.
+Reduced-motion preferences disable the entrance and interaction transitions.
+Rich-text controls use compact grouped icons with translated accessible
+names and hover titles, 44px targets, visible pressed/focus states, softer
+field borders and a localized empty-writing hint. Supported formatting and
+content limits remain unchanged. Exact styling remains provisional for
+owner review; no dependency is added.

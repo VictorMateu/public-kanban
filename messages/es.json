@@ -135,7 +135,8 @@
     "imageTooLarge": "La imagen supera el límite de subida o del archivo procesado. Elige una más pequeña.",
     "uploadUnavailable": "No se ha podido subir la imagen. Vuelve a intentarlo.",
     "unauthorized": "Tu sesión de administrador no está disponible. Vuelve a iniciar sesión.",
-    "imageLimit": "No se ha podido insertar la imagen porque el documento supera sus límites."
+    "imageLimit": "No se ha podido insertar la imagen porque el documento supera sus límites.",
+    "placeholder": "Empieza a escribir tus ideas…"
   },
   "ProjectForm": {
     "title": "Gestionar proyectos",

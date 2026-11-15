@@ -35,14 +35,14 @@ export function EditorImageUpload({ projectId, disabled, onInsert, onBusyChange 
     } catch { setError("uploadUnavailable"); }
     finally { setBusy(false); onBusyChange(false); }
   }
-  if (!projectId) return <p className="border-t border-border/25 p-3 text-sm">{t("saveBeforeImage")}</p>;
-  return <div role="group" aria-label={t("image")} className="space-y-3 border-t border-border/25 p-3">
+  if (!projectId) return <p className="border-t border-border/15 bg-surface-warm/40 px-5 py-3 text-sm text-foreground/75">{t("saveBeforeImage")}</p>;
+  return <div role="group" aria-label={t("image")} className="space-y-3 border-t border-border/15 bg-surface-warm/40 p-5">
     <p id={id + "-help"} className="text-sm">{t("imageHelp")}</p>
     <label htmlFor={id + "-file"} className="block">{t("imageFile")}</label>
     <input ref={fileInput} id={id + "-file"} type="file" accept="image/jpeg,image/png,image/webp" disabled={disabled || busy} aria-describedby={id + "-help"} className="block min-h-11 w-full max-w-full text-sm file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border/45 file:px-3 file:py-2" />
     <label htmlFor={id + "-alt"} className="block">{t("imageAlt")}</label>
     <input id={id + "-alt"} value={alt} maxLength={300} disabled={disabled || busy} onChange={(event) => setAlt(event.target.value)} className="min-h-11 w-full rounded-lg border border-border/60 px-3 py-2" />
-    <button type="button" onClick={() => void upload()} disabled={disabled || busy} className="min-h-11 rounded-lg border border-border/45 px-3 py-2 disabled:opacity-50">{t(busy ? "uploading" : "insertImage")}</button>
+    <div className="flex justify-end"><button type="button" onClick={() => void upload()} disabled={disabled || busy} className="project-secondary-action">{t(busy ? "uploading" : "insertImage")}</button></div>
     <p role="status" className="text-sm">{busy ? t("uploading") : t("saveImages")}</p>
     {error && <p role="alert">{t(error)}</p>}
   </div>;

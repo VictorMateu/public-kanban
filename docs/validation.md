@@ -724,3 +724,45 @@ These automated layout/input assertions are not manual visual review,
 screen-reader testing, physical-device testing or cross-browser validation.
 Owner visual acceptance remains pending. The local review server remains
 available at http://127.0.0.1:3015/projects.
+
+## Cozy modal and rich-text refinement - 2026-11-15
+
+The owner requested right-aligned actions, a gentle modal entrance, a header
+X, bottom Close action and a visual review of the rich-text fields. The
+prototype now has a fixed action footer, CSS-only entry/backdrop animation,
+grouped icon controls, a warm field shell and localized empty-writing hints.
+No dependency, schema or authorization change was introduced.
+
+- npm run lint: passed without warnings.
+- npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips.
+- npm run build: passed with process-local public Supabase configuration.
+- git diff --check: passed.
+
+The ad hoc headless Edge/CDP check ran as
+`node "$env:TEMP/project-garden-cozy-modal-check.cjs"`. It used an isolated
+temporary context and the existing local administrator, then closed the
+browser and removed its profile. At 1440x1000, 390x844 and 320x640 it verified
+right alignment, viewport fit, no horizontal overflow, a scrolling form
+body, and a visible right-aligned footer. Desktop and 390px screenshots
+were also inspected for the warm surfaces, spacing and grouped controls.
+
+Browser assertions verified the configured entrance animation, disabled
+dialog/backdrop animations under prefers-reduced-motion, translated names
+and titles on icon controls, 44px targets, and actual bold text editing.
+Keyboard opening, initial heading focus, Tab/Shift+Tab cycling, Escape
+from within the editor, bottom-button dismissal and focus/scroll restoration
+passed. Escape capture was adjusted after the editor-focused dismissal
+check exposed reliance on native close-request behavior.
+
+The footer submit button was exercised through its native form association.
+An intercepted pending request verified disabled close controls and blocked
+Escape. The required name was removed before forwarding, so server
+validation rejected it without creating a project; closing worked again
+after the response. A read-only database check found zero rows for the
+test slug. No users, project fixtures or migrations were created. The full
+database/HTTP fixture suites were not rerun for this presentation change.
+
+These checks are not physical-device, screen-reader or cross-browser
+validation. Exact styling remains WIP pending owner visual review. The
+local review URL remains http://127.0.0.1:3015/projects.

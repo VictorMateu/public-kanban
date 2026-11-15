@@ -135,7 +135,8 @@
     "imageTooLarge": "La imatge supera el límit de pujada o del fitxer processat. Tria’n una de més petita.",
     "uploadUnavailable": "No s’ha pogut pujar la imatge. Torna-ho a provar.",
     "unauthorized": "La sessió d’administrador no està disponible. Torna a iniciar sessió.",
-    "imageLimit": "No s’ha pogut inserir la imatge perquè el document supera els seus límits."
+    "imageLimit": "No s’ha pogut inserir la imatge perquè el document supera els seus límits.",
+    "placeholder": "Comença a escriure les teves idees…"
   },
   "ProjectForm": {
     "title": "Gestionar projectes",

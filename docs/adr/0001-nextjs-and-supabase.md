@@ -100,3 +100,15 @@ The dialog scrolls internally to keep the form and its close control
 usable on small screens. No dependency, route, schema or authorization
 change is introduced. Styling and dimensions remain a provisional working
 prototype for owner review.
+
+## Cozy modal presentation refinement - 2026-11-15
+
+The owner subsequently requested right-aligned actions instead of the
+initial left alignment, a gentle entrance consistent with the cozy visual
+direction, a header X, a bottom Close action and revised rich-text styling.
+The prototype retains native dialog and adds CSS-only motion with a
+reduced-motion alternative. A fixed footer keeps Save/Close visible while
+the form scrolls. Grouped, labelled icon controls replace the large text
+formatting buttons without changing editor commands or dependencies.
+These requested directions supersede the earlier alignment/close-control
+placement; the exact appearance remains a provisional owner-review result.

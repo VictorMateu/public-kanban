@@ -136,7 +136,8 @@
     "imageTooLarge": "The image exceeds the upload or processed-size limit. Choose a smaller image.",
     "uploadUnavailable": "The image could not be uploaded. Try again.",
     "unauthorized": "Your administrator session is unavailable. Sign in again.",
-    "imageLimit": "This image could not be inserted because the document exceeds its limits."
+    "imageLimit": "This image could not be inserted because the document exceeds its limits.",
+    "placeholder": "Start writing your ideas…"
   },
   "ProjectForm": {
     "title": "Manage projects",
