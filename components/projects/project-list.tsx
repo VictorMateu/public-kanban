@@ -4,7 +4,6 @@ import { EmptyState } from "../shared/empty-state";
 import { ProjectCard } from "./project-card";
 import { listManagedProjects, listPublishedProjects } from "../../lib/projects/queries";
 import { getAdministrator } from "../../lib/auth/server";
-import { SignOutForm } from "../../app/admin/sign-out-form";
 import { ProjectManagement } from "./project-management";
 import { isSupabaseConfigured } from "../../lib/supabase/env";
 
@@ -34,7 +33,7 @@ export async function ProjectList() {
         <h1 className="text-4xl text-balance sm:text-5xl">{t("projects")}</h1>
         <p className="mt-5 max-w-2xl text-lg leading-relaxed text-pretty text-foreground/80">{t("introduction")}</p>
       </div>
-      {administrator && <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0 grow"><ProjectManagement /></div><SignOutForm /></div>}
+      {administrator && <ProjectManagement />}
       <section aria-labelledby="projects-heading" className="mt-10">
         <h2 id="projects-heading" className="sr-only">{t(administrator ? "managedProjects" : "publishedProjects")}</h2>
         <p className="mb-6 text-sm text-foreground/80">{t("openProject")}</p>

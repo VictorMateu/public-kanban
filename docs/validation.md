@@ -659,3 +659,23 @@ Supabase project, available Supabase configuration is loopback-only, and
 no deployment credentials are configured. The local URL is explicitly a
 local review environment. No push, remote migration, user creation or
 remote deployment has been performed in this preparation step.
+
+## Project sign-out control correction - 2026-11-15
+
+The owner requested removing the extra sign-out button from Projects,
+because main already owns shared session controls. Only its import and
+listing markup were removed; main was inspected but not merged.
+
+- npm run lint and npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips.
+- npm run build: passed with process-local public Supabase configuration.
+- Read-only local HTTP checks: /projects and /admin/login returned 200.
+  With the existing administrator's short-lived, memory-only local test
+  session, Projects returned 200 with its creation control and without
+  the extra sign-out control. No users or fixtures were created.
+- git diff --check: passed. No browser or visual review was performed.
+
+Docker Desktop was restarted because its engine was stopped. The existing
+Supabase containers resumed without a reset or migration. The local
+development server was restarted on http://127.0.0.1:3015/projects for
+owner review. No remote deployment or merge from main was performed.

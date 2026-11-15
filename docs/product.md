@@ -219,3 +219,11 @@ The form opens inline, without a new route or modal dependency. This is a
 provisional presentation within the confirmed placement. Toolbar, rich-text
 font, focus and responsive behavior still require visual/interaction
 review before acceptance.
+
+### Project session-control follow-up - 2026-11-15
+
+The owner requested removing the separate sign-out control from the
+Projects listing because main already manages session controls in the
+shared shell. This branch no longer adds a project-level sign-out button.
+The shared session controls remain owned by main; main has not been merged
+into this worktree as part of this focused correction.
