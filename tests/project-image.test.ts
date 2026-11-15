@@ -57,3 +57,18 @@ test("animated WebP is rejected instead of silently dropping frames", async () =
   assert.equal((await sharp(bytes).metadata()).pages, 2);
   await assert.rejects(normalizeProjectImage(bytes, "image/webp"), fails("invalidImage"));
 });
+
+test("multipart parsing preserves case-sensitive browser boundaries and image bytes", async () => {
+  const boundary = "----WebKitFormBoundaryMixedCASE123";
+  const bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const body = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="project_id"\r\n\r\nfixture\r\n--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="diagram.png"\r\nContent-Type: image/png\r\n\r\n`),
+    bytes, Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  const request = new Request("http://localhost/project-images", { method: "POST", headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` }, body });
+  const form = await readImageForm(request);
+  assert.equal(form.get("project_id"), "fixture");
+  const image = form.get("file"); assert.ok(image instanceof File);
+  assert.equal(image.type, "image/png");
+  assert.deepEqual(Buffer.from(await image.arrayBuffer()), bytes);
+});

@@ -49,7 +49,8 @@ export async function readImageForm(request: Request): Promise<FormData> {
       chunks.push(Uint8Array.from(chunk.value).buffer);
     }
   } finally { reader.releaseLock(); }
-  const body = new Blob(chunks, { type: request.headers.get("content-type") ?? "" });
-  try { return await new Response(body).formData(); }
+  // Blob.type lowercases ASCII, which corrupts case-sensitive browser boundaries.
+  const body = new Blob(chunks);
+  try { return await new Response(body, { headers: { "Content-Type": request.headers.get("content-type") ?? "" } }).formData(); }
   catch { throw new ImageInputError("invalidImage"); }
 }
