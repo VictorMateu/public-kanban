@@ -9,6 +9,7 @@ A public Kanban for exploring my projects, their progress and supporting informa
 - **Phase 3 visual prototype; acceptance pending:** a cozy full-viewport layout provides Overview/Projects navigation, a public project listing, a sidebar language selector, a collapsible mobile menu without decorative media and a desktop account disclosure and mobile-menu sign-out for the verified administrator session. Overview now has a viewport-aware presentation-only summary with pending metrics and an activity placeholder; login and 404 pages share the visual direction.
 - The interface supports English (default), Spanish and Catalan through `next-intl`, with a cookie preference and unchanged URLs.
 - Administration CRUD and the additional [product requirements](docs/product.md) are not implemented. No remote services are connected or deployments made.
+- Strict GitHub Actions CI and security workflows are versioned. Local checks, secret scanning and the full dependency audit pass with the approved temporary parser-scoped minimatch override. Hosted execution and required-check activation remain pending. See the [validation evidence](docs/validation.md#approved-minimatch-override--2026-11-14).
 
 ## Stack and local development
 
@@ -36,10 +37,12 @@ Open [localhost:3000](http://localhost:3000). The Overview presentation works wi
 - [Product requirements and open decisions](docs/product.md)
 - [Future ideas and required maintenance follow-up](docs/ideas.md)
 - [Development, configuration and database operations](docs/development.md)
+- [CI security policy and GitHub activation](docs/development.md#continuous-integration-and-security)
 - [Validation evidence and limitations](docs/validation.md)
 - [ADR 0001: Next.js and Supabase](docs/adr/0001-nextjs-and-supabase.md)
 - [ADR 0002: Single administrator and RLS](docs/adr/0002-single-administrator-and-rls.md)
 - [ADR 0003: Interface internationalization](docs/adr/0003-interface-internationalization.md)
+- [ADR 0004: Strict CI and security gates](docs/adr/0004-strict-ci-and-security.md)
 
 The owner accepted the first responsive Overview presentation. The next step is to define its data integration after the separate data-model work, continue reviewing the remaining UI and verify authentication in the eventual HTTPS deployment. Each implementation scope and phase transition requires the owner's confirmation.
 

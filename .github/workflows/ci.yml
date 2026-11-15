@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  npm_config_engine_strict: "true"
+
+jobs:
+  quality:
+    name: Application checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - name: Verify npm version
+        run: test "$(npm --version)" = "11.19.1"
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  integration:
+    name: Database and HTTP checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - name: Require a fresh GitHub-hosted test instance
+        run: |
+          test "$GITHUB_ACTIONS" = "true"
+          test "$RUNNER_ENVIRONMENT" = "github-hosted"
+          if docker container inspect supabase_db_portfolio-kanban >/dev/null 2>&1; then
+            echo "::error::Refusing to use an existing Supabase instance."
+            exit 1
+          fi
+      - name: Verify npm version
+        run: test "$(npm --version)" = "11.19.1"
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install checksum-verified Supabase CLI
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            https://github.com/supabase/cli/releases/download/v2.122.0/supabase_2.122.0_linux_amd64.tar.gz \
+            --output supabase.tar.gz
+          echo '59ed066847b98d7461c60e9109d40cab6b9756177ce06ebb05b51338519f5136  supabase.tar.gz' | sha256sum --check --strict
+          mkdir -p supabase-bin
+          tar -xzf supabase.tar.gz -C supabase-bin supabase
+          echo "$RUNNER_TEMP/supabase-bin" >> "$GITHUB_PATH"
+      - name: Start disposable Supabase without logging credentials
+        id: supabase-start
+        run: |
+          if ! supabase start >"$RUNNER_TEMP/supabase-start.log" 2>&1; then
+            echo "::error::Disposable Supabase failed to start; raw credential-bearing logs are not published."
+            exit 1
+          fi
+      - name: Check migrations and database policies
+        run: |
+          supabase migration up --local
+          supabase db lint --local --fail-on warning
+          supabase test db --local
+      - name: Export only validated local public configuration
+        run: |
+          supabase status --output json 2>"$RUNNER_TEMP/supabase-status.log" | node --input-type=module -e '
+            import {appendFileSync, readFileSync} from "node:fs";
+            import {getSupabaseConfig} from "./lib/supabase/env.ts";
+            try {
+              const status = JSON.parse(readFileSync(0, "utf8"));
+              const config = getSupabaseConfig({
+                NEXT_PUBLIC_SUPABASE_URL: status.API_URL,
+                NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.PUBLISHABLE_KEY,
+              });
+              if (config.url !== "http://127.0.0.1:54321") throw new Error();
+              console.log("::add-mask::" + config.key);
+              appendFileSync(process.env.GITHUB_ENV,
+                "NEXT_PUBLIC_SUPABASE_URL=" + config.url + "\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=" + config.key + "\n");
+            } catch {
+              console.error("Invalid local Supabase public configuration; raw status is not logged.");
+              process.exit(1);
+            }
+          '
+      - name: Build against local Supabase
+        run: npm run build
+      - name: Exercise the production HTTP server
+        env:
+          KANBAN_TEST_URL: http://127.0.0.1:3000
+        run: |
+          npm start -- --hostname 127.0.0.1 >"$RUNNER_TEMP/next-start.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in {1..60}; do
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "::error::The production HTTP server exited before becoming ready."
+              exit 1
+            fi
+            if curl --fail --silent --output /dev/null --max-time 2 "$KANBAN_TEST_URL/projects"; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo "::error::The production HTTP server did not become ready."
+            exit 1
+          fi
+          npm run test:public
+      - name: Stop disposable Supabase
+        if: ${{ always() && steps.supabase-start.outcome != 'skipped' }}
+        run: |
+          if ! supabase stop >"$RUNNER_TEMP/supabase-stop.log" 2>&1; then
+            echo "::error::Disposable Supabase cleanup failed; runner teardown still discards its resources."
+            exit 1
+          fi
+
+  gate:
+    name: CI gate
+    if: ${{ always() }}
+    needs: [quality, integration]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    env:
+      QUALITY_RESULT: ${{ needs.quality.result }}
+      INTEGRATION_RESULT: ${{ needs.integration.result }}
+    steps:
+      - name: Require every application check to pass
+        run: |
+          test "$QUALITY_RESULT" = success
+          test "$INTEGRATION_RESULT" = success

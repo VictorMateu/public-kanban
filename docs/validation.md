@@ -696,3 +696,111 @@ At the owner's request, the 13 component/CSS files were grouped into `layout`, `
 ### Commit handoff
 
 The owner subsequently authorized committing the pending work by responsibility: `f075749` contains component organization and import updates; `f4734ed` contains the sidebar animation, source sheets, runtime media, controls, translations and tests. The related development, product and validation documentation is recorded in a separate commit. Staged diffs were reviewed for scope, whitespace, credentials and generated/environment files; the animation CSS's redundant final blank line was removed. Ignored local source PNGs and encoding recipes remain outside Git and were preserved. No push was requested or performed. Visual acceptance remains pending owner review.
+
+## Strict CI and security pipeline — 2026-11-14
+
+The owner approved GitHub Actions validation, low-severity vulnerability blocking, CodeQL, Gitleaks, Dependency Review, weekly Dependabot proposals and documentation, with deployment explicitly deferred. The SQL suite's two fixture users and temporary administrator authorization were approved only on a fresh disposable CI database. [ADR 0004](adr/0004-strict-ci-and-security.md) records this accepted policy; the [development guide](development.md#continuous-integration-and-security) describes operation and the still-pending GitHub activation.
+
+### Implemented scope
+
+- `.github/workflows/ci.yml` defines application checks, isolated Supabase database/RLS/HTTP checks and the final `CI gate`.
+- `.github/workflows/security.yml` defines a complete lockfile audit, PR Dependency Review, all-fetched-history secret scanning, security-extended CodeQL for JavaScript/TypeScript and Actions, and the final `Security gate`. Security also runs daily at 04:23 UTC after activation on the default branch.
+- `.github/dependabot.yml` proposes weekly npm/Actions updates without automatic merges. Actions use full commit pins; Supabase/Gitleaks release archives have hardcoded publisher-verified SHA-256 checksums.
+- `scripts/ci/check-codeql.ts` blocks every emitted SARIF finding and missing/malformed/failed analyses. Seven new application-suite tests cover this policy, multiple runs/files, CLI exit status and non-disclosure of invalid report content.
+- No application dependency, lockfile, migration, schema, RLS policy, project content, UI or environment file was changed. No commit, push, remote configuration or deployment was performed.
+
+### Local automated evidence
+
+Environment: Windows, Node.js 24.22.1 and npm 11.19.1. These are local assertions, not a GitHub-hosted run.
+
+| Command/check | Actual result |
+| --- | --- |
+| `npm ci --ignore-scripts --no-audit --no-fund` | Passed; 395 packages installed. Existing ESLint 9.39.5 unsupported-version warning remains; no dependency upgrade was attempted. |
+| `npm run lint` | Passed without warnings. |
+| `npm run typecheck` | Route generation and strict TypeScript passed. |
+| `node --test tests/ci-security.test.ts` | Seven focused tests passed. |
+| `npm test` | All 41 tests passed, including the seven new CI gate tests. |
+| `npm run build` | Production build passed without Supabase environment configuration, after the same script-disabled installation used by CI. |
+| `actionlint -color` (1.7.12) | Both workflows passed. The temporary Windows binary was checksum-verified from the official release; no application dependency was added. ShellCheck was not installed, so this is not a ShellCheck result. |
+| One-off YAML/Bash validation harness | Parsed both workflows and Dependabot with the already-installed transitive `js-yaml` parser; all 22 shell snippets passed Git Bash syntax checks. No YAML dependency was added. |
+| One-off aggregate-gate harness | 101 assertions exercised application status combinations and security failure/cancellation/skip behavior across PR, push, merge-group, scheduled and manual events using Bash `-e -o pipefail`. No failed or unexpectedly skipped prerequisite was accepted. These harness assertions are separate from `npm test`. |
+| One-off public-configuration export harness | Five synthetic status payloads exercised the actual workflow shell/Node export boundary. A valid loopback publishable key exported exactly two public variables; remote origins, missing/newline-bearing keys and malformed JSON failed without exporting configuration or logging the private fixture marker. No Supabase operation or remote connection was made. |
+| `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` | **Failed as intended by policy:** seven moderately affected packages, from the single advisory detailed below. |
+| `npm audit --package-lock-only --ignore-scripts --omit=dev --audit-level=low` | Passed: zero reported production-dependency vulnerabilities at check time. This does not replace the blocking full audit. |
+| `gitleaks git --log-opts="--all" --redact=100 --no-banner --no-color --ignore-gitleaks-allow --exit-code=1 .` (8.30.1) | **Failed:** one pre-existing documentation-prose false positive in 60 scanned commits. Scan matches were fully redacted; no credentials were disclosed and no exception was applied. |
+| `gitleaks dir --redact=100 --no-banner --no-color --ignore-gitleaks-allow PATH` | Separate scans of `.github`, `scripts/ci` and `tests/ci-security.test.ts` passed with zero findings. This does not waive the historical blocker. |
+| `git diff --exit-code -- package.json package-lock.json supabase` | Passed: dependency manifests, lockfile and database files are unchanged. |
+| `git diff --check` | Passed. |
+
+### Initial blockers before the authorized follow-up
+
+The following records the initial state. The later [follow-up](#ci-blocker-follow-up--2026-11-14) supersedes the historical secret-scanner blocker with the owner-approved exact exception; dependency remediation remains pending.
+
+1. **Dependency advisory:** `GHSA-g3hv-75wg-m249` describes potential denial of service through glob-parts amplification in minimatch. The locked chain includes `eslint-config-next@16.4.3 → typescript-eslint@8.72.0 → @typescript-eslint/typescript-estree@8.72.0 → minimatch@10.2.6`. npm reports seven affected development-tooling packages, not seven distinct advisories. The full audit remains blocking. No `npm audit fix`, override, lockfile refresh or package upgrade was applied; a reviewed dependency remediation requires owner confirmation.
+2. **Historical secret-scanner false positive:** Gitleaks rule `generic-api-key` matches ordinary validation prose, not a credential, at fingerprint `9ce4e58f4a3b72e5da4fc2f76ae79472f51d82e6:docs/validation.md:generic-api-key:137`. Finding metadata was inspected from a fully redacted report; the surrounding documentation identified ordinary prose rather than a credential. Scanning all history intentionally preserves this failure until the owner approves a precise, reviewed false-positive policy. No baseline, ignore file, broad path exclusion, history rewrite or inline waiver was added.
+
+These findings mean the security pipeline is implemented but **not green or accepted as activated**. The recommended next step is owner review of dependency remediation and, separately, the exact historical false-positive exception, followed by an authorized push/PR and GitHub setup. Do not weaken the approved threshold to mask the blockers.
+
+### Checks not performed and hosted activation pending
+
+- Docker reported an existing `supabase_db_portfolio-kanban` instance and its associated local services. It was not started, stopped, reset or used for tests. Authorization was limited to disposable CI fixtures; no users, administrator registry or owner data were modified locally or remotely.
+- Database lint, migrations, pgTAP/RLS and `npm run test:public` were therefore not executed in this task. Their hosted success remains unverified. The existing local configuration/fixtures were inspected, not treated as CI evidence.
+- CodeQL extraction/query execution, SARIF upload and Dependency Review were not run against GitHub. The SARIF parser tests use explicit fixtures; they are not evidence of a vulnerability-free CodeQL analysis. Binary/action pins and the existence of the Actions security-extended suite were checked against official upstream sources.
+- Required-check rulesets, code scanning advanced setup, dependency graph/alerts/security updates, secret scanning/push protection, fork/Dependabot behavior and daily scheduling still need owner-account activation and an actual first hosted run. No credentials were requested or remote settings changed.
+- No browser, responsive, keyboard, screenshot or manual accessibility pass was performed: this change does not alter the application interface. Previous visual acceptance remains pending and unaffected.
+- Vercel deployments, remote migrations, production credentials and deployment approvals remain outside this task. Successful local validation does not establish hosted enforcement, complete security coverage or product acceptance.
+
+## CI blocker follow-up — 2026-11-14
+
+The owner authorized continuing the reported blocker corrections. The exact historical Gitleaks exception was applied first; dependency inspection then revealed a new major-version compatibility choice. The proposal below records that earlier state; the later explicit approval and applied override are recorded in the subsequent section.
+
+### Applied historical exception
+
+The root `.gitleaksignore` contains exactly the previously identified commit/file/rule/line fingerprint, with no path glob, rule exclusion or baseline. The secret job explicitly uses that file, requires its presence, still refuses `.gitleaks.toml` overrides and keeps built-in rules, full fetched-history scanning, redaction, ignored inline allow comments and failure exit status. [ADR 0004](adr/0004-strict-ci-and-security.md#subsequent-owner-approved-false-positive-correction--2026-11-14) records the narrow owner-approved amendment to the original no-ignore-file restriction.
+
+| Check | Actual result |
+| --- | --- |
+| `gitleaks git --log-opts="--all" --redact=100 --no-banner --no-color --verbose=false --ignore-gitleaks-allow --gitleaks-ignore-path .gitleaksignore --exit-code=1 .` | Passed: 70 fetched commits scanned, no unignored findings. The only exception is the approved historical prose fingerprint. |
+| Temporary Gitleaks regression fixture | A newly generated synthetic generic-API-key pattern at `docs/validation.md:137` failed with exit 1 both with an empty ignore file and with the approved ignore file. The matching rule and line were asserted from redacted reports. This confirms that new findings at the same relative path/rule/line are not exempt. No fixture repository commits or real credentials were used; its specific temporary directory was removed. |
+| `actionlint -color` (1.7.12) | Both workflows passed after the exception change. |
+| `npm run lint` | Passed without warnings. |
+| `npm run typecheck` | Route generation and strict TypeScript passed. |
+| `npm test` | All 41 tests passed. |
+| `npm run build` | Production build passed. |
+| `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` | Still fails with seven affected development-tooling packages from the minimatch advisory; no severity waiver applied. |
+| `git diff --exit-code -- package.json package-lock.json supabase` | Passed: application dependencies, lockfile and database files remain unchanged. |
+| `git diff --check` | Passed. |
+
+These are local checks. The temporary scanner fixture is separate from the 41 application tests; no database or GitHub-hosted integration suite was executed.
+
+### Historical dependency remediation proposal, before explicit approval
+
+Registry inspection with `npm view typescript-eslint dist-tags --json` reported stable `8.72.2` and canary `8.72.3-alpha.8`. `npm view @typescript-eslint/typescript-estree@latest version dependencies.minimatch engines --json` confirmed that stable 8.72.2 still requires `minimatch ^10.2.2`. Stable `8.72.3` was not available. The installed chain remains at 8.72.0 with minimatch 10.2.6.
+
+`npm view minimatch@11.0.1 version engines --json` confirmed the advisory's patched release and compatibility with Node.js 24. `npm audit fix --package-lock-only --ignore-scripts --dry-run --json` reported no changes and retained seven affected packages with exit 1. The upstream parent range does not accept minimatch 11, so an ordinary supported-range update is insufficient.
+
+The concrete proposal is an exact `minimatch@11.0.1` override only beneath `@typescript-eslint/typescript-estree`, changing `package.json` and its generated lockfile. This is a temporary cross-major compatibility override in development tooling, not an approved application-stack upgrade. It needs explicit confirmation of that choice, then a clean script-disabled install, lint, typecheck, all tests, production build and complete low-threshold audit. The alternative is to await a compatible stable upstream parser release while keeping the audit blocking. No prerelease, broad override, forced fix or dependency change was applied.
+
+Hosted execution, branch protection/required checks and account-level security activation remain pending. No local/remote users, administrator authorization, application data or services were changed. No application repository commit, push, deployment or Vercel connection was performed. Previous UI acceptance is unaffected.
+
+## Approved minimatch override — 2026-11-14
+
+After reviewing the compatibility proposal, the owner explicitly approved applying the narrow override and documenting its reasons. `package.json` now pins `minimatch@11.0.1` only below `@typescript-eslint/typescript-estree`, and npm regenerated the lockfile with lifecycle scripts disabled. This addresses the advisory without lowering the full low-severity audit gate. The installed parser's declared major-10 range is intentionally overridden; it is not a normal supported-range patch update.
+
+The reason, alternatives, cross-major compatibility risk and removal criteria are recorded in [ADR 0004](adr/0004-strict-ci-and-security.md#subsequent-owner-approved-dependency-override--2026-11-14) and the [development guide](development.md#approved-temporary-minimatch-override). Earlier failed audit results and the previously unchanged manifests describe the historical pre-override checks, not the final state.
+
+| Check | Actual result |
+| --- | --- |
+| `npm install --package-lock-only --ignore-scripts --no-audit --no-fund` | Passed with npm 11.19.1 / Node.js 24.22.1. No direct dependency pins changed. |
+| Lockfile scope inspection | Only the parser-scoped minimatch changed version, from 10.2.6 to 11.0.1. npm added its `@isaacs/nonrecursive-glob-match@1.1.0` dependency and six bundled optional-package metadata entries beneath the existing `@tailwindcss/oxide-wasm32-wasi` package. An isolated regeneration from the original lockfile, without `node_modules`, reproduced the same eight added/changed entries and no removals. No unrelated existing package version changed. |
+| `npm ci --ignore-scripts --no-audit --no-fund` | Passed: clean script-disabled installation, 396 packages. npm still reports the previously documented ESLint 9.39.5 unsupported-version warning; it was not upgraded. |
+| `npm ls minimatch --all` | Passed: `@typescript-eslint/typescript-estree@8.72.0` resolves `minimatch@11.0.1 overridden`; unrelated consumers retain 3.1.5. |
+| `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` | Passed: found 0 vulnerabilities across the complete lockfile, including development dependencies. No advisory exclusion or severity waiver. |
+| `npm run lint` | Passed without warnings, exercising the parser with the overridden dependency. |
+| `npm run typecheck` | Route generation and strict TypeScript passed. |
+| `npm test` | All 41 tests passed; no failures or skipped tests. |
+| `npm run build` | Production build passed after the clean script-disabled installation. |
+| `actionlint -color` (1.7.12) | Both workflows passed. ShellCheck was not available; this does not assert ShellCheck validation. |
+| `git diff --check` / `git diff --exit-code -- supabase` | Passed: no whitespace errors or database-file changes. |
+
+The historical Gitleaks scan and its synthetic regression fixture remain recorded in the preceding section; the override does not change the scanner, its configuration or that approved exception. No database/HTTP integration suite was rerun against the owner's existing instance. Actual GitHub-hosted execution, CodeQL/Dependency Review availability and required-check configuration remain unverified until an authorized push and hosted run. No commit, push, deployment, Vercel connection, user creation, administrator change or application-data operation was performed. Local validation exercises the installed toolchain but does not guarantee exhaustive cross-major compatibility or absence of unknown vulnerabilities.
