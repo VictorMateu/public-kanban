@@ -1,4 +1,4 @@
-import { projectDetailsSchema, projectContentSchema, type ProjectDetails, type ProjectContentField } from "./schemas.ts";
+import { projectDetailsSchema, projectContentSchema, projectPublicationSchema, type ProjectDetails, type ProjectContentField } from "./schemas.ts";
 import { parseRichTextJson } from "./rich-text.ts";
 
 type ProjectField = keyof ProjectDetails;
@@ -33,8 +33,10 @@ export function parseProjectDetails(formData: FormData): ProjectDetailsResult {
   return { success: false, errors };
 }
 
+export type ProjectFormField = ProjectContentField | "is_published";
+
 export type ProjectFormState = {
-  errors?: Partial<Record<ProjectContentField, InputError>>;
+  errors?: Partial<Record<ProjectFormField, InputError>>;
   error?: "unauthorized" | "unavailable" | "slugTaken" | "stale" | "invalid";
 };
 
@@ -60,4 +62,18 @@ export function parseProjectContent(form: FormData) {
     errors[key] ??= issue.message === "required" || issue.message === "tooLong" ? issue.message : "invalid";
   }
   return { success: false as const, errors };
+}
+
+export function parseProjectSubmission(form: FormData) {
+  const content = parseProjectContent(form);
+  const values = form.getAll("is_published");
+  const publication = projectPublicationSchema.safeParse(values.length === 1 ? values[0] : undefined);
+  if (!content.success || !publication.success) {
+    const errors: Partial<Record<ProjectFormField, InputError>> = {
+      ...(!content.success ? content.errors : {}),
+      ...(!publication.success ? { is_published: "invalid" as const } : {}),
+    };
+    return { success: false as const, errors };
+  }
+  return { success: true as const, data: { ...content.data, is_published: publication.data } };
 }

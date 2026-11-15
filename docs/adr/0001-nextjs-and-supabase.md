@@ -112,3 +112,22 @@ the form scrolls. Grouped, labelled icon controls replace the large text
 formatting buttons without changing editor commands or dependencies.
 These requested directions supersede the earlier alignment/close-control
 placement; the exact appearance remains a provisional owner-review result.
+
+
+## Project visibility and board-focused detail update - 2026-11-15
+
+The owner requested a Published switch in both form modes and a detail
+view focused on the board. Publication now travels with content through
+saveProject, under the existing authorization, Zod validation, optimistic
+concurrency check and RLS. One database mutation applies both values;
+this supersedes the separate publication action. Creation defaults to
+private in the UI but may explicitly publish on save. A missing or invalid
+publication value fails validation rather than silently changing state.
+
+The alternative was an immediately persisted publication toggle separate
+from content; that could expose older content while unsaved changes are
+visible in the editor. The selected prototype applies the switch only
+when saving. Save redirects no longer request automatic modal opening.
+The detail removes supporting-information sections while retaining the
+board, compact administration/navigation controls, accessible project
+heading and existing published metadata. Visual acceptance is pending.

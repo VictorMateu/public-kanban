@@ -171,6 +171,9 @@
     "draftHelp": "Aquest esborrany és privat. Desa els canvis abans de publicar-lo.",
     "publish": "Publicar projecte",
     "hide": "Amagar projecte",
-    "closeForm": "Tanca el formulari"
+    "closeForm": "Tanca el formulari",
+    "visibility": "Publicat",
+    "publishOnSave": "En desar, el projecte i el seu contingut seran públics.",
+    "draftOnSave": "En desar, el projecte serà privat. Només tu el podràs veure."
   }
 }

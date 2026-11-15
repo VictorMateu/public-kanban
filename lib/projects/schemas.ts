@@ -32,3 +32,5 @@ export type ProjectContent = z.infer<typeof projectContentSchema>;
 export type ProjectContentField = keyof ProjectContent;
 
 export const projectIdentitySchema = z.strictObject({ id: z.uuid(), updated_at: z.iso.datetime({ offset: true }) });
+
+export const projectPublicationSchema = z.enum(["true", "false"]).transform((value) => value === "true");

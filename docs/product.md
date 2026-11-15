@@ -261,3 +261,27 @@ names and hover titles, 44px targets, visible pressed/focus states, softer
 field borders and a localized empty-writing hint. Supported formatting and
 content limits remain unchanged. Exact styling remains provisional for
 owner review; no dependency is added.
+
+
+### Project visibility and board-focused detail - 2026-11-15
+
+The owner requested a publication switch in creation and editing. Both
+modes use the same modal/form with optional initial project values. New
+forms default to private; saving explicitly applies the switch together
+with content in one project mutation. Editing a published project saves
+its content and selected visibility together. The previous separate
+Publish/Hide action is superseded. Saving redirects to the project board
+without automatically opening the editor. Explicit edit=1 links remain
+available for direct editor entry.
+
+The detail page now concentrates on the board with compact back/edit
+controls and an administrator visibility badge. Description, objectives
+and repository are retained as stored, editable content but have no
+visible detail section. The project name remains an accessible heading
+and public metadata continues to use published content. The future
+information presentation is undecided; this layout remains WIP.
+
+Images during creation are requested but their staging and failure
+lifecycle await the owner decision described in ADR 0002. The current
+upload still requires an existing project; no automatic draft-on-upload
+or temporary Storage policy has been introduced.

@@ -115,7 +115,7 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       // Match the installed Next/React multipart Server Action protocol without another dependency.
       const manifest: unknown = JSON.parse(readFileSync(".next/server/server-reference-manifest.json", "utf8"));
       const actions = z.object({ node: z.record(z.string(), z.object({ exportedName: z.string() })) }).parse(manifest).node;
-      const invoke = async (name: "saveProject" | "setProjectPublication", values: Record<string, string>, authenticated = true) => {
+      const invoke = async (name: "saveProject", values: Record<string, string>, authenticated = true) => {
         const entry = Object.entries(actions).find(([, action]) => action.exportedName === name);
         assert.ok(entry, "Build must expose the tested Server Action");
         const body = new FormData();
@@ -137,9 +137,11 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       assert.equal(created.error, null); assert.ok(created.data);
       assert.equal(createdResponse.status, 200);
       assert.ok(createdResponse.headers.get("x-action-redirect")?.includes("/projects/" + actionSlug));
-      assert.equal(created.data.is_published, false); assert.equal(created.data.position, 0);
+      assert.equal(created.data.is_published, true); assert.equal(created.data.position, 0);
+      assert.ok(!createdResponse.headers.get("x-action-redirect")?.includes("edit=1"));
+      assert.equal((await fetch(origin.origin + "/projects/" + actionSlug)).status, 200);
       const original = created.data;
-      const base = { ...fields, id: original.id, updated_at: original.updated_at };
+      const base = { ...fields, id: original.id, updated_at: original.updated_at, is_published: "false" };
       const foreignAsset = JSON.stringify({ type: "doc", content: [{ type: "image", attrs: { assetId, alt: "Foreign asset" } }] });
       const forged = await invoke("saveProject", { ...base, description_content: foreignAsset });
       assert.ok((await forged.text()).includes('"invalid"'));
@@ -153,12 +155,12 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const stale = await invoke("saveProject", { ...base, name: "Stale overwrite" });
       assert.ok((await stale.text()).includes('"stale"'));
       assert.equal((await admin.from("projects").select("name").eq("id", original.id).single()).data?.name, "Updated action fixture");
-      const published = await invoke("setProjectPublication", { id: original.id, updated_at: updated.data.updated_at, is_published: "true" });
+      const published = await invoke("saveProject", { ...base, slug: changedSlug, name: "Updated action fixture", updated_at: updated.data.updated_at, is_published: "true" });
       assert.equal(published.status, 200);
       assert.equal((await fetch(origin.origin + "/projects/" + changedSlug)).status, 200);
       const current = await admin.from("projects").select("updated_at").eq("id", original.id).single();
       assert.ok(current.data);
-      const hidden = await invoke("setProjectPublication", { id: original.id, updated_at: current.data.updated_at, is_published: "false" });
+      const hidden = await invoke("saveProject", { ...base, slug: changedSlug, name: "Updated action fixture", updated_at: current.data.updated_at, is_published: "false" });
       assert.equal(hidden.status, 200);
       assert.equal((await fetch(origin.origin + "/projects/" + changedSlug)).status, 404);
     });
@@ -193,12 +195,13 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       assert.equal(output.exif, undefined); assert.equal(output.icc, undefined);
     });
     assert.equal((await admin.from("projects").update({ is_published: true }).eq("id", id)).error, null);
-    await context.test("published rich text renders semantically and images are delivered without redirects", async () => {
+    await context.test("published detail shows the board and images remain available without redirects", async () => {
       const response = await fetch(origin.origin + "/projects/" + slug);
       assert.equal(response.status, 200);
       const html = await response.text();
-      assert.ok(html.includes("<strong>Rich HTTP fixture</strong>"));
-      assert.ok(html.includes('alt="Fixture diagram"'));
+      assert.ok(!html.includes("<strong>Rich HTTP fixture</strong>"));
+      assert.ok(!html.includes('alt="Fixture diagram"'));
+      assert.ok(html.includes("Private board fixture task"));
       const result = await fetch(origin.origin + publicPath, { redirect: "manual" });
       assert.equal(result.status, 200);
       assert.equal(result.headers.get("location"), null);

@@ -13,15 +13,13 @@ function FormLoading() {
 }
 
 const ProjectForm = dynamic(() => import("./project-form").then((module) => module.ProjectForm), { loading: FormLoading });
-const PublicationForm = dynamic(() => import("./project-form").then((module) => module.PublicationForm));
 
-export function ProjectManagement({ project = null, initiallyOpen = false, className = "mt-6", triggerClassName = "" }: {
+export function ProjectManagement({ project = null, initiallyOpen = false, className = "mt-6 w-full", triggerClassName = "" }: {
   project?: Project | null; initiallyOpen?: boolean; className?: string; triggerClassName?: string;
 }) {
   const t = useTranslations("ProjectForm");
   const [formStatus, setFormStatus] = useState<ProjectFormStatus>({ busy: false, pending: false, canSubmit: false });
-  const [publicationBusy, setPublicationBusy] = useState(false);
-  const busy = formStatus.busy || publicationBusy;
+  const busy = formStatus.busy;
   const [open, setOpen] = useState(initiallyOpen);
   const id = useId();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -63,7 +61,7 @@ export function ProjectManagement({ project = null, initiallyOpen = false, class
     }
   }
 
-  return <div className={`flex w-full justify-end text-left ${className}`}>
+  return <div className={`flex justify-end text-left ${className}`}>
     <button ref={trigger} type="button" aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => setOpen(true)}
       className={`project-primary-action ${triggerClassName}`}>
       {t(project ? "edit" : "newProject")}
@@ -94,12 +92,11 @@ export function ProjectManagement({ project = null, initiallyOpen = false, class
           </button>
         </div>
         <div className="project-dialog-body min-h-0 min-w-0 overflow-y-auto overscroll-contain px-5 py-6 sm:px-7">
-          <ProjectForm formId={id + "-form"} onStatusChange={setFormStatus} disabled={publicationBusy} project={project} description={readRichText(project?.description_content, project?.description)} objectives={readRichText(project?.objectives_content)} />
-          {project && <PublicationForm onBusyChange={setPublicationBusy} disabled={formStatus.busy} project={project} />}
+          <ProjectForm formId={id + "-form"} onStatusChange={setFormStatus} project={project} description={readRichText(project?.description_content, project?.description)} objectives={readRichText(project?.objectives_content)} />
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-border/15 bg-surface-warm/60 px-5 py-4 sm:px-7">
           <button type="button" disabled={busy} onClick={() => setOpen(false)} className="project-secondary-action">{t("closeForm")}</button>
-          <button type="submit" form={id + "-form"} disabled={!formStatus.canSubmit || publicationBusy} className="project-primary-action">{t(formStatus.pending ? "saving" : project ? "save" : "createDraft")}</button>
+          <button type="submit" form={id + "-form"} disabled={!formStatus.canSubmit} className="project-primary-action">{t(formStatus.pending ? "saving" : project ? "save" : "create")}</button>
         </div>
       </>}
     </dialog>

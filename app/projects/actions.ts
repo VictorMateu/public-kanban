@@ -2,10 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { getAdministrator } from "../../lib/auth/server";
 import { createServerSupabaseClient } from "../../lib/supabase/server";
-import { parseProjectContent, type ProjectFormState } from "../../lib/projects/input";
+import { parseProjectSubmission, type ProjectFormState } from "../../lib/projects/input";
 import { projectIdentitySchema } from "../../lib/projects/schemas";
 import { richTextAssetIds, richTextToPlainText } from "../../lib/projects/rich-text";
 
@@ -19,7 +18,7 @@ export async function saveProject(_previous: ProjectFormState, form: FormData): 
   try {
     const client = await createServerSupabaseClient(true);
     if (!await getAdministrator(client)) return { error: "unauthorized" };
-    const input = parseProjectContent(form);
+    const input = parseProjectSubmission(form);
     if (!input.success) return { errors: input.errors };
     const rawId = single(form, "id");
     const identity = rawId === "" ? null : projectIdentitySchema.safeParse({ id: rawId, updated_at: single(form, "updated_at") });
@@ -41,25 +40,7 @@ export async function saveProject(_previous: ProjectFormState, form: FormData): 
     const result = await mutation;
     if (result.error) return { error: result.error.code === "23505" ? "slugTaken" : "unavailable" };
     if (!result.data) return { error: "stale" };
-    destination = "/projects/" + encodeURIComponent(input.data.slug) + "?edit=1&saved=1";
-  } catch { return { error: "unavailable" }; }
-  revalidatePath("/projects", "layout");
-  redirect(destination);
-}
-
-export async function setProjectPublication(_previous: ProjectFormState, form: FormData): Promise<ProjectFormState> {
-  const identity = projectIdentitySchema.safeParse({ id: single(form, "id"), updated_at: single(form, "updated_at") });
-  let destination: string;
-  const published = z.enum(["true", "false"]).safeParse(single(form, "is_published"));
-  if (!identity.success || !published.success) return { error: "invalid" };
-  try {
-    const client = await createServerSupabaseClient(true);
-    if (!await getAdministrator(client)) return { error: "unauthorized" };
-    const { data, error } = await client.from("projects").update({ is_published: published.data === "true" })
-      .eq("id", identity.data.id).eq("updated_at", identity.data.updated_at).select("slug").maybeSingle();
-    if (error) return { error: "unavailable" };
-    if (!data) return { error: "stale" };
-    destination = "/projects/" + encodeURIComponent(data.slug);
+    destination = "/projects/" + encodeURIComponent(input.data.slug) + "?saved=1";
   } catch { return { error: "unavailable" }; }
   revalidatePath("/projects", "layout");
   redirect(destination);

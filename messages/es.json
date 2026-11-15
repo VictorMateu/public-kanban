@@ -171,6 +171,9 @@
     "draftHelp": "Este borrador es privado. Guarda los cambios antes de publicarlo.",
     "publish": "Publicar proyecto",
     "hide": "Ocultar proyecto",
-    "closeForm": "Cerrar formulario"
+    "closeForm": "Cerrar formulario",
+    "visibility": "Publicado",
+    "publishOnSave": "Al guardar, el proyecto y su contenido serán públicos.",
+    "draftOnSave": "Al guardar, el proyecto será privado. Solo tú podrás verlo."
   }
 }

@@ -362,11 +362,16 @@ and maps issues to stable field error codes. It owns the parser results
 and ProjectFormState response contract. Schemas reject unknown keys and
 avoid coercion; adapters allowlist editable fields and reject duplicates,
 files and null bytes. Text limits count Unicode code points. ProjectForm
-uses the response contract; saveProject uses parseProjectContent and
+uses the response contract; saveProject uses parseProjectSubmission and
 validates identity separately. Authorization, slug uniqueness and writes
-remain in Server Actions and database policies/constraints. Saving content
-does not change publication; new projects use the database default draft
-state, and publication changes use a separate authorized action.
+remain in Server Actions and database policies/constraints. The current
+submission adapter additionally validates an explicit
+is_published string enum and converts it to a boolean. The content-only
+adapter still excludes publication. saveProject applies the content and
+publication together after authorization and an optimistic concurrency
+check; missing/duplicate/invalid publication values fail closed. The UI
+defaults new projects to private. The earlier separate publication action
+has been superseded.
 
 ## Strict typing and runtime validation
 
@@ -542,3 +547,20 @@ targets, pressed states and visible focus. The field shell integrates the
 image-upload footer and uses palette-based surfaces/focus treatment. An
 empty paragraph is detected with CSS :has to display the translated
 data-placeholder hint; that hint is not persisted as project content.
+
+## Board-focused detail and visibility form - 2026-11-15
+
+ProjectForm renders the same controlled native button switch in both
+creation and editing, initialized from is_published or false. A hidden
+field sends true/false explicitly; changing the switch has no write side
+effect until save. The switch supports keyboard activation, a linked
+label/help, aria-checked, disabled states and reduced-motion styling.
+The existing save/upload busy guards also cover visibility. Creation
+uses the generic Create project label and saves to ?saved=1 without
+edit=1. ProjectManagement retains optional explicit editor entry.
+
+The detail keeps a screen-reader project heading and compact back/edit
+controls above the board. Supporting rich content remains editable and
+stored; its former visible detail sections are removed. Public metadata
+continues to use the existing session-independent published query.
+Creation image staging is a proposal in ADR 0002, not implemented.

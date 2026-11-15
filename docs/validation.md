@@ -813,3 +813,42 @@ default to unpublished; saving content preserves visibility and the separate
 publication action changes it. This was a source inspection, not a new
 database/HTTP integration run. No database operations or browser UI review
 were required for this module-only refactor.
+
+## Visibility switch and board-focused detail - 2026-11-15
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 54 passed, no failures or skips. Added coverage for explicit
+  true/false publication, missing/duplicate/file values, rejected coercions
+  and combined content/publication errors.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+A temporary local production server at 127.0.0.1:3016 ran the equivalent of
+node --test --test-concurrency=1 tests/project-content-http.ts
+tests/public-http.test.mjs with explicit local public Supabase configuration.
+Result: 18 passed, 2 skipped, no failures. The skipped post-cleanup empty
+states require an empty owner database; existing projects were preserved.
+The suites verified authenticated publication on creation, redirect without
+edit=1, content/visibility updates, stale-write rejection, unauthorized
+writes, public/draft access, board data, image-route access/normalization
+and the absence of former rich-content detail sections. Only identifiable
+fixtures created by those tests were removed. User/admin and table counts
+were checked before/after; no users, migrations or remote operations ran.
+The temporary production server was stopped after the suites.
+
+The ad hoc headless Edge/CDP check ran as
+`node "$env:TEMP/project-garden-visibility-browser-check.cjs"` against the
+local review server. At 1440x1000, 390x844 and 320x640 it checked modal/page
+overflow, a labelled 44px switch, keyboard switching, reduced motion,
+creation defaulting to private, public creation without modal reopening,
+a compact board-focused detail, saved name/publication initial values in
+editing, cancellation without a visibility write and hiding on save.
+Desktop/mobile board screenshots were visually inspected. Its exact
+created project was removed and before/after population counts matched.
+The isolated browser context/profile was closed and removed.
+
+Creation image staging remains a proposal awaiting owner confirmation;
+it was not implemented or tested. No new dependency or schema/policy
+change is included. Full screen-reader, physical-device and cross-browser
+review remain unperformed; UI acceptance remains pending.

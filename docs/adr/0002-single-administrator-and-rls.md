@@ -98,3 +98,38 @@ the ready state. Failure compensation addresses only the new asset's exact
 object path and ID; failed removal preserves the pending record for later
 inspection. Successful but unsaved uploads remain private; no broad orphan
 cleanup or deletion of existing assets is introduced.
+
+
+## Creation images staging proposal - 2026-11-15
+
+- Status: proposal; owner confirmation required before implementation.
+
+The owner requested inserting images before the project is created.
+Existing asset rows require an existing project and uploads enforce that
+ownership. Proposed flow: stage selected files/previews in browser memory
+until Create; persist a private draft when saving, upload sequentially
+through the existing authorized/normalized route, then save image
+references and requested visibility. Publish only after every required
+upload succeeds. Closing before saving creates no project or assets.
+If an upload fails after saving starts, retain the new private draft and
+successful assets, report the failure and retry against that same project.
+This avoids deleting existing data or silently publishing partial content.
+The proposed aggregate staging limit is 32 MiB across both fields, with
+the existing 8 MiB per-image limit and document image limits preserved.
+Preview URLs must be revoked and dismissal blocked during save/upload.
+The aggregate limit and failure/retry contract need confirmation.
+
+Alternatives: create a persistent draft on the first image upload (leaves
+a project even if the user cancels without saving), or introduce temporary
+Storage ownership and later attachment (requires new policies/schema and
+an explicit cleanup lifecycle). No alternative is implemented or accepted.
+No dependency, migration, new Storage permission or cleanup is authorized
+by this proposal.
+
+The proposal would affect ProjectForm, RichTextEditor, EditorImageUpload,
+editor-extensions (local previews), image-input (aggregate limits) and
+project Server Actions (private draft preparation/final save). Existing
+authorized image processing/delivery and database ownership rules remain
+required. Validation would cover staging budgets, cancel-before-save,
+unauthorized requests, valid image creation, delayed publication, partial
+upload failure, retry without duplicate projects and private failed drafts.

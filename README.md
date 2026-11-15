@@ -8,7 +8,7 @@ A public Kanban for exploring my projects, their progress and supporting informa
 - **Phase 2 validated locally:** Supabase schema, password authentication, single-administrator authorization and RLS.
 - **Phase 3 visual prototype; acceptance pending:** a cozy full-viewport layout provides Overview/Projects navigation and a public project listing. Overview KPIs await definition; login and 404 pages share the visual direction without a language selector.
 - The interface supports English (default), Spanish and Catalan through `next-intl`, with a cookie preference and unchanged URLs.
-- Project controls in the shared listing/detail views support creating drafts, rich-text description/objectives, repository links, updates, publishing and hiding. Private image upload/delivery uses server-side Sharp normalization. Project deletion, file cleanup policy and visual/interaction acceptance remain pending. See [current scope](docs/product.md). No remote services are connected or deployments made.
+- Project controls in the shared listing/detail views support creating projects with selected visibility, rich-text description/objectives, repository links and updates. Creation and editing share a publication switch applied on save; project detail currently focuses on the board. Private image upload/delivery uses server-side Sharp normalization. Images before creation, project deletion, file cleanup policy and visual/interaction acceptance remain pending. See [current scope](docs/product.md). No remote services are connected or deployments made.
 
 ## Stack and local development
 

@@ -172,6 +172,9 @@
     "draftHelp": "This draft is private. Save your edits before publishing.",
     "publish": "Publish project",
     "hide": "Hide project",
-    "closeForm": "Close form"
+    "closeForm": "Close form",
+    "visibility": "Published",
+    "publishOnSave": "Saving makes this project and its content public.",
+    "draftOnSave": "Saving keeps this project private. Only you can see it."
   }
 }

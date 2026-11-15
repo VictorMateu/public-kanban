@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { getSchema } from "@tiptap/react";
 import { projectEditorExtensions } from "../lib/projects/editor-extensions.ts";
 import { richTextDocumentSchema, richTextToPlainText, richTextAssetIds, plainTextDocument, optionalRichText, parseRichTextJson, readRichText, safeLinkSchema, RICH_TEXT_LIMITS } from "../lib/projects/rich-text.ts";
-import { parseProjectContent } from "../lib/projects/input.ts";
+import { parseProjectContent, parseProjectSubmission } from "../lib/projects/input.ts";
 
 const assetId = "f6fd871c-99e4-457a-89ae-9024cc27e668";
 const schema = getSchema(projectEditorExtensions);
@@ -102,4 +102,28 @@ test("project content accepts optional information and rejects forged and duplic
     assert.equal(parseProjectContent(invalid).success, false);
   }
   assert.equal(safeLinkSchema.safeParse("https://gitlab.com/example/project?ref=main#readme").success, true);
+});
+
+
+test("project submissions require explicit visibility and collect content and visibility errors", () => {
+  for (const published of ["false", "true"]) {
+    const form = contentForm();
+    form.set("is_published", published);
+    const result = parseProjectSubmission(form);
+    assert.ok(result.success);
+    if (result.success) assert.equal(result.data.is_published, published === "true");
+  }
+  for (const invalid of [undefined, "", "on", "1", "TRUE", new Blob(["true"])]) {
+    const form = contentForm();
+    if (invalid !== undefined) form.set("is_published", invalid);
+    const result = parseProjectSubmission(form);
+    assert.deepEqual(result, { success: false, errors: { is_published: "invalid" } });
+  }
+  const duplicate = contentForm();
+  duplicate.append("is_published", "true");
+  duplicate.append("is_published", "false");
+  duplicate.set("name", " ");
+  assert.deepEqual(parseProjectSubmission(duplicate), {
+    success: false, errors: { name: "required", is_published: "invalid" },
+  });
 });
