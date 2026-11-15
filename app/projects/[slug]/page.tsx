@@ -60,8 +60,8 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
           <ProjectInformation key={project.updated_at} project={administrator ? project : undefined} initiallyEditing={administrator && edit === "1"}>
             <div className="space-y-6">
               <p className="text-2xl wrap-anywhere">{project.name}</p>
-              {project.description_content || project.description ? <section><h3 className="mb-3 text-xl">{information("description")}</h3><RichTextContent preview={administrator} document={readRichText(project.description_content, project.description)} /></section> : null}
-              {project.objectives_content && <section><h3 className="mb-3 text-xl">{t("objectives")}</h3><RichTextContent preview={administrator} document={readRichText(project.objectives_content)} /></section>}
+              {project.description_content || project.description ? <section><h3 className="mb-3 text-2xl">{information("description")}</h3><RichTextContent preview={administrator} document={readRichText(project.description_content, project.description)} /></section> : null}
+              {project.objectives_content && <section><h3 className="mb-3 text-2xl">{t("objectives")}</h3><RichTextContent preview={administrator} document={readRichText(project.objectives_content)} /></section>}
               {project.repository_url && <a href={project.repository_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t("repository")}</a>}
               {!project.description_content && !project.description && !project.objectives_content && !project.repository_url && <p>{information("empty")}</p>}
             </div>

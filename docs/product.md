@@ -315,3 +315,7 @@ the existing shared form; no second modal is stacked. Closing and reopening
 returns to information. Explicit edit=1 entry and save redirects remain.
 This supersedes the earlier placement beside the title. Visual acceptance
 is pending; lifecycle and hidden semantics remain awaiting confirmation.
+
+The owner requested larger Description and Objectives subheadings in the
+information modal. Both use 24px text at all viewport sizes, retaining the
+existing script typeface and heading semantics. Visual review is pending.

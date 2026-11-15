@@ -926,3 +926,15 @@ This adjustment did not rerun the full HTTP integration suite. No full
 screen-reader, physical-device or cross-browser review is claimed. The
 working appearance remains pending owner acceptance, and status/hidden
 semantics remain proposals. Local review stays at 127.0.0.1:3015.
+
+## Larger information section headings - 2026-11-15
+
+Description and Objectives headings changed from 20px to 24px. npm run
+lint, npm run typecheck, npm test (54 passed), npm run build and git diff
+--check passed. The build used process-local public local Supabase values.
+The targeted headless Edge check, project-garden-information-headings-check.cjs,
+verified both computed heading sizes at 1440x1000, 390x844 and 320x640,
+modal fit/scrolling and keyboard/focus behavior. The desktop screenshot
+was inspected. Exact temporary fixtures were cleaned and population counts
+were preserved. Full HTTP integration was not rerun for this typography
+change; owner visual acceptance remains pending.
