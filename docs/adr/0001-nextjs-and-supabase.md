@@ -84,3 +84,19 @@ The measured local two-folder footprint is about 19.9 MiB; this version
 already existed through Next.js. Sharp remains outside browser imports.
 Deployment size and runtime resource measurements remain environment
 specific; see the dated assessment in development.md.
+
+## Project form modal update - 2026-11-15
+
+- Status: modal placement accepted by the owner; visual acceptance remains pending.
+- Scope: opening project creation/editing from the shared project views.
+
+The owner requested left alignment for the creation button and a modal
+form. This supersedes the provisional inline form presentation. The
+implementation uses native HTML dialog rather than adopting a modal
+library or implementing a custom overlay. It retains lazy editor loading,
+uses the browser's top layer and inert background, and adds explicit
+keyboard focus cycling, focus restoration and pending-operation guards.
+The dialog scrolls internally to keep the form and its close control
+usable on small screens. No dependency, route, schema or authorization
+change is introduced. Styling and dimensions remain a provisional working
+prototype for owner review.

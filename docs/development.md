@@ -479,3 +479,22 @@ Supabase environment choice, credentials, a migration/configuration plan,
 and an existing authorized administrator. Do not publish the loopback
 Supabase URL or automatically create remote users. UI acceptance remains
 pending; the UI implementation commit is explicitly marked WIP.
+
+## Native project form modal - 2026-11-15
+
+ProjectManagement now opens the lazily loaded project form inside a native
+HTML dialog with showModal(), replacing the provisional inline section.
+This uses the existing React client boundary and adds no dependencies.
+The modal has a labelled heading, internal vertical scrolling, a sticky
+close control and explicit left alignment for its opening button.
+
+The browser supplies the top layer and inert background. A keyboard handler
+cycles focus at the first/last enabled visible controls and blocks Escape
+while busy. Native closedby switches between closerequest and none; the
+cancel handler also prevents idle/native close requests from bypassing
+React state. Body overflow is restored on close/unmount, and focus returns
+to the opener. Project save/upload and publication report pending state
+separately, so modal dismissal is blocked throughout either operation and
+the form cannot save concurrently with publication. The existing translated
+closeForm message is reused. Backend authorization and data rules are not
+changed by this presentation update.

@@ -679,3 +679,48 @@ Docker Desktop was restarted because its engine was stopped. The existing
 Supabase containers resumed without a reset or migration. The local
 development server was restarted on http://127.0.0.1:3015/projects for
 owner review. No remote deployment or merge from main was performed.
+
+## Project modal and left alignment - 2026-11-15
+
+The owner requested left alignment for the project creation button and a
+modal form. ProjectManagement now uses a native dialog for creation and
+editing; no dependency, database or authorization changes were made.
+
+- npm run lint: passed without warnings.
+- npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips.
+- npm run build: passed with local public Supabase configuration injected
+  through the process environment.
+- git diff --check: passed.
+
+An ad hoc browser integration check ran with the installed Edge in headless
+mode, through Node's built-in WebSocket/CDP support, without installing a
+browser-testing dependency. The command was
+`node "$env:TEMP/project-garden-modal-check.cjs"`. It used a temporary,
+isolated browser context and the existing local administrator. The context
+and browser were closed, and the temporary profile was removed.
+
+The final browser assertions passed for keyboard opening, the accessible
+heading reference, initial heading focus, Tab/Shift+Tab containment, Escape
+and button dismissal, opener focus restoration, and body-scroll restoration.
+At 1440x1000, 390x844 and 320x640, the dialog fitted the viewport without
+horizontal overflow, scrolled internally, and kept its close control visible.
+The creation button matched the main content's left edge.
+
+An intercepted save request verified that the close control was disabled
+and Escape could not dismiss the busy dialog. Before forwarding it, the
+test removed the required name so server validation rejected the request
+without creating a project. The dialog remained usable after the validation
+response and could close again. A read-only database check found zero rows
+with the test slug. No users, project fixtures, schema changes or migrations
+were created by these checks. Publication/upload pending guards were not
+individually exercised in this browser check.
+
+Early browser checks exposed native focus navigation reaching browser chrome
+and a non-cancelable native close request; explicit focus cycling and busy
+Escape/closedby guards resolved those assertions. The keyboard test driver
+was also corrected to send Enter's text event and wait for hydration.
+These automated layout/input assertions are not manual visual review,
+screen-reader testing, physical-device testing or cross-browser validation.
+Owner visual acceptance remains pending. The local review server remains
+available at http://127.0.0.1:3015/projects.

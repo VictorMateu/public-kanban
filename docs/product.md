@@ -143,8 +143,8 @@ The Overview content remains blank pending KPI definitions. The known project-40
 | Project foundation | Phase 1 complete |
 | Supabase integration, Auth and initial RLS | Phase 2 validated locally; owner account manually authorized locally |
 | Public project listing and read-only boards | Listing available at `/projects`; existing board routes preserved; Overview content remains empty until KPIs are defined |
-| Administration | Protected project prototype supports draft creation, selection, details updates, publishing and hiding; deletion and final shared-interface placement remain pending |
-| Project information | Description and objectives use optional rich-text JSONB; repository is optional HTTPS; the editor and public rendering are implemented, while image upload/processing remains pending |
+| Administration | Shared project views support draft creation, selection, details updates, publishing and hiding; forms open in a modal; deletion and visual acceptance remain pending |
+| Project information | Description and objectives use optional rich-text JSONB; repository is optional HTTPS; editor, public rendering and private image upload/processing are implemented |
 | Columns | Currently stored per project; reusable definitions and propagation choices are not implemented |
 | Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
 | New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
@@ -215,10 +215,9 @@ stored file. Successful uploads abandoned before saving remain private.
 No existing files are automatically deleted. Project deletion and its
 column/task/file behavior still require the owner's decision.
 
-The form opens inline, without a new route or modal dependency. This is a
-provisional presentation within the confirmed placement. Toolbar, rich-text
-font, focus and responsive behavior still require visual/interaction
-review before acceptance.
+The initial inline form presentation was provisional and is superseded by
+the owner-requested modal below. Toolbar, rich-text font and the modal's
+visual presentation still require owner review before acceptance.
 
 ### Project session-control follow-up - 2026-11-15
 
@@ -227,3 +226,16 @@ Projects listing because main already manages session controls in the
 shared shell. This branch no longer adds a project-level sign-out button.
 The shared session controls remain owned by main; main has not been merged
 into this worktree as part of this focused correction.
+
+### Project form modal - 2026-11-15
+
+The owner requested a left-aligned creation button and a modal form.
+Creation and editing now use a native dialog from their existing shared
+project views. The form remains lazy-loaded, with internal scrolling on
+small screens and a visible close button. Its title receives initial
+focus; Tab and Shift+Tab stay within the modal, Escape closes it when idle,
+and closing restores focus to the opening button. Background interaction
+and scrolling are blocked while it is open. Saving, publishing and image
+uploads block dismissal. Closing an idle form discards unsaved edits as
+before; no autosave or file-cleanup policy is added. Modal width, spacing
+and styling are a working prototype awaiting owner visual review.
