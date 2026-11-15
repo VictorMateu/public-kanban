@@ -59,6 +59,7 @@ test("rich project HTTP paths enforce image visibility without creating users", 
     { type: "image", attrs: { assetId, alt: "Fixture diagram" } },
   ] };
   let actionProjectId: string | null = null;
+  const draftProjectId = randomUUID();
   const routeAssets: { id: string; objectPath: string }[] = [];
   let uploaded = false;
   let assetCreated = false;
@@ -115,12 +116,12 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       // Match the installed Next/React multipart Server Action protocol without another dependency.
       const manifest: unknown = JSON.parse(readFileSync(".next/server/server-reference-manifest.json", "utf8"));
       const actions = z.object({ node: z.record(z.string(), z.object({ exportedName: z.string() })) }).parse(manifest).node;
-      const invoke = async (name: "saveProject", values: Record<string, string>, authenticated = true) => {
+      const invoke = async (name: "saveProject" | "saveProjectDraft", values: Record<string, string>, authenticated = true) => {
         const entry = Object.entries(actions).find(([, action]) => action.exportedName === name);
         assert.ok(entry, "Build must expose the tested Server Action");
         const body = new FormData();
         for (const [key, value] of Object.entries(values)) body.set("_1_" + key, value);
-        body.set("0", JSON.stringify([{}, "$K1"]));
+        body.set("0", JSON.stringify(name === "saveProjectDraft" ? ["$K1"] : [{}, "$K1"]));
         return fetch(origin.origin + "/projects", { method: "POST", body, redirect: "manual", headers: {
           "Next-Action": entry[0], Origin: origin.origin, ...(authenticated ? { Cookie: cookie } : {}),
         } });
@@ -128,6 +129,25 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const actionSlug = "action-http-" + id;
       const empty = JSON.stringify({ type: "doc", content: [{ type: "paragraph" }] });
       const fields = { id: "", updated_at: "", name: actionSlug, slug: actionSlug, description_content: empty, objectives_content: empty, repository_url: "", is_published: "true", position: "999999" };
+      const draftFields = { ...fields, id: draftProjectId, slug: "draft-" + actionSlug, is_published: "false" };
+      assert.ok((await (await invoke("saveProjectDraft", draftFields, false)).text()).includes('"unauthorized"'));
+      assert.ok((await (await invoke("saveProjectDraft", { ...draftFields, is_published: "true" })).text()).includes('"invalid"'));
+      assert.equal((await admin.from("projects").select("id").eq("id", draftProjectId)).data?.length, 0);
+      const prepared = await invoke("saveProjectDraft", draftFields);
+      assert.ok((await prepared.text()).includes('"success":true'));
+      const draft = await admin.from("projects").select("*").eq("id", draftProjectId).single();
+      assert.ok(draft.data); assert.equal(draft.data.is_published, false);
+      assert.equal((await fetch(origin.origin + "/projects/" + draftFields.slug)).status, 404);
+      const replay = await invoke("saveProjectDraft", draftFields);
+      assert.ok((await replay.text()).includes('"success":true'));
+      assert.equal((await admin.from("projects").select("id").eq("id", draftProjectId)).data?.length, 1);
+      assert.equal((await admin.from("projects").select("updated_at").eq("id", draftProjectId).single()).data?.updated_at, draft.data.updated_at);
+      const foreignDraft = JSON.stringify({ type: "doc", content: [{ type: "image", attrs: { assetId, alt: "Other project's asset" } }] });
+      assert.ok((await (await invoke("saveProjectDraft", { ...draftFields, updated_at: draft.data.updated_at, description_content: foreignDraft })).text()).includes('"invalid"'));
+      const draftUpdate = await invoke("saveProjectDraft", { ...draftFields, updated_at: draft.data.updated_at, name: "Retained draft fixture" });
+      assert.ok((await draftUpdate.text()).includes('"success":true'));
+      assert.ok((await (await invoke("saveProjectDraft", { ...draftFields, updated_at: draft.data.updated_at })).text()).includes('"stale"'));
+      assert.ok((await (await invoke("saveProjectDraft", draftFields)).text()).includes('"stale"'), "Initial replay cannot bypass later edits");
       const denied = await invoke("saveProject", fields, false);
       assert.ok((await denied.text()).includes('"unauthorized"'));
       assert.equal((await admin.from("projects").select("id").eq("slug", actionSlug)).data?.length, 0);
@@ -138,6 +158,8 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       assert.equal(createdResponse.status, 200);
       assert.ok(createdResponse.headers.get("x-action-redirect")?.includes("/projects/" + actionSlug));
       assert.equal(created.data.is_published, true); assert.equal(created.data.position, 0);
+      const forceDraft = await invoke("saveProjectDraft", { ...fields, id: created.data.id, updated_at: created.data.updated_at, is_published: "false" });
+      assert.ok((await forceDraft.text()).includes('"stale"'), "Draft preparation cannot unpublish an existing project");
       assert.ok(!createdResponse.headers.get("x-action-redirect")?.includes("edit=1"));
       assert.equal((await fetch(origin.origin + "/projects/" + actionSlug)).status, 200);
       const original = created.data;
@@ -222,6 +244,7 @@ test("rich project HTTP paths enforce image visibility without creating users", 
     });
   } finally {
     // Delete exactly this run's fixtures, object first; preserve all existing data/users.
+    assert.equal((await admin.from("projects").delete().eq("id", draftProjectId).eq("slug", "draft-action-http-" + id)).error, null);
     if (actionProjectId) assert.equal((await admin.from("projects").delete().eq("id", actionProjectId)).error, null);
     for (const asset of routeAssets) {
       assert.equal((await admin.storage.from("project-images").remove([asset.objectPath])).error, null);

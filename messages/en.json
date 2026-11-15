@@ -137,7 +137,10 @@
     "uploadUnavailable": "The image could not be uploaded. Try again.",
     "unauthorized": "Your administrator session is unavailable. Sign in again.",
     "imageLimit": "This image could not be inserted because the document exceeds its limits.",
-    "placeholder": "Start writing your ideas…"
+    "placeholder": "Start writing your ideas…",
+    "stagedImageHelp": "JPEG, PNG or WebP, up to 8 MiB each. Up to 32 MiB of image files per creation form, shared by description and objectives.",
+    "stagedImages": "Images are previewed locally and uploaded when you create the project. Closing before saving discards them.",
+    "stagingTooLarge": "This form holds up to 32 MiB of image files, including files retained for undo. Close and reopen the form to release them."
   },
   "ProjectForm": {
     "title": "Manage projects",
@@ -175,7 +178,9 @@
     "closeForm": "Close form",
     "visibility": "Published",
     "publishOnSave": "Saving makes this project and its content public.",
-    "draftOnSave": "Saving keeps this project private. Only you can see it."
+    "draftOnSave": "Saving keeps this project private. Only you can see it.",
+    "imageUploadFailed": "An image could not be uploaded. Your project remains private. Check the selected files and try saving again.",
+    "draftRetained": "A private draft has been saved. Retry here to continue with the same project. Closing keeps the draft and saved images, but discards local files that have not been uploaded."
   },
   "ProjectInformation": {
     "title": "Project information",

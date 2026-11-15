@@ -938,3 +938,54 @@ modal fit/scrolling and keyboard/focus behavior. The desktop screenshot
 was inspected. Exact temporary fixtures were cleaned and population counts
 were preserved. Full HTTP integration was not rerun for this typography
 change; owner visual acceptance remains pending.
+
+## Creation images, private draft retries and browser multipart - 2026-11-15
+
+- npm run lint: passed with no warnings.
+- npm run typecheck: passed.
+- npm test: 60 passed, no failures or skips.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+Unit checks cover the shared 32 MiB file budget, invalid/oversized files,
+preview URL revocation, preserving rich content while resolving local
+references, sequential uploads, partial failure/retry, reusing successful
+IDs, stable creation identity after a lost initial response and validation
+before writes. A regression test uses a mixed-case WebKit multipart
+boundary and verifies exact file bytes survive parsing.
+
+The local production HTTP run used node --test --test-concurrency=1
+against tests/project-content-http.ts and tests/public-http.test.mjs at
+127.0.0.1:3016. Result: 18 passed, 2 skipped, no failures. The skipped
+empty-state assertions require an empty database. New Server Action
+assertions cover unauthorized draft saves, forbidden publication through
+the draft action, draft 404, idempotent initial retry without a second row
+or timestamp change, foreign assets, stale writes and refusal to turn a
+published project into a draft. Existing project CRUD, HTML/RSC privacy,
+image processing/access and population preservation checks also passed.
+
+The ad hoc isolated headless Edge test ran via
+project-garden-local-integration.cjs and project-garden-creation-images-check.cjs.
+At 1440x1000, 390x844 and 320x640 it checked previews in both fields, modal
+fit and Tab containment. Cancelling before Save created no database data
+and revoked the preview URL. Real image requests were paused to assert
+private project/image access during upload and pending Escape protection.
+After both uploads the selected publication applied, saved images became
+public and the detail stayed closed. Injecting a 503 on the second upload
+kept a private draft with the first image saved, preserved name/slug and
+showed the retry explanation. Retry used that same project and uploaded
+only the remaining image. The mobile preview screenshot was inspected.
+
+Early browser runs exposed invalidImage responses, also reproduced without
+network interception. Blob.type was lowercasing the browser's case-sensitive
+boundary. Preserving Content-Type on Response fixed the real browser
+multipart regression. The final full browser run passed after the fix.
+Temporary diagnostics were removed. Exact project/asset/object fixtures
+were removed and population counts preserved. No users, schema changes,
+remote operations or automatic cleanup were introduced. Temporary
+production servers were stopped; the existing local review server remains.
+
+Visual acceptance remains pending. Full screen-reader, physical-device
+and cross-browser review were not performed. Lost upload responses may
+leave private unreferenced assets; general cleanup remains a separate
+pending decision. Browser decoding memory can exceed the 32 MiB file budget.

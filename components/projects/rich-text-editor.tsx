@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { EditorImageUpload } from "./editor-image-upload";
 import { EditorToolButton } from "./editor-tool-button";
-import { projectEditorExtensions } from "../../lib/projects/editor-extensions";
+import type { ProjectImageStaging } from "../../lib/projects/image-staging";
+import { projectEditorExtensions, projectEditorExtensionsWithPreviews } from "../../lib/projects/editor-extensions";
 import { richTextDocumentSchema, safeLinkSchema, type RichTextDocument } from "../../lib/projects/rich-text";
 
 
-export function RichTextEditor({ label, initial, disabled, projectId, onBusyChange, onChange }: {
+export function RichTextEditor({ label, initial, disabled, projectId, imageStaging, onBusyChange, onChange }: {
   label: string; initial: RichTextDocument; disabled: boolean;
-  projectId?: string; onBusyChange: (busy: boolean) => void;
+  projectId?: string; imageStaging?: ProjectImageStaging; onBusyChange: (busy: boolean) => void;
   onChange: (value: string, valid: boolean) => void;
 }) {
   const t = useTranslations("Editor");
@@ -26,10 +27,11 @@ export function RichTextEditor({ label, initial, disabled, projectId, onBusyChan
     setInvalid(!parsed.success);
     onChange(JSON.stringify(document), parsed.success);
   };
+  const extensions = useMemo(() => imageStaging ? projectEditorExtensionsWithPreviews(imageStaging.previewUrl) : projectEditorExtensions, [imageStaging]);
   const editor = useEditor({
     immediatelyRender: false,
     editable: !disabled,
-    extensions: projectEditorExtensions,
+    extensions,
     content: initial,
     editorProps: { attributes: { role: "textbox", "aria-multiline": "true", "aria-labelledby": id + "-label", "aria-describedby": id + "-help", "data-placeholder": t("placeholder"), spellcheck: "true", class: "rich-text editor-writing-area outline-none" } },
     onCreate: ({ editor: created }) => report(created.getJSON()),
@@ -93,7 +95,7 @@ export function RichTextEditor({ label, initial, disabled, projectId, onBusyChan
           {!editor && <p role="status" className="p-4">{t("loading")}</p>}
           <EditorContent editor={editor} />
         </fieldset>
-        <EditorImageUpload projectId={projectId} disabled={disabled || !editor} onBusyChange={(busy) => { setUploading(busy); onBusyChange(busy); }} onInsert={(assetId, alt) => {
+        <EditorImageUpload projectId={projectId} imageStaging={imageStaging} disabled={disabled || !editor} onBusyChange={(busy) => { setUploading(busy); onBusyChange(busy); }} onInsert={(assetId, alt) => {
           if (!editor) return false;
           const document: unknown = editor.getJSON();
           const parsed = richTextDocumentSchema.safeParse(document);

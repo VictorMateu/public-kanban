@@ -133,3 +133,22 @@ authorized image processing/delivery and database ownership rules remain
 required. Validation would cover staging budgets, cancel-before-save,
 unauthorized requests, valid image creation, delayed publication, partial
 upload failure, retry without duplicate projects and private failed drafts.
+
+## Creation images staging accepted - 2026-11-15
+
+The owner accepted the preceding creation-images flow, 32 MiB aggregate
+file budget and private-draft retention/retry contract. This supersedes
+its pending status. No new dependency, Storage policy or migration is
+needed. Local UUID references and blob previews exist only in the form;
+the server accepts only validated documents with owned ready assets.
+A stable browser-generated attempt UUID makes initial draft creation
+idempotent if its response is lost. Draft writes stay private and use
+optimistic timestamps. Successful references are saved to the private
+draft before publication and, where possible, after a failed upload.
+Uploads run sequentially, retaining successful IDs across retries.
+Files/previews are retained for editor undo within the 32 MiB session
+budget and revoked on dismissal. This budget bounds file bytes, not all
+browser decoding memory. Closing after a failure preserves the private
+draft and saved references but discards remaining local files; the UI
+explains this. No automatic orphan cleanup is included. Visual review
+will use the working form at desktop/mobile sizes and keyboard checks.

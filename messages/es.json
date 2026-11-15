@@ -136,7 +136,10 @@
     "uploadUnavailable": "No se ha podido subir la imagen. Vuelve a intentarlo.",
     "unauthorized": "Tu sesión de administrador no está disponible. Vuelve a iniciar sesión.",
     "imageLimit": "No se ha podido insertar la imagen porque el documento supera sus límites.",
-    "placeholder": "Empieza a escribir tus ideas…"
+    "placeholder": "Empieza a escribir tus ideas…",
+    "stagedImageHelp": "JPEG, PNG o WebP, hasta 8 MiB por imagen. Hasta 32 MiB de archivos por formulario de creación, compartidos entre descripción y objetivos.",
+    "stagedImages": "Las imágenes se previsualizan localmente y se suben al crear el proyecto. Cerrar antes de guardar las descarta.",
+    "stagingTooLarge": "Este formulario admite hasta 32 MiB de archivos, incluidos los conservados para deshacer. Ciérralo y vuelve a abrirlo para liberarlos."
   },
   "ProjectForm": {
     "title": "Gestionar proyectos",
@@ -174,7 +177,9 @@
     "closeForm": "Cerrar formulario",
     "visibility": "Publicado",
     "publishOnSave": "Al guardar, el proyecto y su contenido serán públicos.",
-    "draftOnSave": "Al guardar, el proyecto será privado. Solo tú podrás verlo."
+    "draftOnSave": "Al guardar, el proyecto será privado. Solo tú podrás verlo.",
+    "imageUploadFailed": "No se ha podido subir una imagen. El proyecto sigue siendo privado. Revisa los archivos seleccionados e intenta guardar de nuevo.",
+    "draftRetained": "Se ha guardado un borrador privado. Reintenta aquí para continuar con el mismo proyecto. Al cerrar se conservan el borrador y las imágenes guardadas, pero se descartan los archivos locales que aún no se han subido."
   },
   "ProjectInformation": {
     "title": "Información del proyecto",

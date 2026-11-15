@@ -4,16 +4,16 @@ import { z } from "zod";
 import { projectImageUrl, safeLinkSchema } from "./rich-text.ts";
 
 const imageAttributes = z.object({ assetId: z.uuid(), alt: z.string() });
-const ProjectImage = Node.create({
+function projectImage(previewUrl?: (assetId: string) => string | undefined) { return Node.create({
   name: "image", group: "block", atom: true, draggable: true,
   addAttributes() { return { assetId: { default: null }, alt: { default: "" } }; },
   // Do not import external HTML src attributes into persisted image nodes.
   parseHTML() { return []; },
   renderHTML({ node }) {
     const attrs = imageAttributes.safeParse(node.attrs);
-    return attrs.success ? ["img", { src: projectImageUrl(attrs.data.assetId, true), alt: attrs.data.alt }] : ["span"];
+    return attrs.success ? ["img", { src: previewUrl?.(attrs.data.assetId) ?? projectImageUrl(attrs.data.assetId, true), alt: attrs.data.alt }] : ["span"];
   },
-});
+}); }
 const ParagraphQuote = Node.create({
   name: "blockquote", group: "block", content: "paragraph+", defining: true,
   parseHTML() { return [{ tag: "blockquote" }]; },
@@ -35,7 +35,14 @@ const ProjectListItem = Node.create({
   }; },
 });
 
-export const projectEditorExtensions = [StarterKit.configure({
+const projectTextExtensions = [StarterKit.configure({
   heading: { levels: [2, 3] }, underline: false, blockquote: false, listItem: false,
   link: { openOnClick: false, autolink: false, isAllowedUri: (url) => safeLinkSchema.safeParse(url).success },
-}), ParagraphQuote, ProjectListItem, ProjectImage];
+}), ParagraphQuote, ProjectListItem];
+
+export const projectEditorExtensions = [...projectTextExtensions, projectImage()];
+
+// Local blob URLs affect rendering only; JSON continues to contain UUID references.
+export function projectEditorExtensionsWithPreviews(previewUrl: (assetId: string) => string | undefined) {
+  return [...projectTextExtensions, projectImage(previewUrl)];
+}

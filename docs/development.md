@@ -594,3 +594,34 @@ validation and authorization as creation/editing elsewhere. Title changes
 refocus the dialog heading; closing resets the editor mode/status and
 restores focus to the information icon. There is no nested dialog. The
 icon uses an undecorated 44px button with an accessible name/focus ring.
+
+## Creation image staging and draft saves - 2026-11-15
+
+ProjectForm owns one ProjectImageStaging store for both rich-text fields.
+The store holds original File values, UUIDs, blob previews and known
+uploaded IDs, capped at 32 MiB of file bytes (8 MiB each). Preview URLs
+are revoked when insertion fails or the form unmounts. Undo retains files
+within that budget. The editor extension only resolves local URLs while
+rendering; documents serialize UUID references, never blob URLs.
+
+prepareCreationImages validates the complete submission before writing,
+removes unresolved local image nodes from draft snapshots and uploads
+active files sequentially through the shared uploadProjectImage client.
+saveProjectDraft authorizes/validates every call, forces private state,
+checks owned ready assets and returns a Zod-validated identity. Initial
+creation uses the form's stable UUID; a repeated insert only returns an
+untouched private draft, never bypassing subsequent edits. Later writes
+use updated_at and cannot change a published project through this action.
+Successful references are saved privately before normal saveProject
+applies requested visibility and redirects. Failed uploads attempt to
+persist successful references; retry reuses known asset IDs. A transport
+failure can leave an unreferenced private upload; cleanup remains pending.
+
+Form details are controlled so failed actions retain name, slug and
+repository alongside editor content. The retained-draft message explains
+what survives closing. Save/upload pending state blocks dismissal. No
+new schema, dependency or Storage permission is introduced.
+
+readImageForm sets the original multipart Content-Type on Response,
+rather than Blob.type: Blob lowercasing otherwise corrupts case-sensitive
+WebKit boundaries. Existing byte, pixel and normalization limits remain.

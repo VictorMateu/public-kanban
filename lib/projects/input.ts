@@ -1,4 +1,4 @@
-import { projectDetailsSchema, projectContentSchema, projectPublicationSchema, type ProjectDetails, type ProjectContentField } from "./schemas.ts";
+import { projectDetailsSchema, projectContentSchema, projectPublicationSchema, type ProjectDetails, type ProjectContentField, type ProjectFormField } from "./schemas.ts";
 import { parseRichTextJson } from "./rich-text.ts";
 
 type ProjectField = keyof ProjectDetails;
@@ -33,12 +33,7 @@ export function parseProjectDetails(formData: FormData): ProjectDetailsResult {
   return { success: false, errors };
 }
 
-export type ProjectFormField = ProjectContentField | "is_published";
-
-export type ProjectFormState = {
-  errors?: Partial<Record<ProjectFormField, InputError>>;
-  error?: "unauthorized" | "unavailable" | "slugTaken" | "stale" | "invalid";
-};
+export type { ProjectFormState, ProjectFormField } from "./schemas.ts";
 
 export function parseProjectContent(form: FormData) {
   const field = (name: ProjectContentField): unknown => {

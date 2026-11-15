@@ -136,7 +136,10 @@
     "uploadUnavailable": "No s’ha pogut pujar la imatge. Torna-ho a provar.",
     "unauthorized": "La sessió d’administrador no està disponible. Torna a iniciar sessió.",
     "imageLimit": "No s’ha pogut inserir la imatge perquè el document supera els seus límits.",
-    "placeholder": "Comença a escriure les teves idees…"
+    "placeholder": "Comença a escriure les teves idees…",
+    "stagedImageHelp": "JPEG, PNG o WebP, fins a 8 MiB per imatge. Fins a 32 MiB de fitxers per formulari de creació, compartits entre descripció i objectius.",
+    "stagedImages": "Les imatges es previsualitzen localment i es pugen en crear el projecte. Tancar abans de desar les descarta.",
+    "stagingTooLarge": "Aquest formulari admet fins a 32 MiB de fitxers, inclosos els conservats per desfer. Tanca’l i torna’l a obrir per alliberar-los."
   },
   "ProjectForm": {
     "title": "Gestionar projectes",
@@ -174,7 +177,9 @@
     "closeForm": "Tanca el formulari",
     "visibility": "Publicat",
     "publishOnSave": "En desar, el projecte i el seu contingut seran públics.",
-    "draftOnSave": "En desar, el projecte serà privat. Només tu el podràs veure."
+    "draftOnSave": "En desar, el projecte serà privat. Només tu el podràs veure.",
+    "imageUploadFailed": "No s’ha pogut pujar una imatge. El projecte continua sent privat. Revisa els fitxers seleccionats i torna a intentar desar.",
+    "draftRetained": "S’ha desat un esborrany privat. Torna-ho a intentar aquí per continuar amb el mateix projecte. En tancar es conserven l’esborrany i les imatges desades, però es descarten els fitxers locals que encara no s’han pujat."
   },
   "ProjectInformation": {
     "title": "Informació del projecte",

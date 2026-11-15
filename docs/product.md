@@ -319,3 +319,28 @@ is pending; lifecycle and hidden semantics remain awaiting confirmation.
 The owner requested larger Description and Objectives subheadings in the
 information modal. Both use 24px text at all viewport sizes, retaining the
 existing script typeface and heading semantics. Visual review is pending.
+
+### Images during project creation - 2026-11-15
+
+The owner accepted the creation-image staging proposal in ADR 0002.
+Creation now accepts images in description and objectives before the
+project exists. Files/previews remain local until Create, with 8 MiB per
+file and a 32 MiB shared file budget across both fields. Files retained
+for undo count against that session budget; decoded browser memory may
+be greater. Closing before saving creates no project or asset.
+
+Saving first creates a private draft, uploads referenced files one at a
+time and saves successful references privately before applying requested
+publication. A stable attempt ID prevents duplicate draft creation after
+a lost initial response. If an upload fails, the form retains text, files,
+the private draft and known successful asset IDs for retry on that same
+project. It also saves successful image references to the draft where
+possible. Closing after failure discards remaining local files but keeps
+the draft and saved images; the UI explains this. Saving finishes on the
+project route without automatically opening another modal.
+
+Existing project editing retains immediate uploads followed by explicit
+content saving. Storage remains private with controlled delivery, no new
+dependency or migration, and no automatic orphan cleanup. The multipart
+reader now preserves browser boundary case so ordinary browser uploads
+are parsed correctly. Visual acceptance remains pending.

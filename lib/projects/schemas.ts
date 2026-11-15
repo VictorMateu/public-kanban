@@ -34,3 +34,17 @@ export type ProjectContentField = keyof ProjectContent;
 export const projectIdentitySchema = z.strictObject({ id: z.uuid(), updated_at: z.iso.datetime({ offset: true }) });
 
 export const projectPublicationSchema = z.enum(["true", "false"]).transform((value) => value === "true");
+
+export const projectFormFieldSchema = z.enum(["name", "slug", "description_content", "objectives_content", "repository_url", "is_published"]);
+export const projectFormStateSchema = z.strictObject({
+  errors: z.partialRecord(projectFormFieldSchema, z.enum(["required", "invalid", "tooLong"])).optional(),
+  error: z.enum(["unauthorized", "unavailable", "slugTaken", "stale", "invalid", "imageUploadFailed"]).optional(),
+});
+export const projectDraftResultSchema = z.discriminatedUnion("success", [
+  z.strictObject({ success: z.literal(true), project: projectIdentitySchema.extend({ slug: projectDetailsSchema.shape.slug }) }),
+  z.strictObject({ success: z.literal(false), state: projectFormStateSchema }),
+]);
+export type ProjectIdentity = z.infer<typeof projectIdentitySchema>;
+export type ProjectDraftResult = z.infer<typeof projectDraftResultSchema>;
+export type ProjectFormField = z.infer<typeof projectFormFieldSchema>;
+export type ProjectFormState = z.infer<typeof projectFormStateSchema>;
