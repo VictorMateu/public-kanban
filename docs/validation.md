@@ -766,3 +766,29 @@ database/HTTP fixture suites were not rerun for this presentation change.
 These checks are not physical-device, screen-reader or cross-browser
 validation. Exact styling remains WIP pending owner visual review. The
 local review URL remains http://127.0.0.1:3015/projects.
+
+
+## Responsive project creation action - 2026-11-15
+
+The owner requested the creation button beside the introduction on large
+screens and at full content width below it on small screens.
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips.
+- npm run build: passed with process-local public local Supabase configuration.
+
+The focused ad hoc check ran as
+`node "$env:TEMP/project-garden-responsive-header-check.cjs"` in
+headless Edge with an isolated context and the existing local administrator.
+Assertions passed at widths 1,440, 1,024, 900, 768, 640, 390 and 320px:
+the action aligns beside the description from 1,024px, fills the content
+width below that breakpoint, and causes no horizontal page overflow.
+Screenshots at 1,440px and 390px were inspected. Keyboard modal opening,
+initial heading focus, Escape dismissal and opener focus restoration passed.
+The anonymous header was checked at 1,440px and 390px without management
+controls or overflow. No users, records or migrations were created.
+
+This focused review does not repeat the full editor/save integration suite
+or constitute cross-browser, physical-device or screen-reader validation.
+The layout remains WIP pending owner visual review.

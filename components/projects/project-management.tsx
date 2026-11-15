@@ -15,8 +15,8 @@ function FormLoading() {
 const ProjectForm = dynamic(() => import("./project-form").then((module) => module.ProjectForm), { loading: FormLoading });
 const PublicationForm = dynamic(() => import("./project-form").then((module) => module.PublicationForm));
 
-export function ProjectManagement({ project = null, initiallyOpen = false }: {
-  project?: Project | null; initiallyOpen?: boolean;
+export function ProjectManagement({ project = null, initiallyOpen = false, className = "mt-6", triggerClassName = "" }: {
+  project?: Project | null; initiallyOpen?: boolean; className?: string; triggerClassName?: string;
 }) {
   const t = useTranslations("ProjectForm");
   const [formStatus, setFormStatus] = useState<ProjectFormStatus>({ busy: false, pending: false, canSubmit: false });
@@ -63,9 +63,9 @@ export function ProjectManagement({ project = null, initiallyOpen = false }: {
     }
   }
 
-  return <div className="mt-6 flex w-full justify-end text-left">
+  return <div className={`flex w-full justify-end text-left ${className}`}>
     <button ref={trigger} type="button" aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={() => setOpen(true)}
-      className="project-primary-action">
+      className={`project-primary-action ${triggerClassName}`}>
       {t(project ? "edit" : "newProject")}
     </button>
     <dialog ref={dialog} id={id} aria-labelledby={id + "-heading"} onKeyDown={handleDialogKeyDown} closedby={busy ? "none" : "closerequest"}

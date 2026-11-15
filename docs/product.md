@@ -246,6 +246,9 @@ and styling are a working prototype awaiting owner visual review.
 The owner requested right-aligned actions, a gentle modal entrance, an X
 in the header, a labelled close action at the bottom, and a review of the
 rich-text fields' appearance. Creation/editing buttons now align right.
+The creation button shares the introduction row from 1,024px viewport width;
+below that breakpoint it follows the description and fills the available
+content width, as subsequently requested by the owner.
 The modal keeps its X in the header and Close/Save actions together in a
 fixed footer, with only the form body scrolling. Publication, link and
 image-upload actions also align right where space allows.

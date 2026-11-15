@@ -28,12 +28,14 @@ export async function ProjectList() {
   const administrator = Boolean(await getAdministrator());
   return (
     <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-5 pt-10 pb-16 sm:px-10 sm:pt-14">
-      <div className="max-w-3xl">
+      <div>
         <p className="mb-4 text-sm tracking-widest text-foreground/75 uppercase">{t("eyebrow")}</p>
         <h1 className="text-4xl text-balance sm:text-5xl">{t("projects")}</h1>
-        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-pretty text-foreground/80">{t("introduction")}</p>
+        <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+          <p className="max-w-2xl text-lg leading-relaxed text-pretty text-foreground/80">{t("introduction")}</p>
+          {administrator && <ProjectManagement className="lg:w-auto lg:shrink-0" triggerClassName="w-full lg:w-auto" />}
+        </div>
       </div>
-      {administrator && <ProjectManagement />}
       <section aria-labelledby="projects-heading" className="mt-10">
         <h2 id="projects-heading" className="sr-only">{t(administrator ? "managedProjects" : "publishedProjects")}</h2>
         <p className="mb-6 text-sm text-foreground/80">{t("openProject")}</p>

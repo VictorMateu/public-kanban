@@ -504,7 +504,11 @@ changed by this presentation update.
 
 ProjectManagement now uses a flex dialog with a fixed header and footer;
 only project-dialog-body scrolls. The opening action and footer actions
-align right. The X and bottom Close action share pending-operation guards.
+align right. In the Projects listing, the introduction and creation action
+share a flex row from the lg breakpoint (1,024px); smaller viewports stack
+them with a full-width trigger. ProjectManagement accepts optional wrapper
+and trigger classes, preserving the detail view's existing spacing.
+The X and bottom Close action share pending-operation guards.
 The footer submit button targets ProjectForm by its native form attribute.
 ProjectForm reports a strictly typed busy/pending/canSubmit status, keeping
 editor validity and upload/save guards intact without moving domain logic
