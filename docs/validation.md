@@ -805,6 +805,34 @@ The reason, alternatives, cross-major compatibility risk and removal criteria ar
 
 The historical Gitleaks scan and its synthetic regression fixture remain recorded in the preceding section; the override does not change the scanner, its configuration or that approved exception. No database/HTTP integration suite was rerun against the owner's existing instance. Actual GitHub-hosted execution, CodeQL/Dependency Review availability and required-check configuration remain unverified until an authorized push and hosted run. No commit, push, deployment, Vercel connection, user creation, administrator change or application-data operation was performed. Local validation exercises the installed toolchain but does not guarantee exhaustive cross-major compatibility or absence of unknown vulnerabilities.
 
+## GitHub activation and PR publication — 2026-11-15
+
+The owner explicitly requested commits, push, a PR and GitHub Actions activation. The approved CI/security changes were committed as `c057152` after updating the unpublished branch onto `main`. [PR #5](https://github.com/VictorMateu/public-kanban/pull/5) targets `main` from `ci/security-pipeline`. A concurrent animation PR then advanced `main` to `212ac32`, causing a documentation-only conflict that prevented PR workflows from starting. Merge commit `770cb88` preserves both validation histories and the upstream animation work without rewriting the published branch. No unrelated feature work was added.
+
+### Local validation after integration
+
+- `npm ci --ignore-scripts --no-audit --no-fund` passed with Node.js 24.22.1 / npm 11.19.1 (396 packages). The known ESLint 9.39.5 unsupported-version warning remains unchanged.
+- After merging the newer `main`, `npm run lint`, `npm run typecheck`, `npm test` (48 passing, none skipped), `npm run build` and `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` all passed. The complete audit reported zero vulnerabilities.
+- Local `actionlint -color` passed. ShellCheck is not installed locally; this does not establish a ShellCheck run.
+- Before publication, Gitleaks passed the staged diff and all fetched history (77 commits at that point), with full redaction and only the approved historical fingerprint exception. `git diff origin/main...HEAD --check` passed after integration; no environment files, generated artifacts or unrelated application changes were added by this PR.
+- Local database/HTTP suites were not run against the owner's instance. No browser/UI validation was repeated because this PR does not change the interface; existing visual acceptance is unaffected.
+
+### Remote configuration read-back
+
+| Setting/check | Observed result |
+| --- | --- |
+| Repository permissions | Public repository; current authenticated user has administrator access. |
+| Actions permissions | Enabled, `allowed_actions: selected`, `sha_pinning_required: true`; GitHub-owned actions allowed, verified marketplace actions disabled, additional patterns empty. |
+| Workflow token | Default `read`; workflow creation/approval of PRs disabled. |
+| Dependabot | Vulnerability-alert endpoint enabled; automated security fixes enabled and not paused. The default branch still reports the existing minimatch advisory `GHSA-g3hv-75wg-m249`; it was not dismissed. |
+| Secret scanning | Scanning and push protection already enabled; retained without broad exceptions. |
+| Main ruleset | ID `27306411`, active, no bypass actors; API reports current administrator bypass as `never`. PRs/resolved threads and an up-to-date branch are required; force pushes/deletion blocked. |
+| Required checks | `CI gate` and `Security gate`, each bound to GitHub Actions app ID 15368. |
+| CodeQL merge protection | CodeQL required with both security and alert thresholds set to `all`. Default setup is `not-configured`; advanced analysis comes from the versioned workflow, not a duplicate default setup. |
+| Initial hosted execution at `770cb88` | Both workflows started on the PR. Application checks, full Dependency audit, Dependency review and Secret scan succeeded; both CodeQL language jobs and Database/HTTP checks were still running when inspected. These partial results do not establish successful aggregate gates or the final PR head. |
+
+Initial hosted runs: [CI](https://github.com/VictorMateu/public-kanban/actions/runs/43697957730) and [Security](https://github.com/VictorMateu/public-kanban/actions/runs/43697957724). Settings were read back from GitHub rather than inferred from YAML. Final hosted outcomes, including the current head's aggregate gates, remain pending. Daily security and weekly version updates need the configuration merged to `main`; fork/Dependabot workflow behavior is not yet validated. Automatic merging is disabled. No merge, deployment, Vercel connection, production-secret configuration, remote migration or owner-data operation was performed.
+
 ## Shortened drinking hold and lighter media — 2026-11-14
 
 The owner reported a frozen-looking sip and then requested a smoother, cozy animation without excessive browser work. Before adjustment, a 90-second Chrome observation captured three complete drinks without a permanent playback stall. Decoded stills and the original PNG inputs identified 21 identical sip poses, not a stopped media clock. The adjustment is confined to the drinking asset, its source/duration declaration, HTTP media coverage and documentation. The native player, typing clip, poster, styling, pause/visibility behavior and drink scheduling are unchanged.

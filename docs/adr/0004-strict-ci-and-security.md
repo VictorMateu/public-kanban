@@ -59,6 +59,12 @@ Alternatives were waiting for a compatible stable parser while keeping the audit
 
 This deliberately crosses the upstream declared major range and may introduce parser/lint regressions; local checks cannot establish all-platform or exhaustive API compatibility. A clean script-disabled install, dependency-tree inspection, lint, typecheck, all tests, build and full low-threshold audit validate the exercised paths. Hosted checks remain pending. Remove the override after an owner-reviewed stable upstream update natively supports a patched minimatch version, then regenerate the lockfile and repeat validation. Review the exact pin for future advisories rather than treating it as permanent. See the [maintenance procedure](../development.md#approved-temporary-minimatch-override) and [actual results](../validation.md#approved-minimatch-override--2026-11-14).
 
+## Owner-authorized GitHub activation — 2026-11-15
+
+The owner subsequently requested commits, push, a PR and GitHub Actions activation. PR #5 publishes this policy; no merge or deployment was authorized. Repository settings now restrict execution to GitHub-owned, full-SHA-pinned actions, retain read-only default workflow permissions and disable workflow-created/approved PRs. Dependabot alerts/security-update PRs are enabled; existing secret scanning/push protection remain enabled.
+
+The active main-branch ruleset requires PRs, resolved review threads, an up-to-date branch, both aggregate gates bound to GitHub Actions and CodeQL at all alert/security thresholds. It blocks deletion/force pushes and defines no administrator bypass. This implements the originally accepted protection policy without adding an unavailable second reviewer. Default CodeQL setup stays unconfigured to avoid duplicate analysis alongside the advanced workflow. First hosted runs and default-branch scheduling are distinct from configuration activation; see the [actual status](../validation.md#github-activation-and-pr-publication--2026-11-15).
+
 ## Operational references
 
 - [Development and GitHub activation](../development.md#continuous-integration-and-security)

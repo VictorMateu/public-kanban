@@ -121,7 +121,7 @@ Dependabot checks npm and Actions weekly on Monday at 08:00 Europe/Madrid, openi
 
 ### GitHub activation checklist
 
-After an authorized push/PR makes the workflows available, configure the following. Versioned YAML alone does not enforce branch protection; these settings are not claimed as applied.
+Versioned YAML alone does not enforce branch protection. The owner authorized publication and repository activation on 2026-11-15; the applied settings are recorded below. Retain this checklist for maintenance and outstanding hosted verification.
 
 1. Enable GitHub Actions for the pinned actions; approve first-time contributor runs when required. Keep default token permissions read-only and do not permit workflows to create/approve PRs.
 2. Enable the dependency graph, Dependabot alerts and security-update PRs. Keep automatic merging disabled. Enable secret scanning and push protection where available.
@@ -131,6 +131,19 @@ After an authorized push/PR makes the workflows available, configure the followi
 6. Review changes to workflows, scripts, dependencies and security configuration. This single-owner project does not introduce a mandatory second reviewer unable to approve the owner's own PR. Verify fork/Dependabot PR behavior without adding production credentials.
 
 Feature availability depends on repository visibility/account entitlements. The repository was publicly readable during setup; verify actual owner-account settings. New advisories can fail a scheduled run after a previously green commit; this does not retroactively invalidate a merge or stop a running application. Monitor Actions/Security notifications and re-run checks before merging. Vercel automation and its deployment policy are deferred to a separately confirmed task.
+
+### Activated repository settings — 2026-11-15
+
+The public repository's owner authorized [PR #5](https://github.com/VictorMateu/public-kanban/pull/5) and GitHub configuration. API read-back confirmed:
+
+- Actions is enabled and restricted to GitHub-owned actions; verified marketplace actions and additional patterns are not allowed. Full-SHA pinning is required at repository level as well as in the workflows.
+- The default workflow token remains read-only; workflows cannot create or approve pull requests. Automatic merging remains disabled.
+- Dependabot vulnerability alerts and security-update PRs are enabled. Secret scanning and push protection were already enabled and remain enabled. No existing alert was dismissed.
+- The active [Strict CI and security ruleset](https://github.com/VictorMateu/public-kanban/rules/27306411) targets `main`, requires a PR and resolved review threads, blocks deletion/force pushes, and has no bypass actors (the current administrator cannot bypass it).
+- The ruleset requires an up-to-date branch and both `CI gate` and `Security gate` from the GitHub Actions app (integration ID 15368). It also requires CodeQL with all security and alert thresholds. No second-reviewer requirement was introduced for this single-owner repository.
+- CodeQL default setup is not configured; the PR's advanced workflow runs both language analyses. Initial hosted jobs started after resolving a documentation conflict with a concurrently updated `main`. Final results and both aggregate gates still require verification on the latest PR head.
+
+The dependency graph is available: PR Dependency Review succeeded and the default-branch minimatch advisory is visible in Dependabot. That alert remains open until the patched dependency reaches `main`; the PR's complete audit passes without dismissing it. Daily security and weekly version-update scheduling require merging the workflow/configuration to the default branch. Fork/Dependabot workflow behavior is not yet validated. No merge, deployment, Vercel connection or remote Supabase operation is included in activation. See [the evidence and limitations](validation.md#github-activation-and-pr-publication--2026-11-15).
 
 ## Shared UI colors
 
