@@ -893,3 +893,36 @@ No cross-browser, physical-device or full screen-reader review is claimed.
 The status/is_hidden migration and access semantics are still proposals
 in ADR 0001, not implementation or applied migration. Visual acceptance
 remains pending. The local review server remains at 127.0.0.1:3015.
+
+## Edit inside information and undecorated trigger - 2026-11-15
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 54 passed, no failures or skips.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+The ad hoc isolated headless Edge check ran with
+`node "$env:TEMP/project-garden-information-edit-check.cjs"`. It passed
+at 1440x1000, 390x844 and 320x640: the information trigger has zero border
+and transparent background with a 44px target; visitors have no edit
+control; the administrator sees Edit project only in the information
+footer. Editing keeps the same native dialog, focuses its new heading,
+loads the existing shared form with initial values and keeps keyboard
+focus contained. Escape from the editor restores focus and body scroll.
+Closing and reopening returns to information. Explicit edit=1 opens the
+editor; saved=1 keeps it closed. The mobile footer screenshot was inspected.
+
+The first temporary-script run matched the sidebar illustration instead
+of the information icon; the selector was scoped to main. The subsequent
+browser run detected that reopening could retain editor mode while the
+native close event was pending. Resetting mode synchronously on dismissal
+fixed the issue; the final complete browser run passed. Two exact temporary
+project fixtures were cleaned and before/after project, asset, column,
+task, user and administrator counts matched. No users or migrations were
+created. Anonymous private-project access still returned 404.
+
+This adjustment did not rerun the full HTTP integration suite. No full
+screen-reader, physical-device or cross-browser review is claimed. The
+working appearance remains pending owner acceptance, and status/hidden
+semantics remain proposals. Local review stays at 127.0.0.1:3015.

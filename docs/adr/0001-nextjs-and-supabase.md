@@ -195,3 +195,15 @@ both publication/hidden combinations, anonymous and administrator reads,
 HTML/RSC/metadata and image routes, optimistic updates and preservation of
 existing rows/users. Apply only the confirmed non-destructive local
 migration; remote operations remain separately authorized.
+
+## Information modal edit action refinement - 2026-11-15
+
+The owner moved Edit project from the title row into the information
+modal footer and removed the information trigger's border/background.
+Editing replaces the information content in the same native dialog,
+using the existing shared ProjectForm and its server action. This avoids
+stacked dialogs and keeps one focus/scroll boundary. Closing resets the
+mode; reopening the icon shows information. The title change refocuses
+the heading, and explicit edit=1 links retain administrator-only direct
+editor entry. This supersedes the placement beside the title described
+above; visual acceptance remains pending. No data/access decision changes.

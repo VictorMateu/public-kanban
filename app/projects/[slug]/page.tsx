@@ -6,7 +6,6 @@ import { getTranslations } from "next-intl/server";
 import { readRichText, richTextToPlainText } from "../../../lib/projects/rich-text";
 import { ProjectBoard } from "../../../components/projects/project-board";
 import { getAdministrator } from "../../../lib/auth/server";
-import { ProjectManagement } from "../../../components/projects/project-management";
 import { ProjectInformation } from "../../../components/projects/project-information";
 import { RichTextContent } from "../../../components/projects/rich-text-content";
 import { getManagedProjectBySlug, getPublishedProjectBySlug } from "../../../lib/projects/queries";
@@ -58,7 +57,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <h1 className="min-w-0 text-3xl wrap-anywhere sm:text-4xl">{project.name}</h1>
-          <ProjectInformation>
+          <ProjectInformation key={project.updated_at} project={administrator ? project : undefined} initiallyEditing={administrator && edit === "1"}>
             <div className="space-y-6">
               <p className="text-2xl wrap-anywhere">{project.name}</p>
               {project.description_content || project.description ? <section><h3 className="mb-3 text-xl">{information("description")}</h3><RichTextContent preview={administrator} document={readRichText(project.description_content, project.description)} /></section> : null}
@@ -70,7 +69,6 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         </div>
         {administrator && <div className="flex flex-wrap items-center justify-end gap-3">
           <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form(project.is_published ? "published" : "draft")}</span>
-          <ProjectManagement key={project.updated_at} project={project} initiallyOpen={edit === "1"} className="w-auto" />
         </div>}
       </div>
       {administrator && saved === "1" && <p role="status" className="sr-only">{form("saved")}</p>}

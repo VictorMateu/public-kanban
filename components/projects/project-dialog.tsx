@@ -24,7 +24,7 @@ export function ProjectDialog({ id, title, closeLabel, open, busy = false, onClo
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previousOverflow; };
-  }, [open, triggerRef]);
+  }, [open, title, triggerRef]);
 
   function handleDialogKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
     if (event.key !== "Tab" || event.defaultPrevented) return;

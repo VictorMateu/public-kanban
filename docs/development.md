@@ -583,3 +583,14 @@ The existing CSS animation and reduced-motion treatment apply to both.
 The Read only badge is no longer rendered. No dependency or database
 change is introduced. Requested status/is_hidden fields remain a proposal
 in ADR 0001 until the owner confirms their data/access semantics.
+
+## Information modal editing refinement - 2026-11-15
+
+ProjectInformation receives editable project values only for the verified
+administrator. Its footer switches the existing ProjectDialog from
+server-rendered information to the lazily loaded shared ProjectForm.
+Submission/busy status uses ProjectFormStatus and the same server action,
+validation and authorization as creation/editing elsewhere. Title changes
+refocus the dialog heading; closing resets the editor mode/status and
+restores focus to the information icon. There is no nested dialog. The
+icon uses an undecorated 44px button with an accessible name/focus ring.

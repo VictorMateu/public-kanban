@@ -303,3 +303,15 @@ the default status for existing projects require confirmation. ADR 0001
 contains the concrete migration/access proposal. The currently implemented
 visibility model still has only is_published. The creation-image staging
 proposal remains pending and is not included in this UI adjustment.
+
+### Information modal edit action refinement - 2026-11-15
+
+The owner moved Edit project into the information modal footer. The title
+row now contains the information icon and administrator visibility badge,
+without an external edit button. The icon has no border or background,
+while retaining a 44px target, accessible name and visible keyboard focus.
+For the verified administrator, Edit project switches the same dialog to
+the existing shared form; no second modal is stacked. Closing and reopening
+returns to information. Explicit edit=1 entry and save redirects remain.
+This supersedes the earlier placement beside the title. Visual acceptance
+is pending; lifecycle and hidden semantics remain awaiting confirmation.
