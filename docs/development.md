@@ -14,6 +14,7 @@
 | Tailwind CSS / @tailwindcss/postcss | 4.3.3 |
 | PostCSS | 8.5.31 |
 | ESLint | 9.39.5 |
+| parse5 (test-only development dependency) | 8.1.1 |
 | @supabase/supabase-js | 2.118.0 |
 | @supabase/ssr | 0.12.7 |
 | server-only | 0.0.1 |
@@ -36,6 +37,8 @@ npm start
 ```
 
 `dev` serves the application at `http://localhost:3000`. `typecheck` runs `next typegen` followed by `tsc --noEmit`; it works before the first build. Lint runs separately from the build. `start` requires an existing build. Application tests use the Node.js 24 test runner without an additional framework.
+
+The owner approved `parse5@8.1.1` solely for HTTP-test inspection. `tests/helpers/html.ts` parses server markup, excludes script/style/template payloads and comments from the inspection copy, and reads decoded text while ignoring `aria-hidden="true"` decoration. Both HTTP suites retain the original response separately for private-data and React-payload assertions. The helper is not a sanitizer, a browser renderer or production code; it does not execute scripts or evaluate CSS visibility. Do not reuse it to make untrusted content safe for rendering. Parser regressions cover malformed script endings, comments, escaped owner content, nested hidden decorations, catalog-only payloads and entity semantics. The dependency and its transitive `entities` package are locked as development-only and included in the full blocking audit.
 
 The application builds without Supabase configuration and does not query the database during compilation. After changing `NEXT_PUBLIC_*` variables, restart `dev` and rebuild before using `start`: those variables are incorporated into the browser bundle at build time.
 

@@ -855,6 +855,28 @@ The concrete proposal is to add exactly `parse5@8.1.1` as a development dependen
 
 Alternatives are a custom HTML tokenizer or a narrowly reviewed scanner exception. The former adds avoidable parsing/maintenance risk; the latter leaves brittle assertions in place. Neither is recommended. Dependency adoption requires the owner's explicit confirmation under repository instructions, so no parser, lockfile change or implementation has been applied for this proposal. If approved, validation will include parser regressions, lint, typecheck, all application tests, build, full low-threshold dependency audit and fresh hosted HTTP/CodeQL checks. Earlier local checks remain historical evidence, not validation of this unapplied proposal.
 
+## Owner-approved test-only HTML parser — 2026-11-15
+
+The owner subsequently approved adding the dependency proposed above. That explicit decision supersedes the historical pending-approval state. `parse5` is pinned to `8.1.1` in `devDependencies`; npm added only its `entities@9.0.0` transitive package to the generated lockfile. Existing dependency versions, the minimatch override, production code, workflows, security thresholds and Supabase files are unchanged.
+
+Both HTTP suites now use `tests/helpers/html.ts` rather than regex removal of scripts, comments, tags or hidden spans. The helper parses before inspecting, preserves the original response, and never executes scripts. The inspection serialization omits script/style/template payloads and comments; decoded-text inspection ignores hidden decorative spans so labels cannot be satisfied by their arrows or SVG titles. Original HTML/React-payload leakage and escaped-owner-content assertions remain independent. This helper is test instrumentation, not a production HTML sanitizer or a full browser visibility model. [ADR 0004](adr/0004-strict-ci-and-security.md#owner-approved-test-only-html-parser--2026-11-15) records the accepted dependency choice, alternatives and consequences.
+
+| Local command/check | Actual result |
+| --- | --- |
+| `npm install --package-lock-only --ignore-scripts --no-audit --no-fund` | Passed; existing pins preserved, exactly two development package entries added. |
+| `npm ci --ignore-scripts --no-audit --no-fund` | Passed; 398 packages installed with lifecycle scripts disabled. The known ESLint unsupported-version warning remains. |
+| `npm ls parse5 entities --all` | Passed: parse5 8.1.1 resolves entities 9.0.0. |
+| `node --test tests/html.test.ts` | Seven parser regressions passed: script non-execution/exclusion, mixed-case and malformed script endings, comment handling, escaped owner content, nested hidden link/icon decoration, payload-only catalogs, and entity/quoted-attribute semantics. |
+| `npm run lint` / `npm run typecheck` | Passed without lint warnings; route generation and strict TypeScript passed. |
+| `npm test` | All 55 tests passed, none skipped. |
+| `npm run build` | Production build passed. |
+| `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` | Passed: zero reported vulnerabilities, including both new development packages. No finding exclusion or severity waiver. |
+| `KANBAN_TEST_URL=http://127.0.0.1:3017 node --test tests/i18n-http.test.mjs` | Against a temporary loopback production server, eight HTTP cases passed and one invalid-sign-in-feedback case was explicitly skipped because local Supabase configuration is absent. Locale rendering, native language submission, shared layout, metadata and media/range assertions passed with the parsed inspection copy. The temporary server was stopped afterwards. |
+| `node --check tests/public-http.test.mjs` / `actionlint -color` | Passed. ShellCheck was not available locally. |
+| `git diff --check` / `git diff --exit-code -- supabase .github scripts/ci/check-codeql.ts` | Passed: no whitespace errors or changes to database files, workflows or the strict SARIF gate. |
+
+No local database-backed fixtures or owner-data operations were performed. Fresh hosted database/HTTP, CodeQL and aggregate-gate results remain pending for the parser change; earlier passing runs do not establish its hosted outcome. No browser/visual pass, merge, deployment or Vercel connection was performed.
+
 ## Shortened drinking hold and lighter media — 2026-11-14
 
 The owner reported a frozen-looking sip and then requested a smoother, cozy animation without excessive browser work. Before adjustment, a 90-second Chrome observation captured three complete drinks without a permanent playback stall. Decoded stills and the original PNG inputs identified 21 identical sip poses, not a stopped media clock. The adjustment is confined to the drinking asset, its source/duration declaration, HTTP media coverage and documentation. The native player, typing clip, poster, styling, pause/visibility behavior and drink scheduling are unchanged.

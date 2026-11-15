@@ -65,6 +65,12 @@ The owner subsequently requested commits, push, a PR and GitHub Actions activati
 
 The active main-branch ruleset requires PRs, resolved review threads, an up-to-date branch, both aggregate gates bound to GitHub Actions and CodeQL at all alert/security thresholds. It blocks deletion/force pushes and defines no administrator bypass. This implements the originally accepted protection policy without adding an unavailable second reviewer. Default CodeQL setup stays unconfigured to avoid duplicate analysis alongside the advanced workflow. First hosted runs and default-branch scheduling are distinct from configuration activation; see the [actual status](../validation.md#github-activation-and-pr-publication--2026-11-15).
 
+## Owner-approved test-only HTML parser — 2026-11-15
+
+After the first hosted analyses identified ten results in HTTP-test HTML filters, the owner explicitly approved adding the proposed dependency. The project uses exactly `parse5@8.1.1` as a development dependency, with its npm-locked `entities@9.0.0` dependency, instead of hand-written tag/script/comment-removal regexes. The shared test helper inspects parsed server markup and decoded text; original response strings remain available for independent private-data and React-payload assertions. No application code imports the parser, executes parsed scripts or uses this helper as a security sanitizer.
+
+Alternatives were maintaining a custom tokenizer or approving scanner exclusions. A maintained HTML parser was selected to address malformed/nested markup and assertion reliability without weakening the all-results CodeQL policy. The consequences are two additional development packages, ongoing dependency review and browser-compatible serialization/entity behavior in tests. Parser regressions and HTTP checks validate that interpretation; parser tests are not visual/browser verification. Full dependency audit, required gates and database-fixture restrictions remain unchanged. See the [validation evidence](../validation.md#owner-approved-test-only-html-parser--2026-11-15).
+
 ## Operational references
 
 - [Development and GitHub activation](../development.md#continuous-integration-and-security)
