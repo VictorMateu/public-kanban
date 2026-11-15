@@ -51,13 +51,36 @@ export function checkCodeqlDirectory(directory: string): number {
   }, 0);
 }
 
+export function codeqlFindingLocations(directory: string): string[] {
+  return readdirSync(directory).filter(name => name.endsWith(".sarif")).flatMap(name => {
+    const report: unknown = JSON.parse(readFileSync(join(directory, name), "utf8"));
+    countCodeqlAlerts(report);
+    const analysis = report as { runs: { results: Record<string, unknown>[] }[] };
+    return analysis.runs.flatMap(run => run.results.map(result => {
+      const locations = Array.isArray(result.locations) ? result.locations : [];
+      const location = isRecord(locations[0]) ? locations[0].physicalLocation : undefined;
+      const physicalLocation = isRecord(location) ? location : {};
+      const artifact = isRecord(physicalLocation.artifactLocation) ? physicalLocation.artifactLocation : {};
+      const region = isRecord(physicalLocation.region) ? physicalLocation.region : {};
+      return JSON.stringify({
+        rule: typeof result.ruleId === "string" ? result.ruleId : "unknown",
+        file: typeof artifact.uri === "string" ? artifact.uri : "unknown",
+        line: typeof region.startLine === "number" ? region.startLine : null,
+      });
+    }));
+  });
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   try {
     const directory = process.argv[2];
     if (!directory || process.argv.length !== 3) throw new Error("A report directory is required.");
     const alerts = checkCodeqlDirectory(directory);
     console.log(`CodeQL gate: ${alerts} finding(s).`);
-    if (alerts > 0) process.exitCode = 1;
+    if (alerts > 0) {
+      for (const location of codeqlFindingLocations(directory)) console.error(`CodeQL finding location: ${location}`);
+      process.exitCode = 1;
+    }
   } catch {
     console.error("CodeQL gate failed: missing, malformed or unsuccessful analysis; report content is not logged.");
     process.exitCode = 1;

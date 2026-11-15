@@ -182,12 +182,14 @@ test("public project pages use real local data and preserve existing users", asy
     assert.equal(population(), before, "Fixtures should be removed and existing data and users preserved");
   }
 
-  await context.test("keeps the initial screen blank after fixture cleanup", {
-    skip: JSON.parse(before)[0] !== 0,
-  }, async () => {
+  await context.test("keeps overview metrics pending after fixture cleanup", async () => {
     const result = await page("/");
     assert.equal(result.status, 200);
-    assert.match(result.renderedHtml, /<main\b[^>]*>\s*<\/main>/);
+    const main = result.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1];
+    assert.ok(main, "The overview should retain its main landmark after cleanup");
+    assert.equal((main.match(/<dd\b/g) ?? []).length, 8);
+    assert.equal((main.match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8);
+    for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "Cleaned fixtures must not appear in HTML or React payloads");
     assert.ok(!result.renderedHtml.includes("No published projects yet"));
   });
 

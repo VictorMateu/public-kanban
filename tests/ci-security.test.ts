@@ -80,6 +80,22 @@ test("CodeQL CLI fails closed without disclosing raw reports", () => {
     assert.equal(execute().status, 1);
 
     const privateMarker = "private-fixture-value-do-not-log";
+    writeFileSync(join(directory, "actions.sarif"), JSON.stringify(report([{
+      ruleId: "js/bad-tag-filter",
+      level: "warning",
+      message: { text: privateMarker },
+      locations: [{ physicalLocation: {
+        artifactLocation: { uri: "tests/fixture.mjs" },
+        region: { startLine: 12, snippet: { text: privateMarker } },
+      } }],
+      codeFlows: [{ privateMarker }],
+    }])));
+    const findings = execute();
+    assert.equal(findings.status, 1);
+    assert.ok(findings.stderr.includes('"rule":"js/bad-tag-filter"'));
+    assert.ok(findings.stderr.includes('"file":"tests/fixture.mjs","line":12'));
+    assert.ok(!(findings.stdout + findings.stderr).includes(privateMarker));
+
     writeFileSync(join(directory, "actions.sarif"), privateMarker + "{");
     const failed = execute();
     assert.equal(failed.status, 1);
