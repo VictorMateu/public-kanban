@@ -877,6 +877,21 @@ Both HTTP suites now use `tests/helpers/html.ts` rather than regex removal of sc
 
 No local database-backed fixtures or owner-data operations were performed. Fresh hosted database/HTTP, CodeQL and aggregate-gate results remain pending for the parser change; earlier passing runs do not establish its hosted outcome. No browser/visual pass, merge, deployment or Vercel connection was performed.
 
+## Successful hosted parser verification — 2026-11-15
+
+GitHub's completed results were inspected for PR #5 at exact head `b1750dbc24f1251946c9c8b6e90a772fc935d38b`. All ten check runs succeeded, including required `CI gate` and `Security gate`; the PR was open, mergeable and `CLEAN` when inspected. This is actual GitHub-hosted evidence for the parser correction, superseding the preceding pending-run state without erasing earlier failures.
+
+| Hosted control | Verified result |
+| --- | --- |
+| [CI workflow](https://github.com/VictorMateu/public-kanban/actions/runs/43700237126) | Successful Application checks, Database and HTTP checks and CI gate. |
+| Disposable Supabase | Migration/policy step passed; database lint reported no schema errors; pgTAP passed all 53 assertions; cleanup succeeded. No owner's instance was used. |
+| Production HTTP integration | All 22 tests passed, zero failed and zero skipped. The Supabase-dependent sign-in-feedback case ran here, unlike its explicitly skipped local run. |
+| [Security workflow](https://github.com/VictorMateu/public-kanban/actions/runs/43700237119) | Successful dependency audit, Dependency Review, Secret scan, both CodeQL languages and Security gate. |
+| CodeQL local SARIF gates | JavaScript/TypeScript and Actions each logged `CodeQL gate: 0 finding(s).` The earlier ten test-filter results are resolved without exclusions, severity changes or an existing-alert baseline. |
+| Additional code-scanning check | GitHub's CodeQL check also succeeded; this alone was not substituted for the strict SARIF gate. |
+
+This evidence is pinned to the tested code commit; later commits, including this documentation-only record, still require their own required checks. No application/dependency/workflow change accompanies this evidence update, so the already-recorded local checks were not repeated solely for prose. Daily security and weekly version updates remain conditional on merging to the default branch. Fork/Dependabot PR behavior, future advisory changes and browser/visual acceptance remain outside these assertions. No merge, automatic merge, deployment or Vercel connection was performed.
+
 ## Shortened drinking hold and lighter media — 2026-11-14
 
 The owner reported a frozen-looking sip and then requested a smoother, cozy animation without excessive browser work. Before adjustment, a 90-second Chrome observation captured three complete drinks without a permanent playback stall. Decoded stills and the original PNG inputs identified 21 identical sip poses, not a stopped media clock. The adjustment is confined to the drinking asset, its source/duration declaration, HTTP media coverage and documentation. The native player, typing clip, poster, styling, pause/visibility behavior and drink scheduling are unchanged.
