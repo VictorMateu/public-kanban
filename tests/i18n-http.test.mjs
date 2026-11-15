@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { htmlText, serverMarkup } from "./helpers/html.ts";
 
 const origin = new URL(process.env.KANBAN_TEST_URL ?? "http://127.0.0.1:3000");
 if (
@@ -26,7 +27,7 @@ function hasProjectNotFoundHeading(html, title) {
 async function page(path, headers = {}) {
   const response = await fetch(new URL(path, origin), { headers, redirect: "manual" });
   const html = await response.text();
-  return { response, html, renderedHtml: html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "") };
+  return { response, html, renderedHtml: serverMarkup(html) };
 }
 
 function assertSharedLayout(html) {
@@ -49,15 +50,15 @@ for (const locale of ["en", "es", "ca"]) {
     assert.ok(home.html.includes(`name="description" content="${catalogs[locale].Metadata.description.replaceAll("'", "&#x27;")}"`));
     const main = home.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/);
     assert.ok(main, "The overview should have a main landmark");
-    const text = value => value.replaceAll("'", "&#x27;");
-    assert.ok(main[1].includes(text(catalogs[locale].Overview.title)));
-    assert.ok(main[1].includes(text(catalogs[locale].Overview.description)));
+    const mainText = htmlText(main[1]);
+    assert.ok(mainText.includes(catalogs[locale].Overview.title));
+    assert.ok(mainText.includes(catalogs[locale].Overview.description));
     assert.match(main[1], /href="https:\/\/victormateulopez\.com"/);
     assert.equal((main[1].match(/<dd\b/g) ?? []).length, 8, "The overview contains four project and four task metrics");
     assert.equal((main[1].match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8, "Pending metrics must never be rendered as zero");
-    assert.ok(main[1].includes(text(catalogs[locale].Overview.pendingValue)));
-    assert.ok(main[1].includes(text(catalogs[locale].Overview.taskActivityMonths)));
-    assert.ok(main[1].includes(text(catalogs[locale].Overview.pending)));
+    assert.ok(mainText.includes(catalogs[locale].Overview.pendingValue));
+    assert.ok(mainText.includes(catalogs[locale].Overview.taskActivityMonths));
+    assert.ok(mainText.includes(catalogs[locale].Overview.pending));
     assert.doesNotMatch(main[1], /<video\b|<canvas\b/, "The provisional overview must not render media or a simulated chart");
     assert.ok(home.renderedHtml.includes(`aria-label="${catalogs[locale].Common.mainContent}"`));
     assert.equal((home.renderedHtml.match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);
@@ -69,7 +70,7 @@ for (const locale of ["en", "es", "ca"]) {
     assert.ok(disclosure, "The mobile menu must start collapsed and identify its panel");
     const disclosureContent = sidebar.slice(sidebar.indexOf(disclosure[0]) + disclosure[0].length).split("</button>")[0];
     assert.match(disclosureContent, /<svg\b[^>]*aria-hidden="true"/);
-    assert.equal(disclosureContent.replace(/<[^>]+>/g, "").trim(), "", "The mobile toggle uses an icon without a visible Menu label");
+    assert.equal(htmlText(disclosureContent).trim(), "", "The mobile toggle uses an icon without a visible Menu label");
     assert.ok(disclosure[0].includes(`aria-label="${catalogs[locale].Navigation.openMenu}"`));
     assert.ok(sidebar.includes(`id="${disclosure[1]}" data-open="false"`));
     assert.doesNotMatch(sidebar, /<video\b|<img\b[^>]*src="[^"]*illustrations\//, "Initial HTML must not load decorative media before the desktop viewport is known");
@@ -96,7 +97,7 @@ for (const locale of ["en", "es", "ca"]) {
     assert.doesNotMatch(login.renderedHtml, /aria-current="page"/);
     assert.equal((login.renderedHtml.match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);
     assert.ok(login.html.includes(`<html lang="${locale}"`));
-    if (login.renderedHtml.includes(catalogs[locale].Auth.notConfigured.replaceAll("'", "&#x27;"))) {
+    if (htmlText(login.renderedHtml).includes(catalogs[locale].Auth.notConfigured)) {
       assert.doesNotMatch(login.renderedHtml, /name="(email|password)"/);
     } else {
       assert.ok(login.renderedHtml.includes(catalogs[locale].Auth.email));
@@ -221,8 +222,8 @@ test("invalid sign-in feedback is localized without creating users or granting a
       method: "POST", headers: { ...headers, Origin: origin.origin }, body, redirect: "manual",
     });
     assert.equal(response.status, 200);
-    const html = (await response.text()).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
-    assert.ok(decode(html).includes(catalogs[locale].Auth.invalidCredentials));
+    const feedback = htmlText(await response.text());
+    assert.ok(feedback.includes(catalogs[locale].Auth.invalidCredentials));
     assert.ok(!response.headers.getSetCookie().some(cookie => cookie.startsWith("sb-")));
     assert.equal((await page("/admin", headers)).response.status, 307);
   }

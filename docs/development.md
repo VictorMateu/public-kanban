@@ -14,6 +14,7 @@
 | Tailwind CSS / @tailwindcss/postcss | 4.3.3 |
 | PostCSS | 8.5.31 |
 | ESLint | 9.39.5 |
+| parse5 (test-only development dependency) | 8.1.1 |
 | @supabase/supabase-js | 2.118.0 |
 | @supabase/ssr | 0.12.7 |
 | server-only | 0.0.1 |
@@ -37,7 +38,115 @@ npm start
 
 `dev` serves the application at `http://localhost:3000`. `typecheck` runs `next typegen` followed by `tsc --noEmit`; it works before the first build. Lint runs separately from the build. `start` requires an existing build. Application tests use the Node.js 24 test runner without an additional framework.
 
+The owner approved `parse5@8.1.1` solely for HTTP-test inspection. `tests/helpers/html.ts` parses server markup, excludes script/style/template payloads and comments from the inspection copy, and reads decoded text while ignoring `aria-hidden="true"` decoration. Both HTTP suites retain the original response separately for private-data and React-payload assertions. The helper is not a sanitizer, a browser renderer or production code; it does not execute scripts or evaluate CSS visibility. Do not reuse it to make untrusted content safe for rendering. Parser regressions cover malformed script endings, comments, escaped owner content, nested hidden decorations, catalog-only payloads and entity semantics. The dependency and its transitive `entities` package are locked as development-only and included in the full blocking audit.
+
 The application builds without Supabase configuration and does not query the database during compilation. After changing `NEXT_PUBLIC_*` variables, restart `dev` and rebuild before using `start`: those variables are incorporated into the browser bundle at build time.
+
+## Continuous integration and security
+
+The owner approved [ADR 0004](adr/0004-strict-ci-and-security.md). These workflows validate only: they do not deploy, connect a remote Supabase project or use Vercel credentials. Hosted activation and actual run evidence remain separate from the [local validation record](validation.md#strict-ci-and-security-pipeline--2026-11-14).
+
+### Triggers and required checks
+
+- `.github/workflows/ci.yml` runs on all pull requests, pushes to `main`, merge groups and manual dispatch, without path filters.
+- `.github/workflows/security.yml` adds a daily 04:23 UTC security run. The scheduled workflow must first exist on the default branch. Scheduling is best effort, not an immediate notification guarantee.
+- Superseded workflow/ref runs are cancelled; jobs have explicit timeouts.
+- Require the stable `CI gate` and `Security gate` checks. They execute after upstream failures and reject failed, cancelled or unexpectedly skipped jobs. Dependency Review is intentionally skipped outside pull requests; the full audit still runs.
+
+The application job verifies npm 11.19.1, installs with `npm ci --ignore-scripts --no-audit --no-fund`, then runs `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`. Node.js 24.22.1 bundles that npm version. Engine mismatches fail the application jobs. Lifecycle scripts and automatic dependency caches are disabled; a future package requiring an installation script needs an explicit reviewed policy change, not global removal of the restriction.
+
+### Disposable database and HTTP integration
+
+The integration job requires a fresh GitHub-hosted Ubuntu 24.04 runner and refuses an existing `supabase_db_portfolio-kanban` container. Do not run it through a local runner or against an owner's instance.
+
+It installs checksum-verified Supabase CLI 2.122.0, starts a new local instance with the versioned configuration/migrations, then runs:
+
+```sh
+supabase migration up --local
+supabase db lint --local --fail-on warning
+supabase test db --local
+npm run build
+npm run test:public
+```
+
+The SQL suite is authorized to insert its two fixed test users and temporary administrator registry only in this disposable CI database; its transaction is rolled back. This is not permission to create users or change authorization in existing local/remote instances. The HTTP suite creates identifiable project/column/task fixtures and cleans up only their specific UUIDs. Public registration remains disabled.
+
+Only the validated loopback API URL and new-format publishable key are exported to the build. Raw Supabase start/status/stop output stays in ephemeral runner-local files because it includes privileged credentials; the public key is masked. No raw status, environment dump or credential-bearing logs are uploaded. Production HTTP tests use `127.0.0.1` and bounded readiness checks. The server is terminated on exit, Supabase stop is attempted after failure, and GitHub discards the runner/resources. No reset, linked migration or remote operation is used.
+
+### Blocking security policy
+
+| Control | Policy |
+| --- | --- |
+| npm audit | `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` includes development and transitive dependencies. Low-or-higher advisories and audit errors fail. No automatic fix or severity waiver. |
+| Dependency Review | PRs fail on newly introduced low-or-higher vulnerabilities in runtime, development or unknown scopes. No license allowlist policy was approved, so license checks are disabled. No PR comments or PR-write permissions. |
+| CodeQL | JavaScript/TypeScript and GitHub Actions use `security-extended`. No project build or dependency install runs in this privileged scanning job. Results are uploaded to code scanning, then the local SARIF gate blocks every returned alert, including notes, existing alerts and suppressed results still emitted. |
+| SARIF gate | `scripts/ci/check-codeql.ts` rejects missing/malformed reports, empty run collections, non-CodeQL runs and reported analysis failures. Every result in every report counts. On findings it logs only rule IDs, file locations and line numbers, never messages, snippets or code-flow content. Tests cover parser failures, alert policy, CLI exit status and non-disclosure. The analyzer action must also succeed. |
+| Gitleaks | Checksum-pinned CLI 8.30.1 scans all fetched Git history with built-in rules and full redaction. Inline `gitleaks:allow` comments are ignored. Findings and scanner errors fail. The job refuses root `.gitleaks.toml` overrides and requires the reviewed `.gitleaksignore` containing only the owner-approved historical fingerprint below. No baseline or broad rule/path exclusion is used. |
+
+These tools detect known advisories/patterns, not every vulnerability or secret. CodeQL blocks findings emitted by the selected query suite, not vulnerabilities beyond its analysis. Confirmed false positives still need owner approval for a narrow exception. Do not lower thresholds, add broad exclusions, rewrite history or use `continue-on-error` to obtain a green check. Existing blockers remain recorded in validation until resolved.
+
+### Approved historical false positive
+
+The owner approved continuing with the exact historical exception identified during initial validation. `.gitleaksignore` contains only:
+
+```text
+9ce4e58f4a3b72e5da4fc2f76ae79472f51d82e6:docs/validation.md:generic-api-key:137
+```
+
+That immutable commit/file/rule/line fingerprint identifies ordinary documentation prose, not a credential. It does not exempt the file, the rule, other commits or new matches at that line. A temporary synthetic fixture at the same relative path and line still failed scanning both with and without this ignore file. The full fetched-history scan passes with the single exception. New exceptions still require owner review and explicit approval; do not replace it with a baseline, regex or directory exclusion. [ADR 0004](adr/0004-strict-ci-and-security.md#subsequent-owner-approved-false-positive-correction--2026-11-14) records this limited amendment.
+
+### Approved temporary minimatch override
+
+On 2026-11-14, the owner explicitly approved a temporary compatibility override to remediate `GHSA-g3hv-75wg-m249` in development tooling. Registry inspection found that stable `typescript-eslint@8.72.2` / `@typescript-eslint/typescript-estree@8.72.2` still depend on `minimatch ^10.2.2`, while the advisory's patched version is `11.0.1`. A compatible-range audit fix preview made no changes and retained seven affected packages from that one advisory.
+
+The root `package.json` now overrides `minimatch` to exactly `11.0.1` only beneath `@typescript-eslint/typescript-estree`; npm generated the corresponding `package-lock.json`. Direct dependency pins and unrelated minimatch copies remain unchanged. The override crosses the parent's declared major-version range, so upstream compatibility is not guaranteed. Node.js 24 satisfies the patched package's engine requirement. This is a temporary development-tooling mitigation, not an application-stack upgrade or a vulnerability waiver.
+
+The scoped override was chosen instead of waiting with a known advisory, adopting a parser prerelease, forcing a broad upgrade or weakening the low-severity gate. Validate it with a clean script-disabled install, lint, typecheck, all tests, production build and the full low-threshold audit; see the [recorded results](validation.md#approved-minimatch-override--2026-11-14). These checks exercise the installed tooling but do not prove compatibility for every parser option or platform.
+
+When reviewing parser/ESLint dependency updates, check whether a stable upstream release natively accepts a non-vulnerable minimatch version. After owner approval of that update, remove this override, regenerate the lockfile and repeat the same checks. Do not leave the override in place to mask an upstream incompatibility or expand it globally. The exact pin also requires review when a new minimatch advisory or fixed release appears.
+
+### Tool pins and maintenance
+
+| Tool | Reviewed version | Commit or archive SHA-256 |
+| --- | --- | --- |
+| actions/checkout | 7.0.1 | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
+| actions/setup-node | 7.1.0 | `949feb2413d6458794dcd2491c4babbbce0c15c1` |
+| github/codeql-action | 4.39.3 | `33d7b85da1a04171e211befe2c739303b9a4c066` |
+| actions/dependency-review-action | 5.0.0 | `a1d282b36b6f3519aa1f3fc636f609c47dddb294` |
+| Supabase Linux amd64 archive | 2.122.0 | `59ed066847b98d7461c60e9109d40cab6b9756177ce06ebb05b51338519f5136` |
+| Gitleaks Linux x64 archive | 8.30.1 | `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb` |
+
+Every action is pinned by full commit SHA. Binary hashes were verified against the publishers' versioned checksum lists; update versions/hashes together. No third-party Gitleaks action or license token is required. This is not hermetic: GitHub-managed runner contents, Node distributions, Supabase container images and CodeQL bundles/queries remain upstream inputs. Security databases intentionally stay current.
+
+Default token permission is `contents: read`. Only CodeQL has `security-events: write`. Checkout does not persist credentials. There are no production secrets, OIDC permissions, shared caches, untrusted event expressions embedded in shell commands or `pull_request_target` executions.
+
+Dependabot checks npm and Actions weekly on Monday at 08:00 Europe/Madrid, opening at most five version-update PRs per ecosystem. It never merges/deploys. Review versions, lockfiles and workflow/script changes before merging. Binary pins and Node/npm versions need deliberate manual maintenance; this Dependabot configuration does not update them. Alerts/security-update PRs require separate GitHub settings.
+
+### GitHub activation checklist
+
+Versioned YAML alone does not enforce branch protection. The owner authorized publication and repository activation on 2026-11-15; the applied settings are recorded below. Retain this checklist for maintenance and outstanding hosted verification.
+
+1. Enable GitHub Actions for the pinned actions; approve first-time contributor runs when required. Keep default token permissions read-only and do not permit workflows to create/approve PRs.
+2. Enable the dependency graph, Dependabot alerts and security-update PRs. Keep automatic merging disabled. Enable secret scanning and push protection where available.
+3. Use CodeQL **advanced setup** with `security.yml`, not an additional default setup. Verify successful uploads for both languages in Security. Missing product access or failed uploads must not bypass the gate.
+4. Create an active `main` ruleset: require PRs, `CI gate` and `Security gate` from GitHub Actions, and an up-to-date branch; block force pushes/deletion and leave no routine administrator/bypass exemption. Select actual check names from the first run, not merely a scan-completed check.
+5. Where available, additionally require CodeQL merge protection at all available security/alert thresholds. The repository SARIF gate remains mandatory regardless of that feature.
+6. Review changes to workflows, scripts, dependencies and security configuration. This single-owner project does not introduce a mandatory second reviewer unable to approve the owner's own PR. Verify fork/Dependabot PR behavior without adding production credentials.
+
+Feature availability depends on repository visibility/account entitlements. The repository was publicly readable during setup; verify actual owner-account settings. New advisories can fail a scheduled run after a previously green commit; this does not retroactively invalidate a merge or stop a running application. Monitor Actions/Security notifications and re-run checks before merging. Vercel automation and its deployment policy are deferred to a separately confirmed task.
+
+### Activated repository settings — 2026-11-15
+
+The public repository's owner authorized [PR #5](https://github.com/VictorMateu/public-kanban/pull/5) and GitHub configuration. API read-back confirmed:
+
+- Actions is enabled and restricted to GitHub-owned actions; verified marketplace actions and additional patterns are not allowed. Full-SHA pinning is required at repository level as well as in the workflows.
+- The default workflow token remains read-only; workflows cannot create or approve pull requests. Automatic merging remains disabled.
+- Dependabot vulnerability alerts and security-update PRs are enabled. Secret scanning and push protection were already enabled and remain enabled. No existing alert was dismissed.
+- The active [Strict CI and security ruleset](https://github.com/VictorMateu/public-kanban/rules/27306411) targets `main`, requires a PR and resolved review threads, blocks deletion/force pushes, and has no bypass actors (the current administrator cannot bypass it).
+- The ruleset requires an up-to-date branch and both `CI gate` and `Security gate` from the GitHub Actions app (integration ID 15368). It also requires CodeQL with all security and alert thresholds. No second-reviewer requirement was introduced for this single-owner repository.
+- CodeQL default setup is not configured; the PR's advanced workflow runs both language analyses. After correcting the HTTP-test filters, all ten checks passed for `b1750db`, including both aggregate gates, both zero-finding CodeQL analyses and the disposable database/HTTP job. See the [hosted evidence](validation.md#successful-hosted-parser-verification--2026-11-15). Always verify the latest PR head before merging; historical success does not validate later commits.
+
+The dependency graph is available: PR Dependency Review succeeded and the default-branch minimatch advisory is visible in Dependabot. That alert remains open until the patched dependency reaches `main`; the PR's complete audit passes without dismissing it. Daily security and weekly version-update scheduling require merging the workflow/configuration to the default branch. Fork/Dependabot workflow behavior is not yet validated. No merge, deployment, Vercel connection or remote Supabase operation is included in activation. See [the evidence and limitations](validation.md#github-activation-and-pr-publication--2026-11-15).
 
 ## Shared UI colors
 

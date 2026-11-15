@@ -697,6 +697,201 @@ At the owner's request, the 13 component/CSS files were grouped into `layout`, `
 
 The owner subsequently authorized committing the pending work by responsibility: `f075749` contains component organization and import updates; `f4734ed` contains the sidebar animation, source sheets, runtime media, controls, translations and tests. The related development, product and validation documentation is recorded in a separate commit. Staged diffs were reviewed for scope, whitespace, credentials and generated/environment files; the animation CSS's redundant final blank line was removed. Ignored local source PNGs and encoding recipes remain outside Git and were preserved. No push was requested or performed. Visual acceptance remains pending owner review.
 
+## Strict CI and security pipeline — 2026-11-14
+
+The owner approved GitHub Actions validation, low-severity vulnerability blocking, CodeQL, Gitleaks, Dependency Review, weekly Dependabot proposals and documentation, with deployment explicitly deferred. The SQL suite's two fixture users and temporary administrator authorization were approved only on a fresh disposable CI database. [ADR 0004](adr/0004-strict-ci-and-security.md) records this accepted policy; the [development guide](development.md#continuous-integration-and-security) describes operation and the still-pending GitHub activation.
+
+### Implemented scope
+
+- `.github/workflows/ci.yml` defines application checks, isolated Supabase database/RLS/HTTP checks and the final `CI gate`.
+- `.github/workflows/security.yml` defines a complete lockfile audit, PR Dependency Review, all-fetched-history secret scanning, security-extended CodeQL for JavaScript/TypeScript and Actions, and the final `Security gate`. Security also runs daily at 04:23 UTC after activation on the default branch.
+- `.github/dependabot.yml` proposes weekly npm/Actions updates without automatic merges. Actions use full commit pins; Supabase/Gitleaks release archives have hardcoded publisher-verified SHA-256 checksums.
+- `scripts/ci/check-codeql.ts` blocks every emitted SARIF finding and missing/malformed/failed analyses. Seven new application-suite tests cover this policy, multiple runs/files, CLI exit status and non-disclosure of invalid report content.
+- No application dependency, lockfile, migration, schema, RLS policy, project content, UI or environment file was changed. No commit, push, remote configuration or deployment was performed.
+
+### Local automated evidence
+
+Environment: Windows, Node.js 24.22.1 and npm 11.19.1. These are local assertions, not a GitHub-hosted run.
+
+| Command/check | Actual result |
+| --- | --- |
+| `npm ci --ignore-scripts --no-audit --no-fund` | Passed; 395 packages installed. Existing ESLint 9.39.5 unsupported-version warning remains; no dependency upgrade was attempted. |
+| `npm run lint` | Passed without warnings. |
+| `npm run typecheck` | Route generation and strict TypeScript passed. |
+| `node --test tests/ci-security.test.ts` | Seven focused tests passed. |
+| `npm test` | All 41 tests passed, including the seven new CI gate tests. |
+| `npm run build` | Production build passed without Supabase environment configuration, after the same script-disabled installation used by CI. |
+| `actionlint -color` (1.7.12) | Both workflows passed. The temporary Windows binary was checksum-verified from the official release; no application dependency was added. ShellCheck was not installed, so this is not a ShellCheck result. |
+| One-off YAML/Bash validation harness | Parsed both workflows and Dependabot with the already-installed transitive `js-yaml` parser; all 22 shell snippets passed Git Bash syntax checks. No YAML dependency was added. |
+| One-off aggregate-gate harness | 101 assertions exercised application status combinations and security failure/cancellation/skip behavior across PR, push, merge-group, scheduled and manual events using Bash `-e -o pipefail`. No failed or unexpectedly skipped prerequisite was accepted. These harness assertions are separate from `npm test`. |
+| One-off public-configuration export harness | Five synthetic status payloads exercised the actual workflow shell/Node export boundary. A valid loopback publishable key exported exactly two public variables; remote origins, missing/newline-bearing keys and malformed JSON failed without exporting configuration or logging the private fixture marker. No Supabase operation or remote connection was made. |
+| `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` | **Failed as intended by policy:** seven moderately affected packages, from the single advisory detailed below. |
+| `npm audit --package-lock-only --ignore-scripts --omit=dev --audit-level=low` | Passed: zero reported production-dependency vulnerabilities at check time. This does not replace the blocking full audit. |
+| `gitleaks git --log-opts="--all" --redact=100 --no-banner --no-color --ignore-gitleaks-allow --exit-code=1 .` (8.30.1) | **Failed:** one pre-existing documentation-prose false positive in 60 scanned commits. Scan matches were fully redacted; no credentials were disclosed and no exception was applied. |
+| `gitleaks dir --redact=100 --no-banner --no-color --ignore-gitleaks-allow PATH` | Separate scans of `.github`, `scripts/ci` and `tests/ci-security.test.ts` passed with zero findings. This does not waive the historical blocker. |
+| `git diff --exit-code -- package.json package-lock.json supabase` | Passed: dependency manifests, lockfile and database files are unchanged. |
+| `git diff --check` | Passed. |
+
+### Initial blockers before the authorized follow-up
+
+The following records the initial state. The later [follow-up](#ci-blocker-follow-up--2026-11-14) supersedes the historical secret-scanner blocker with the owner-approved exact exception; dependency remediation remains pending.
+
+1. **Dependency advisory:** `GHSA-g3hv-75wg-m249` describes potential denial of service through glob-parts amplification in minimatch. The locked chain includes `eslint-config-next@16.4.3 → typescript-eslint@8.72.0 → @typescript-eslint/typescript-estree@8.72.0 → minimatch@10.2.6`. npm reports seven affected development-tooling packages, not seven distinct advisories. The full audit remains blocking. No `npm audit fix`, override, lockfile refresh or package upgrade was applied; a reviewed dependency remediation requires owner confirmation.
+2. **Historical secret-scanner false positive:** Gitleaks rule `generic-api-key` matches ordinary validation prose, not a credential, at fingerprint `9ce4e58f4a3b72e5da4fc2f76ae79472f51d82e6:docs/validation.md:generic-api-key:137`. Finding metadata was inspected from a fully redacted report; the surrounding documentation identified ordinary prose rather than a credential. Scanning all history intentionally preserves this failure until the owner approves a precise, reviewed false-positive policy. No baseline, ignore file, broad path exclusion, history rewrite or inline waiver was added.
+
+These findings mean the security pipeline is implemented but **not green or accepted as activated**. The recommended next step is owner review of dependency remediation and, separately, the exact historical false-positive exception, followed by an authorized push/PR and GitHub setup. Do not weaken the approved threshold to mask the blockers.
+
+### Checks not performed and hosted activation pending
+
+- Docker reported an existing `supabase_db_portfolio-kanban` instance and its associated local services. It was not started, stopped, reset or used for tests. Authorization was limited to disposable CI fixtures; no users, administrator registry or owner data were modified locally or remotely.
+- Database lint, migrations, pgTAP/RLS and `npm run test:public` were therefore not executed in this task. Their hosted success remains unverified. The existing local configuration/fixtures were inspected, not treated as CI evidence.
+- CodeQL extraction/query execution, SARIF upload and Dependency Review were not run against GitHub. The SARIF parser tests use explicit fixtures; they are not evidence of a vulnerability-free CodeQL analysis. Binary/action pins and the existence of the Actions security-extended suite were checked against official upstream sources.
+- Required-check rulesets, code scanning advanced setup, dependency graph/alerts/security updates, secret scanning/push protection, fork/Dependabot behavior and daily scheduling still need owner-account activation and an actual first hosted run. No credentials were requested or remote settings changed.
+- No browser, responsive, keyboard, screenshot or manual accessibility pass was performed: this change does not alter the application interface. Previous visual acceptance remains pending and unaffected.
+- Vercel deployments, remote migrations, production credentials and deployment approvals remain outside this task. Successful local validation does not establish hosted enforcement, complete security coverage or product acceptance.
+
+## CI blocker follow-up — 2026-11-14
+
+The owner authorized continuing the reported blocker corrections. The exact historical Gitleaks exception was applied first; dependency inspection then revealed a new major-version compatibility choice. The proposal below records that earlier state; the later explicit approval and applied override are recorded in the subsequent section.
+
+### Applied historical exception
+
+The root `.gitleaksignore` contains exactly the previously identified commit/file/rule/line fingerprint, with no path glob, rule exclusion or baseline. The secret job explicitly uses that file, requires its presence, still refuses `.gitleaks.toml` overrides and keeps built-in rules, full fetched-history scanning, redaction, ignored inline allow comments and failure exit status. [ADR 0004](adr/0004-strict-ci-and-security.md#subsequent-owner-approved-false-positive-correction--2026-11-14) records the narrow owner-approved amendment to the original no-ignore-file restriction.
+
+| Check | Actual result |
+| --- | --- |
+| `gitleaks git --log-opts="--all" --redact=100 --no-banner --no-color --verbose=false --ignore-gitleaks-allow --gitleaks-ignore-path .gitleaksignore --exit-code=1 .` | Passed: 70 fetched commits scanned, no unignored findings. The only exception is the approved historical prose fingerprint. |
+| Temporary Gitleaks regression fixture | A newly generated synthetic generic-API-key pattern at `docs/validation.md:137` failed with exit 1 both with an empty ignore file and with the approved ignore file. The matching rule and line were asserted from redacted reports. This confirms that new findings at the same relative path/rule/line are not exempt. No fixture repository commits or real credentials were used; its specific temporary directory was removed. |
+| `actionlint -color` (1.7.12) | Both workflows passed after the exception change. |
+| `npm run lint` | Passed without warnings. |
+| `npm run typecheck` | Route generation and strict TypeScript passed. |
+| `npm test` | All 41 tests passed. |
+| `npm run build` | Production build passed. |
+| `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` | Still fails with seven affected development-tooling packages from the minimatch advisory; no severity waiver applied. |
+| `git diff --exit-code -- package.json package-lock.json supabase` | Passed: application dependencies, lockfile and database files remain unchanged. |
+| `git diff --check` | Passed. |
+
+These are local checks. The temporary scanner fixture is separate from the 41 application tests; no database or GitHub-hosted integration suite was executed.
+
+### Historical dependency remediation proposal, before explicit approval
+
+Registry inspection with `npm view typescript-eslint dist-tags --json` reported stable `8.72.2` and canary `8.72.3-alpha.8`. `npm view @typescript-eslint/typescript-estree@latest version dependencies.minimatch engines --json` confirmed that stable 8.72.2 still requires `minimatch ^10.2.2`. Stable `8.72.3` was not available. The installed chain remains at 8.72.0 with minimatch 10.2.6.
+
+`npm view minimatch@11.0.1 version engines --json` confirmed the advisory's patched release and compatibility with Node.js 24. `npm audit fix --package-lock-only --ignore-scripts --dry-run --json` reported no changes and retained seven affected packages with exit 1. The upstream parent range does not accept minimatch 11, so an ordinary supported-range update is insufficient.
+
+The concrete proposal is an exact `minimatch@11.0.1` override only beneath `@typescript-eslint/typescript-estree`, changing `package.json` and its generated lockfile. This is a temporary cross-major compatibility override in development tooling, not an approved application-stack upgrade. It needs explicit confirmation of that choice, then a clean script-disabled install, lint, typecheck, all tests, production build and complete low-threshold audit. The alternative is to await a compatible stable upstream parser release while keeping the audit blocking. No prerelease, broad override, forced fix or dependency change was applied.
+
+Hosted execution, branch protection/required checks and account-level security activation remain pending. No local/remote users, administrator authorization, application data or services were changed. No application repository commit, push, deployment or Vercel connection was performed. Previous UI acceptance is unaffected.
+
+## Approved minimatch override — 2026-11-14
+
+After reviewing the compatibility proposal, the owner explicitly approved applying the narrow override and documenting its reasons. `package.json` now pins `minimatch@11.0.1` only below `@typescript-eslint/typescript-estree`, and npm regenerated the lockfile with lifecycle scripts disabled. This addresses the advisory without lowering the full low-severity audit gate. The installed parser's declared major-10 range is intentionally overridden; it is not a normal supported-range patch update.
+
+The reason, alternatives, cross-major compatibility risk and removal criteria are recorded in [ADR 0004](adr/0004-strict-ci-and-security.md#subsequent-owner-approved-dependency-override--2026-11-14) and the [development guide](development.md#approved-temporary-minimatch-override). Earlier failed audit results and the previously unchanged manifests describe the historical pre-override checks, not the final state.
+
+| Check | Actual result |
+| --- | --- |
+| `npm install --package-lock-only --ignore-scripts --no-audit --no-fund` | Passed with npm 11.19.1 / Node.js 24.22.1. No direct dependency pins changed. |
+| Lockfile scope inspection | Only the parser-scoped minimatch changed version, from 10.2.6 to 11.0.1. npm added its `@isaacs/nonrecursive-glob-match@1.1.0` dependency and six bundled optional-package metadata entries beneath the existing `@tailwindcss/oxide-wasm32-wasi` package. An isolated regeneration from the original lockfile, without `node_modules`, reproduced the same eight added/changed entries and no removals. No unrelated existing package version changed. |
+| `npm ci --ignore-scripts --no-audit --no-fund` | Passed: clean script-disabled installation, 396 packages. npm still reports the previously documented ESLint 9.39.5 unsupported-version warning; it was not upgraded. |
+| `npm ls minimatch --all` | Passed: `@typescript-eslint/typescript-estree@8.72.0` resolves `minimatch@11.0.1 overridden`; unrelated consumers retain 3.1.5. |
+| `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` | Passed: found 0 vulnerabilities across the complete lockfile, including development dependencies. No advisory exclusion or severity waiver. |
+| `npm run lint` | Passed without warnings, exercising the parser with the overridden dependency. |
+| `npm run typecheck` | Route generation and strict TypeScript passed. |
+| `npm test` | All 41 tests passed; no failures or skipped tests. |
+| `npm run build` | Production build passed after the clean script-disabled installation. |
+| `actionlint -color` (1.7.12) | Both workflows passed. ShellCheck was not available; this does not assert ShellCheck validation. |
+| `git diff --check` / `git diff --exit-code -- supabase` | Passed: no whitespace errors or database-file changes. |
+
+The historical Gitleaks scan and its synthetic regression fixture remain recorded in the preceding section; the override does not change the scanner, its configuration or that approved exception. No database/HTTP integration suite was rerun against the owner's existing instance. Actual GitHub-hosted execution, CodeQL/Dependency Review availability and required-check configuration remain unverified until an authorized push and hosted run. No commit, push, deployment, Vercel connection, user creation, administrator change or application-data operation was performed. Local validation exercises the installed toolchain but does not guarantee exhaustive cross-major compatibility or absence of unknown vulnerabilities.
+
+## GitHub activation and PR publication — 2026-11-15
+
+The owner explicitly requested commits, push, a PR and GitHub Actions activation. The approved CI/security changes were committed as `c057152` after updating the unpublished branch onto `main`. [PR #5](https://github.com/VictorMateu/public-kanban/pull/5) targets `main` from `ci/security-pipeline`. A concurrent animation PR then advanced `main` to `212ac32`, causing a documentation-only conflict that prevented PR workflows from starting. Merge commit `770cb88` preserves both validation histories and the upstream animation work without rewriting the published branch. No unrelated feature work was added.
+
+### Local validation after integration
+
+- `npm ci --ignore-scripts --no-audit --no-fund` passed with Node.js 24.22.1 / npm 11.19.1 (396 packages). The known ESLint 9.39.5 unsupported-version warning remains unchanged.
+- After merging the newer `main`, `npm run lint`, `npm run typecheck`, `npm test` (48 passing, none skipped), `npm run build` and `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` all passed. The complete audit reported zero vulnerabilities.
+- Local `actionlint -color` passed. ShellCheck is not installed locally; this does not establish a ShellCheck run.
+- Before publication, Gitleaks passed the staged diff and all fetched history (77 commits at that point), with full redaction and only the approved historical fingerprint exception. `git diff origin/main...HEAD --check` passed after integration; no environment files, generated artifacts or unrelated application changes were added by this PR.
+- Local database/HTTP suites were not run against the owner's instance. No browser/UI validation was repeated because this PR does not change the interface; existing visual acceptance is unaffected.
+
+### Remote configuration read-back
+
+| Setting/check | Observed result |
+| --- | --- |
+| Repository permissions | Public repository; current authenticated user has administrator access. |
+| Actions permissions | Enabled, `allowed_actions: selected`, `sha_pinning_required: true`; GitHub-owned actions allowed, verified marketplace actions disabled, additional patterns empty. |
+| Workflow token | Default `read`; workflow creation/approval of PRs disabled. |
+| Dependabot | Vulnerability-alert endpoint enabled; automated security fixes enabled and not paused. The default branch still reports the existing minimatch advisory `GHSA-g3hv-75wg-m249`; it was not dismissed. |
+| Secret scanning | Scanning and push protection already enabled; retained without broad exceptions. |
+| Main ruleset | ID `27306411`, active, no bypass actors; API reports current administrator bypass as `never`. PRs/resolved threads and an up-to-date branch are required; force pushes/deletion blocked. |
+| Required checks | `CI gate` and `Security gate`, each bound to GitHub Actions app ID 15368. |
+| CodeQL merge protection | CodeQL required with both security and alert thresholds set to `all`. Default setup is `not-configured`; advanced analysis comes from the versioned workflow, not a duplicate default setup. |
+| Initial hosted execution at `770cb88` | Both workflows started on the PR. Application checks, full Dependency audit, Dependency review and Secret scan succeeded; both CodeQL language jobs and Database/HTTP checks were still running when inspected. These partial results do not establish successful aggregate gates or the final PR head. |
+
+Initial hosted runs: [CI](https://github.com/VictorMateu/public-kanban/actions/runs/43697957730) and [Security](https://github.com/VictorMateu/public-kanban/actions/runs/43697957724). Settings were read back from GitHub rather than inferred from YAML. Final hosted outcomes, including the current head's aggregate gates, remain pending. Daily security and weekly version updates need the configuration merged to `main`; fork/Dependabot workflow behavior is not yet validated. Automatic merging is disabled. No merge, deployment, Vercel connection, production-secret configuration, remote migration or owner-data operation was performed.
+
+## First hosted failures and diagnostic follow-up — 2026-11-15
+
+The completed runs for `cc0726f` failed, rather than establishing a green activation: [CI](https://github.com/VictorMateu/public-kanban/actions/runs/43698135235) and [Security](https://github.com/VictorMateu/public-kanban/actions/runs/43698135232). Both aggregate gates correctly propagated their prerequisite failures; their conditions and the main-branch ruleset were not relaxed.
+
+- The disposable integration runner successfully started Supabase, applied/checked migrations, passed database lint and pgTAP/RLS, safely exported public configuration and built the application. Cleanup also succeeded. The HTTP suite reported 20 passing tests and two failures: one obsolete nested assertion and its enclosing test. The assertion still required a blank Overview after fixture cleanup despite the approved pending-metrics presentation. The corrected assertion requires a main landmark, eight pending metrics and no fixture names in either HTML or React payloads. It no longer depends on an empty owner's database. The existing empty-project-list test retains its prerequisite.
+- JavaScript/TypeScript analysis and upload succeeded, but the local SARIF gate counted ten results and failed. The processed Code Scanning API reported zero results/alerts for that merge ref, so those APIs alone cannot identify or dismiss the local results. Actions-language analysis, dependency audit/review and secret scanning passed. The gate now logs only rule ID, file URI and start line for each result to enable investigation on the next hosted run; it still blocks every result. It does not log messages, snippets or code flows. A CLI regression test checks that source/message fixture markers remain absent from logs while finding metadata and failure status are retained.
+
+Local checks for this follow-up passed: `node --test tests/ci-security.test.ts` (seven tests), `node --check tests/public-http.test.mjs`, `npm run lint`, `npm run typecheck`, `npm test` (48 passing), `npm run build` and the full development-inclusive low-threshold audit (zero vulnerabilities). No local database or HTTP fixture operations were performed. The corrected fixture assertion and ten CodeQL results still require the next hosted run; no finding exclusion, severity waiver, new dependency or production-code change was introduced.
+
+## CodeQL findings identified; parser proposal pending approval — 2026-11-15
+
+The diagnostic run for `c17510f` identified all ten local SARIF results in [JavaScript/TypeScript analysis](https://github.com/VictorMateu/public-kanban/actions/runs/43698683428/job/132764764670). They are confined to HTML-processing helpers in the HTTP tests, not application implementation files:
+
+- `js/bad-tag-filter`: script-removal regular expressions at `tests/i18n-http.test.mjs:29`, `tests/i18n-http.test.mjs:224` and `tests/public-http.test.mjs:37` (three results).
+- `js/incomplete-multi-character-sanitization`: those same script filters, tag removal at `tests/i18n-http.test.mjs:72`, comment removal at `tests/public-http.test.mjs:94`, and span/comment removal at `tests/public-http.test.mjs:114` (seven results).
+
+These helpers inspect server output and do not sanitize content for the application. Nevertheless, ad hoc removal can mishandle malformed/nested markup and undermine assertions. The proposed root correction is a test-only HTML parser rather than scanner exclusions or progressively more complex filtering regexes. CodeQL's own bad-tag-filter guidance recommends a well-tested parser over custom HTML filtering. No alert was dismissed or gate relaxed. The failed Security gate correctly reflects the JavaScript/TypeScript gate; other security jobs passed. The same head's Database and HTTP checks and CI gate now pass, confirming the earlier Overview assertion correction in the disposable hosted environment.
+
+The concrete proposal is to add exactly `parse5@8.1.1` as a development dependency (registry-reported MIT license, dependency `entities ^9.0.0`), regenerate the npm lockfile and replace the affected filtering with read-only parsed-tree inspection in both HTTP suites. A shared test helper and meaningful parser regression tests would cover script content, malformed/nested markup, comments, escaped text and visible link labels, while preserving independent checks of raw HTML and React payloads for private-data leakage. No parser would be used to sanitize production content or execute scripts. Risks include dependency maintenance and changes in test interpretation; keeping parser use restricted to tests and retaining raw-response assertions limits scope.
+
+Alternatives are a custom HTML tokenizer or a narrowly reviewed scanner exception. The former adds avoidable parsing/maintenance risk; the latter leaves brittle assertions in place. Neither is recommended. Dependency adoption requires the owner's explicit confirmation under repository instructions, so no parser, lockfile change or implementation has been applied for this proposal. If approved, validation will include parser regressions, lint, typecheck, all application tests, build, full low-threshold dependency audit and fresh hosted HTTP/CodeQL checks. Earlier local checks remain historical evidence, not validation of this unapplied proposal.
+
+## Owner-approved test-only HTML parser — 2026-11-15
+
+The owner subsequently approved adding the dependency proposed above. That explicit decision supersedes the historical pending-approval state. `parse5` is pinned to `8.1.1` in `devDependencies`; npm added only its `entities@9.0.0` transitive package to the generated lockfile. Existing dependency versions, the minimatch override, production code, workflows, security thresholds and Supabase files are unchanged.
+
+Both HTTP suites now use `tests/helpers/html.ts` rather than regex removal of scripts, comments, tags or hidden spans. The helper parses before inspecting, preserves the original response, and never executes scripts. The inspection serialization omits script/style/template payloads and comments; decoded-text inspection ignores hidden decorative spans so labels cannot be satisfied by their arrows or SVG titles. Original HTML/React-payload leakage and escaped-owner-content assertions remain independent. This helper is test instrumentation, not a production HTML sanitizer or a full browser visibility model. [ADR 0004](adr/0004-strict-ci-and-security.md#owner-approved-test-only-html-parser--2026-11-15) records the accepted dependency choice, alternatives and consequences.
+
+| Local command/check | Actual result |
+| --- | --- |
+| `npm install --package-lock-only --ignore-scripts --no-audit --no-fund` | Passed; existing pins preserved, exactly two development package entries added. |
+| `npm ci --ignore-scripts --no-audit --no-fund` | Passed; 398 packages installed with lifecycle scripts disabled. The known ESLint unsupported-version warning remains. |
+| `npm ls parse5 entities --all` | Passed: parse5 8.1.1 resolves entities 9.0.0. |
+| `node --test tests/html.test.ts` | Seven parser regressions passed: script non-execution/exclusion, mixed-case and malformed script endings, comment handling, escaped owner content, nested hidden link/icon decoration, payload-only catalogs, and entity/quoted-attribute semantics. |
+| `npm run lint` / `npm run typecheck` | Passed without lint warnings; route generation and strict TypeScript passed. |
+| `npm test` | All 55 tests passed, none skipped. |
+| `npm run build` | Production build passed. |
+| `npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low` | Passed: zero reported vulnerabilities, including both new development packages. No finding exclusion or severity waiver. |
+| `KANBAN_TEST_URL=http://127.0.0.1:3017 node --test tests/i18n-http.test.mjs` | Against a temporary loopback production server, eight HTTP cases passed and one invalid-sign-in-feedback case was explicitly skipped because local Supabase configuration is absent. Locale rendering, native language submission, shared layout, metadata and media/range assertions passed with the parsed inspection copy. The temporary server was stopped afterwards. |
+| `node --check tests/public-http.test.mjs` / `actionlint -color` | Passed. ShellCheck was not available locally. |
+| `git diff --check` / `git diff --exit-code -- supabase .github scripts/ci/check-codeql.ts` | Passed: no whitespace errors or changes to database files, workflows or the strict SARIF gate. |
+
+No local database-backed fixtures or owner-data operations were performed. Fresh hosted database/HTTP, CodeQL and aggregate-gate results remain pending for the parser change; earlier passing runs do not establish its hosted outcome. No browser/visual pass, merge, deployment or Vercel connection was performed.
+
+## Successful hosted parser verification — 2026-11-15
+
+GitHub's completed results were inspected for PR #5 at exact head `b1750dbc24f1251946c9c8b6e90a772fc935d38b`. All ten check runs succeeded, including required `CI gate` and `Security gate`; the PR was open, mergeable and `CLEAN` when inspected. This is actual GitHub-hosted evidence for the parser correction, superseding the preceding pending-run state without erasing earlier failures.
+
+| Hosted control | Verified result |
+| --- | --- |
+| [CI workflow](https://github.com/VictorMateu/public-kanban/actions/runs/43700237126) | Successful Application checks, Database and HTTP checks and CI gate. |
+| Disposable Supabase | Migration/policy step passed; database lint reported no schema errors; pgTAP passed all 53 assertions; cleanup succeeded. No owner's instance was used. |
+| Production HTTP integration | All 22 tests passed, zero failed and zero skipped. The Supabase-dependent sign-in-feedback case ran here, unlike its explicitly skipped local run. |
+| [Security workflow](https://github.com/VictorMateu/public-kanban/actions/runs/43700237119) | Successful dependency audit, Dependency Review, Secret scan, both CodeQL languages and Security gate. |
+| CodeQL local SARIF gates | JavaScript/TypeScript and Actions each logged `CodeQL gate: 0 finding(s).` The earlier ten test-filter results are resolved without exclusions, severity changes or an existing-alert baseline. |
+| Additional code-scanning check | GitHub's CodeQL check also succeeded; this alone was not substituted for the strict SARIF gate. |
+
+This evidence is pinned to the tested code commit; later commits, including this documentation-only record, still require their own required checks. No application/dependency/workflow change accompanies this evidence update, so the already-recorded local checks were not repeated solely for prose. Daily security and weekly version updates remain conditional on merging to the default branch. Fork/Dependabot PR behavior, future advisory changes and browser/visual acceptance remain outside these assertions. No merge, automatic merge, deployment or Vercel connection was performed.
+
 ## Shortened drinking hold and lighter media — 2026-11-14
 
 The owner reported a frozen-looking sip and then requested a smoother, cozy animation without excessive browser work. Before adjustment, a 90-second Chrome observation captured three complete drinks without a permanent playback stall. Decoded stills and the original PNG inputs identified 21 identical sip poses, not a stopped media clock. The adjustment is confined to the drinking asset, its source/duration declaration, HTTP media coverage and documentation. The native player, typing clip, poster, styling, pause/visibility behavior and drink scheduling are unchanged.
