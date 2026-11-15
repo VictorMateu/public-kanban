@@ -27,6 +27,7 @@ Open [localhost:3000](http://localhost:3000). The blank base-layout screen works
 | `npm run typecheck` | Generate route types and check TypeScript |
 | `npm test` | Run application tests |
 | `npm run test:public` | Test public HTTP routes with local Next.js and Supabase running |
+| `npm run test:images` | Test image persistence in an isolated local Chromium browser |
 | `npm run build` | Build for production |
 | `npm start` | Serve an existing production build |
 

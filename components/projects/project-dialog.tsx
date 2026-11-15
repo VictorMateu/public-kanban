@@ -53,7 +53,12 @@ export function ProjectDialog({ id, title, closeLabel, open, busy = false, onClo
         if (!busy) onClose();
       }
     }}
-    onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }}
+    onCancel={(event) => {
+      // File inputs also emit bubbling cancel events when their picker is dismissed.
+      if (event.target !== event.currentTarget) return;
+      event.preventDefault();
+      if (!busy) onClose();
+    }}
     onClose={() => {
       if (!dialog.current?.open) {
         onClose();

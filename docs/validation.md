@@ -989,3 +989,48 @@ Visual acceptance remains pending. Full screen-reader, physical-device
 and cross-browser review were not performed. Lost upload responses may
 leave private unreferenced assets; general cleanup remains a separate
 pending decision. Browser decoding memory can exceed the 32 MiB file budget.
+
+
+## Image persistence and file-picker cancellation regression - 2026-11-15
+
+The reported image-saving problem prompted real browser creation, reload,
+information-modal and edit checks. Inserted images persisted and decoded
+correctly in both rich-text fields, including a further upload during edit.
+A separate reproducible loss was found: reselecting an unchanged file emits
+an actual trusted, bubbling input `cancel` event. ProjectDialog interpreted
+it as dialog cancellation, closed the form and discarded staged content.
+The regression assertion failed before the fix with "File chooser
+cancellation must not dismiss the project form". The handler now ignores
+cancellation events originating at descendants.
+
+Added `npm run test:images`, backed by tracked TypeScript browser tests and
+Zod-validated Chromium protocol helpers, without new dependencies. The test
+asserts the native input event occurred, the modal and staged image survive,
+and explicit Escape still closes the form and releases the blob URL. It also
+checks both-field creation, private state while requests are paused, 1440px,
+390px and 320px modal fit, Tab containment, reload/decoded image dimensions,
+reopening the editor, text edits and an additional uploaded image, anonymous
+published reads, private/public access after saving visibility, and partial
+upload failure/retry with the same draft and previously uploaded asset.
+
+Checks on the corrected production build using local Supabase:
+
+- `npm run lint`: passed, no warnings.
+- `npm run typecheck`: passed.
+- `npm test`: 60 passed.
+- `npm run build`: passed with local public Supabase configuration.
+- `node --test tests/project-images-browser.ts`: 6 passed (parent plus five
+  browser scenarios), in isolated headless Edge through the temporary local
+  integration runner on port 3016 (Edge 157.0.4341.46).
+- `npm run test:images`: the same 6 assertions also passed against the
+  existing development/review server on port 3015 after the fix.
+- Existing HTTP suites: 18 passed, 2 skipped because their empty-database
+  preconditions do not hold on this populated instance.
+
+All temporary fixture objects/rows were removed; existing population counts
+were preserved. No users, schema changes, remote operations or dependencies
+were introduced. These are automated browser/HTTP checks; manual visual,
+physical-device and cross-browser acceptance remain pending. A selected file
+still requires Insert image before Save; selection alone is not a persisted
+rich-text node. This check establishes the confirmed cancellation regression,
+not that every possible image failure has been reproduced.

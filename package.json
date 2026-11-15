@@ -16,6 +16,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --test tests/*.test.ts",
+    "test:images": "node --test --test-concurrency=1 tests/project-images-browser.ts",
     "test:public": "node --test --test-concurrency=1 tests/*-http.test.mjs tests/*-http.ts"
   },
   "dependencies": {

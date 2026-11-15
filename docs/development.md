@@ -625,3 +625,36 @@ new schema, dependency or Storage permission is introduced.
 readImageForm sets the original multipart Content-Type on Response,
 rather than Blob.type: Blob lowercasing otherwise corrupts case-sensitive
 WebKit boundaries. Existing byte, pixel and normalization limits remain.
+
+
+## Image persistence browser tests - 2026-11-15
+
+Run `npm run test:images` against a running local production build and the
+existing local Supabase instance, configured as for `test:public` with
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and
+`KANBAN_TEST_URL` (default `http://127.0.0.1:3000`). Both origins must be
+HTTP loopback URLs. Docker and the existing authorized administrator are
+required. No users are created. Run integration suites sequentially and
+avoid editing application data while their preservation checks run.
+
+The suite uses an installed Chromium browser through its debugging protocol,
+with an isolated temporary profile and generated PNG fixture. On Windows it
+defaults to Edge at `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe`.
+For another installation, set `KANBAN_TEST_BROWSER` to the absolute executable
+path. It does not download a browser or add a dependency. Browser protocol
+responses are validated with Zod. Shared local authentication/environment
+helpers also serve the existing project HTTP suite.
+
+The tests drive actual file inputs, Server Actions, image HTTP routes and
+Supabase Storage. They verify native file-picker cancellation, resource
+release on explicit dismissal, staged creation in both fields, private
+upload progress, persisted image decoding after reload, editing with a new
+image, anonymous published viewing, returning to private visibility, and a
+failed-upload retry without duplicate assets. The tests remove only their
+UUID-named project/asset/Storage fixtures, stop their own browser, and check
+that existing project/asset/column/task/user/administrator counts match.
+
+ProjectDialog ignores bubbling file-input `cancel` events. Only a cancel
+originating at the dialog is treated as dialog dismissal; explicit Close/X
+and Escape keep their existing busy guards. Selecting an unchanged file or
+cancelling its picker must preserve the open form and staged images.
