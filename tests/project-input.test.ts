@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseProjectDetails, projectDetailsSchema } from "../lib/projects/input.ts";
+import { parseProjectDetails } from "../lib/projects/input.ts";
+import { projectDetailsSchema } from "../lib/projects/schemas.ts";
 
 function details() {
   const data = new FormData();

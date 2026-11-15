@@ -792,3 +792,24 @@ controls or overflow. No users, records or migrations were created.
 This focused review does not repeat the full editor/save integration suite
 or constitute cross-browser, physical-device or screen-reader validation.
 The layout remains WIP pending owner visual review.
+
+## Project schema and form adapter separation - 2026-11-15
+
+Moved the existing Zod project detail/content/identity schemas and inferred
+payload types to lib/projects/schemas.ts. FormData parsing, field error
+mapping and action response types remain in lib/projects/input.ts. Updated
+action, form and test imports without changing validation or visibility.
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips, including existing input and
+  rich-content validation coverage.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+Visibility was inspected in the creation/publication actions, schema default,
+public/administrator queries, project page and RLS policies. New projects
+default to unpublished; saving content preserves visibility and the separate
+publication action changes it. This was a source inspection, not a new
+database/HTTP integration run. No database operations or browser UI review
+were required for this module-only refactor.

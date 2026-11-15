@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { saveProject, setProjectPublication } from "../../app/projects/actions";
-import { type ProjectFormState, type ProjectContentField } from "../../lib/projects/input";
+import type { ProjectFormState } from "../../lib/projects/input";
+import type { ProjectContentField } from "../../lib/projects/schemas";
 import type { RichTextDocument } from "../../lib/projects/rich-text";
 import { RichTextEditor } from "./rich-text-editor";
 

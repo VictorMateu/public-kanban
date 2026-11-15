@@ -350,9 +350,23 @@ Keep the README concise. Use [Product requirements](product.md) for defined requ
 
 References: [Next.js](https://nextjs.org/docs/app/getting-started/installation), [Tailwind with Next.js](https://tailwindcss.com/docs/installation/framework-guides/nextjs), [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client) and [local CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
 
-## Project input validation preparation
+## Project input validation
 
-`lib/projects/input.ts` exports a strict Zod schema for existing editable project details. `ProjectDetailsInput` and `ProjectDetails` are inferred from the schema, and `satisfies` checks output compatibility with the Supabase insert contract without widening the inferred type. The `FormData` adapter returns either the typed allowlisted payload or stable field error codes. The schema rejects unknown object keys and does not coerce input types; the adapter excludes unrelated form fields and preserves duplicate values as invalid input. Publication, identity, ordering and timestamps are excluded. Files and null bytes are invalid; name and description limits count Unicode code points. This validator does not authorize requests, check slug uniqueness or write to Supabase, and currently has no form or mutation caller.
+`lib/projects/schemas.ts` defines the Zod schemas for project details, rich
+content and edit identity, together with their inferred types. Schema rules
+do not depend on FormData or action state. `satisfies` checks the details
+output against the Supabase insert contract without widening its type.
+
+`lib/projects/input.ts` reads FormData, validates it through those schemas
+and maps issues to stable field error codes. It owns the parser results
+and ProjectFormState response contract. Schemas reject unknown keys and
+avoid coercion; adapters allowlist editable fields and reject duplicates,
+files and null bytes. Text limits count Unicode code points. ProjectForm
+uses the response contract; saveProject uses parseProjectContent and
+validates identity separately. Authorization, slug uniqueness and writes
+remain in Server Actions and database policies/constraints. Saving content
+does not change publication; new projects use the database default draft
+state, and publication changes use a separate authorized action.
 
 ## Strict typing and runtime validation
 

@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAdministrator } from "../../lib/auth/server";
 import { createServerSupabaseClient } from "../../lib/supabase/server";
-import { parseProjectContent, projectIdentitySchema, type ProjectFormState } from "../../lib/projects/input";
+import { parseProjectContent, type ProjectFormState } from "../../lib/projects/input";
+import { projectIdentitySchema } from "../../lib/projects/schemas";
 import { richTextAssetIds, richTextToPlainText } from "../../lib/projects/rich-text";
 
 function single(form: FormData, name: string): unknown {
