@@ -36,6 +36,7 @@ export async function launchBrowser() {
   let session: string | undefined;
   const pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   const events: unknown[] = [];
+  const uploads: { id: string; status?: number }[] = [];
   async function close() {
     socket?.close();
     for (const operation of pending.values()) { clearTimeout(operation.timer); operation.reject(new Error("Test browser closed")); }
@@ -64,6 +65,17 @@ export async function launchBrowser() {
     assert.equal(result.exceptionDetails, undefined, "Browser assertion script must execute successfully");
     return result.result.value;
   }
+  async function click(selector: string) {
+    const point = z.object({ x: z.number(), y: z.number(), reachable: z.literal(true) }).parse(await evaluate(`(()=>{
+      const element=document.querySelector(${JSON.stringify(selector)});
+      element.scrollIntoView({block:"center",inline:"center",behavior:"instant"});
+      const rect=element.getBoundingClientRect();const x=rect.left+rect.width/2;const y=rect.top+rect.height/2;
+      const hit=document.elementFromPoint(x,y);return {x,y,reachable:hit===element||element.contains(hit)};
+    })()`));
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: point.x, y: point.y });
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", x: point.x, y: point.y, button: "left", buttons: 1, clickCount: 1 });
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: point.x, y: point.y, button: "left", buttons: 0, clickCount: 1 });
+  }
   async function nextUpload() {
     await waitFor(() => events.length > 0, "image upload request");
     return z.object({ requestId: z.string(), request: z.object({ method: z.literal("POST"), url: z.string() }) }).parse(events.shift());
@@ -90,11 +102,23 @@ export async function launchBrowser() {
         pending.delete(message.id); clearTimeout(operation.timer);
         if (message.error) operation.reject(new Error(message.error.message)); else operation.resolve(message.result);
       } else if (message.method === "Fetch.requestPaused") events.push(message.params);
+      else if (message.method === "Network.requestWillBeSent") {
+        const request = z.object({ requestId: z.string(), request: z.object({ url: z.url(), method: z.string() }) }).safeParse(message.params);
+        if (request.success && request.data.request.method === "POST" && new URL(request.data.request.url).pathname === "/project-images") {
+          uploads.push({ id: request.data.requestId });
+        }
+      } else if (message.method === "Network.responseReceived") {
+        const response = z.object({ requestId: z.string(), response: z.object({ status: z.number() }) }).safeParse(message.params);
+        if (response.success) {
+          const upload = uploads.find((entry) => entry.id === response.data.requestId);
+          if (upload) upload.status = response.data.response.status;
+        }
+      }
     });
     const context = z.object({ browserContextId: z.string() }).parse(await send("Target.createBrowserContext", { disposeOnDetach: true }, false));
     const target = z.object({ targetId: z.string() }).parse(await send("Target.createTarget", { url: "about:blank", browserContextId: context.browserContextId }, false));
     session = z.object({ sessionId: z.string() }).parse(await send("Target.attachToTarget", { targetId: target.targetId, flatten: true }, false)).sessionId;
     await send("Runtime.enable"); await send("Page.enable"); await send("Network.enable");
-    return { send, evaluate, nextUpload, close };
+    return { send, evaluate, click, nextUpload, uploads, close };
   } catch (error) { await close(); throw error; }
 }

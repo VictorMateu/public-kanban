@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -12,6 +12,9 @@ import type { Database } from "../lib/supabase/database.types.ts";
 import { readRichText, richTextAssetIds, richTextToPlainText } from "../lib/projects/rich-text.ts";
 import { environment, origin, supabaseUrl, population, localAdministratorToken } from "./support/local-project.ts";
 import { launchBrowser, waitFor } from "./support/image-browser.ts";
+
+const messages: unknown = JSON.parse(readFileSync(new URL("../messages/en.json", import.meta.url), "utf8"));
+const editorMessages = z.object({ Editor: z.object({ invalidAlt: z.string(), invalidImage: z.string() }) }).parse(messages).Editor;
 
 test("browser image persistence across creation, reload, editing and visibility", { timeout: 180_000 }, async (context) => {
   const before = population();
@@ -33,9 +36,8 @@ test("browser image persistence across creation, reload, editing and visibility"
   try {
     writeFileSync(file, await sharp({ create: { width: 64, height: 32, channels: 3, background: "#cba56b" } }).png().toBuffer());
     browser = await launchBrowser();
-    const { send, evaluate, nextUpload } = browser;
+    const { send, evaluate, click, nextUpload, uploads } = browser;
     const truth = async (expression: string) => z.boolean().parse(await evaluate(expression));
-    const click = async (selector: string) => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
     const setAdministrator = () => send("Network.setCookies", { cookies: cookies.map(({ name, value }) => ({ name, value, url: origin.origin, sameSite: "Lax" })) });
     const navigate = async (pathname: string) => { await send("Page.navigate", { url: origin.origin + pathname }); };
     const fill = async (selector: string, text: string) => {
@@ -70,18 +72,19 @@ test("browser image persistence across creation, reload, editing and visibility"
       const result = await admin.from("project_assets").select("*").eq("project_id", id);
       assert.equal(result.error, null); assert.ok(result.data); return result.data;
     };
-    const chooseFile = async (index: number) => {
+    const chooseFile = async (index: number, selectedFile = file) => {
       const document = z.object({ root: z.object({ nodeId: z.number() }) }).parse(await send("DOM.getDocument"));
       const inputs = z.object({ nodeIds: z.array(z.number()) }).parse(await send("DOM.querySelectorAll", { nodeId: document.root.nodeId, selector: 'dialog:modal input[type=file]' }));
       const nodeId = inputs.nodeIds[index]; assert.ok(nodeId);
-      await send("DOM.setFileInputFiles", { nodeId, files: [file] });
+      await send("DOM.setFileInputFiles", { nodeId, files: [selectedFile] });
     };
     const insertImage = async (index: number, alt: string) => {
       await chooseFile(index);
       const group = `document.querySelectorAll("dialog:modal input[type=file]")[${index}].parentElement`;
       await evaluate(`(()=>{const input=${group}.querySelector("input:not([type=file])");input.focus();input.select();})()`);
       await send("Input.insertText", { text: alt });
-      await evaluate(`${group}.querySelector("button").click()`);
+      const fileId = z.string().parse(await evaluate(`${group}.querySelector("input[type=file]").id`));
+      await click(`div[role=group]:has([id=${JSON.stringify(fileId)}]) button`);
       await waitFor(() => truth(`[...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt===${JSON.stringify(alt)}&&img.complete&&img.naturalWidth===64)`), "inserted image preview decodes");
       return z.string().parse(await evaluate(`[...document.querySelectorAll("dialog:modal .rich-text img")].find(img=>img.alt===${JSON.stringify(alt)}).getAttribute("src")`));
     };
@@ -127,6 +130,7 @@ test("browser image persistence across creation, reload, editing and visibility"
       await waitFor(() => truth('!document.querySelector("dialog:modal")'), "creation dismissed");
       assert.equal(await truth(`fetch(${JSON.stringify(preview)}).then(()=>false,()=>true)`), true, "Closing revokes local preview URLs");
       assert.equal(population(), before);
+      assert.equal(uploads.length, 0, "Staging and cancellation do not send an upload");
     });
     await context.test("creation saves both fields and publishes only after uploads finish", async () => {
       await openCreate(); await fill("#project-name", "Image persistence fixture"); await fill("#project-slug", slug);
@@ -152,6 +156,7 @@ test("browser image persistence across creation, reload, editing and visibility"
           await send("Fetch.continueRequest", { requestId: upload.requestId });
         }
         const project = await saved(slug, 2); assert.equal(project.is_published, true);
+        assert.deepEqual(uploads.map((upload) => upload.status), [201, 201], "Creation must upload both actual image files successfully");
       } finally { await send("Fetch.disable"); }
     });
     await context.test("reload and edit retain saved images and persist an additional upload", async () => {
@@ -172,10 +177,42 @@ test("browser image persistence across creation, reload, editing and visibility"
       await navigate("/projects/" + slug); await openInformation();
       await decodedImages(["Description diagram", "Diagram added while editing", "Objectives diagram"], true);
     });
+    await context.test("editing validates before upload, surfaces a real server rejection and permits correction", async () => {
+      await edit();
+      const project = await getProject();
+      const initialAssets = await assetsFor(project.id);
+      const uploadCount = uploads.length;
+      const invalidFile = path.join(directory, "corrupt.png"); writeFileSync(invalidFile, "This is not an image.");
+      await chooseFile(0, invalidFile);
+      const fileId = z.string().parse(await evaluate('document.querySelector("dialog:modal input[type=file]").id'));
+      const group = `div[role=group]:has([id=${JSON.stringify(fileId)}])`;
+      await click(group + " button");
+      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(editorMessages.invalidAlt)}`), "alternative text validation");
+      assert.equal(uploads.length, uploadCount, "Invalid alternative text must not send a POST");
+      const altId = z.string().parse(await evaluate(`document.querySelector(${JSON.stringify(group)}).querySelector("input:not([type=file])").id`));
+      await fill(`[id=${JSON.stringify(altId)}]`, "Corrected diagram");
+      await evaluate('document.addEventListener("click",event=>{if(event.target.closest("button"))document.body.dataset.uploadClickTrusted=String(event.isTrusted)},{once:true})');
+      await click(group + " button");
+      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(editorMessages.invalidImage)} && !document.querySelector("dialog:modal input[type=file]").disabled`), "server image rejection is recoverable");
+      assert.equal(await evaluate('document.body.dataset.uploadClickTrusted'), "true", "Upload uses a real browser pointer click");
+      assert.equal(uploads.length, uploadCount + 1); assert.equal(uploads.at(-1)?.status, 400);
+      assert.equal(await evaluate(`document.querySelector(${JSON.stringify(`[id=${JSON.stringify(altId)}]`)}).value`), "Corrected diagram");
+      assert.equal(await truth('document.querySelector("dialog:modal input[type=file]").files.length===1'), true, "Rejection retains the selected file");
+      assert.deepEqual((await assetsFor(project.id)).map((asset) => asset.id).sort(), initialAssets.map((asset) => asset.id).sort(), "Rejected bytes cannot create an asset");
+      const rejectedContent: unknown = JSON.parse(z.string().parse(await evaluate('document.querySelector("input[name=description_content]").value')));
+      assert.deepEqual(readRichText(rejectedContent), readRichText(project.description_content), "Rejected bytes cannot insert a rich-text image");
+      await chooseFile(0);
+      await click(group + " button");
+      await waitFor(() => truth('[...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt==="Corrected diagram"&&img.complete&&img.naturalWidth===64)'), "corrected file uploads and inserts on the next click");
+      assert.equal(uploads.length, uploadCount + 2); assert.equal(uploads.at(-1)?.status, 201);
+      await submit(); await saved(slug, 4);
+      await navigate("/projects/" + slug); await openInformation();
+      await decodedImages(["Description diagram", "Diagram added while editing", "Corrected diagram", "Objectives diagram"], true);
+    });
     await context.test("visitors see decoded published images; saving private removes public access", async () => {
       await send("Network.clearBrowserCookies");
       await navigate("/projects/" + slug); await openInformation();
-      await decodedImages(["Description diagram", "Diagram added while editing", "Objectives diagram"], false);
+      await decodedImages(["Description diagram", "Diagram added while editing", "Corrected diagram", "Objectives diagram"], false);
       assert.equal(await truth('Boolean(document.querySelector("dialog:modal button.project-primary-action"))'), false);
       const project = await getProject();
       for (const asset of await assetsFor(project.id)) {
@@ -186,17 +223,19 @@ test("browser image persistence across creation, reload, editing and visibility"
       }
       await setAdministrator(); await navigate("/projects/" + slug); await openInformation(); await edit();
       await click('dialog:modal button[role=switch]'); await submit();
-      assert.equal((await saved(slug, 3)).is_published, false);
+      assert.equal((await saved(slug, 4)).is_published, false);
       assert.equal((await fetch(origin.origin + "/projects/" + slug)).status, 404);
       for (const asset of await assetsFor(project.id)) assert.equal((await fetch(origin.origin + "/project-images/" + asset.id)).status, 404);
       await navigate("/projects/" + slug); await openInformation();
-      await decodedImages(["Description diagram", "Diagram added while editing", "Objectives diagram"], true);
+      await decodedImages(["Description diagram", "Diagram added while editing", "Corrected diagram", "Objectives diagram"], true);
     });
     await context.test("a failed second upload retains private progress and retries without duplication", async () => {
+      await setAdministrator();
       await openCreate(); await fill("#project-name", "Image retry fixture"); await fill("#project-slug", retrySlug);
       await insertImage(0, "Retained description diagram"); await insertImage(1, "Retried objectives diagram");
       await click('dialog:modal button[role=switch]');
       await send("Fetch.enable", { patterns: [{ urlPattern: origin.origin + "/project-images", requestStage: "Request" }] });
+      const retryUploadStart = uploads.length;
       try {
         await submit(); const first = await nextUpload(); await send("Fetch.continueRequest", { requestId: first.requestId });
         const second = await nextUpload();
@@ -211,6 +250,7 @@ test("browser image persistence across creation, reload, editing and visibility"
         assert.equal((await fetch(origin.origin + "/projects/" + retrySlug)).status, 404);
         await submit(); const retry = await nextUpload(); await send("Fetch.continueRequest", { requestId: retry.requestId });
         const project = await saved(retrySlug, 2); assert.equal(project.id, draft.id);
+        assert.deepEqual(uploads.slice(retryUploadStart).map((upload) => upload.status), [201, 503, 201], "The failed second upload is retried exactly once");
         assert.ok((await assetsFor(project.id)).some((asset) => asset.id === retained[0]?.id));
       } finally { await send("Fetch.disable"); }
       await navigate("/projects/" + retrySlug); await openInformation();

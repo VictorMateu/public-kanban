@@ -1034,3 +1034,53 @@ physical-device and cross-browser acceptance remain pending. A selected file
 still requires Insert image before Save; selection alone is not a persisted
 rich-text node. This check establishes the confirmed cancellation regression,
 not that every possible image failure has been reproduced.
+
+
+## Direct upload execution and stronger regression assertions - 2026-11-15
+
+A fresh tab in the shared review browser was used on port 3015 with the
+existing administrator session. A generated 1200x630 PNG was selected through
+the file input, given alternative text and inserted using the UI. Creation
+rendered its local preview, then saved the private project and a ready WebP
+asset. Opening information decoded it at 1200x630. During editing, clicking
+Insert with empty alt produced invalidAlt and zero POST requests. Supplying
+alt and clicking again produced POST /project-images HTTP 201 and a second
+image node. Saving, navigating afresh and opening information decoded both
+images. Database inspection confirmed two owned ready assets, each 1446
+bytes at 1200x630, referenced by the saved description document. Only that
+UUID-named temporary project's Storage objects/rows and generated file were
+removed; the original project and administrator remained. The test tab closed.
+
+This does not reproduce the owner's remaining insertion failure. The prior
+file-picker cancellation fix addresses a separate confirmed regression.
+No additional production behavior has been changed speculatively.
+
+The tracked browser suite now dispatches actual pointer clicks after checking
+hit testing instead of invoking DOM click(), and observes upload POST/status
+events. Added checks cover invalid alt without a POST, a real 400 response
+for corrupt PNG bytes without a new asset or document node, preserved file
+and alt after rejection, and correction followed by exactly one successful
+201 upload and visible/saved image. Creation asserts both upload responses
+are 201. Partial retry asserts the sequence 201,503,201. Three new isolated
+client-transport tests use mocked fetch; they do not claim Storage coverage.
+
+Checks:
+
+- `npm run lint`, `npm run typecheck`, `npm run build`: passed.
+- `npm test`: 63 passed.
+- `npm run test:images` on the development review server: 7 passed (parent
+  and six browser scenarios).
+- On the local production build on port 3016, the browser suite and both
+  existing HTTP suites ran sequentially: 25 passed, 2 skipped (empty-database
+  requirements). Command: `node --test --test-concurrency=1
+  tests/project-content-http.ts tests/public-http.test.mjs
+  tests/project-images-browser.ts` through the temporary local server runner.
+
+Initial runs of the new test failed because its expected English message
+contained a misencoded dash. The assertion now reads the source message
+catalog; those failures were in the test expectation, not the application.
+All final assertions above passed and fixture population checks passed.
+The browser remains Edge/Chromium; other engines and the owner's exact
+failing file/interaction have not been verified. Debug boundaries are
+recorded in docs/development.md. No dependencies, schema/security changes,
+users or remote operations were introduced.

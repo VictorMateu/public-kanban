@@ -658,3 +658,67 @@ ProjectDialog ignores bubbling file-input `cancel` events. Only a cancel
 originating at the dialog is treated as dialog dismissal; explicit Close/X
 and Escape keep their existing busy guards. Selecting an unchanged file or
 cancelling its picker must preserve the open form and staged images.
+
+
+### Following an image upload through the form
+
+`ProjectForm` is shared between creation and editing. Its `useActionState`
+callback receives the outer form's FormData; rich-text JSON lives in the
+`description_content` and `objectives_content` hidden fields. File pickers
+have no form field name: images travel separately, never in the Server
+Action request carrying project details.
+
+1. `EditorImageUpload.upload()` validates the trimmed alternative text
+   (1-300 characters), selection and source size before attempting any upload.
+   An `invalidAlt` error returns immediately; it produces no network request.
+2. Creation stages the File under a local UUID in `ProjectImageStaging`,
+   creates a blob preview and calls the editor's `onInsert`. Storage is
+   untouched at this point. Editing instead calls `uploadProjectImage`
+   immediately with the existing project ID.
+3. `uploadProjectImage` posts multipart `project_id` and `file` to
+   `/project-images`. The browser sets Content-Type/boundary. Its JSON
+   result is validated with `imageUploadResultSchema`.
+4. The POST handler checks same-origin, administrator authorization,
+   multipart fields, source size and project existence. `readImageForm`
+   bounds streamed bytes; `normalizeProjectImage` validates the raster,
+   bounds pixels, strips metadata and produces WebP. The handler inserts
+   a pending `project_assets` row, uploads the object into private Storage
+   and marks the asset ready. Success is HTTP 201 with its UUID; failures
+   use 400/401/403/413/503 and a stable error code. Request-local cleanup
+   compensates failed persistence.
+5. `RichTextEditor.onInsert` validates the candidate document and appends
+   an image root block `{ type: "image", attrs: { assetId, alt } }`.
+   `onUpdate` serializes the editor JSON back into ProjectForm's hidden
+   field. In creation the ID is initially local; in editing it is the
+   uploaded asset UUID. No inserted node means the image is absent from
+   the next project save, even if an upload already succeeded.
+6. On creation save, `prepareCreationImages` validates all fields, creates
+   a private draft and uploads referenced staged files sequentially. It
+   replaces local IDs with returned asset IDs and saves private progress
+   before normal `saveProject` applies the selected publication. Editing
+   calls `saveProject` directly with the JSON's existing asset references.
+7. `persistProject` authorizes again, validates input, verifies every image
+   is ready and belongs to this project, then applies the optimistic
+   timestamp update. Successful save revalidates project pages and redirects.
+8. `RichTextContent` renders image references through `/project-images/:id`.
+   Administrator previews use `?preview=1`; public requests use a separate
+   anonymous client. Storage/database policies check access on delivery.
+
+Debug the first boundary whose expected evidence is missing:
+
+| Observation | Check |
+| --- | --- |
+| No POST after Insert while editing | Alternative text/file errors and whether the button/editor is enabled |
+| No POST after Insert while creating | Expected: staging is local until Create project |
+| POST fails | Response error code, authentication/origin, decoding/size limits or Storage failure |
+| POST returns 201 but no image node | `RichTextEditor.onInsert`, candidate document limits and command result |
+| Node exists but save fails | Server Action errors, ready/ownership validation, updated_at or slug conflict |
+| Saved node exists but image does not decode | GET response for its asset UUID and publication/preview authorization |
+
+`test:images` uses trusted pointer clicks and records only upload request IDs
+and HTTP status codes. It checks that invalid alt sends no POST, corrupt
+bytes return 400 without an inserted node/asset, and correction uploads and
+inserts on the next click. `tests/image-upload.test.ts` isolates the client
+transport with mocked fetch: multipart fields/bytes, browser-owned boundary,
+server error mapping and malformed/network responses. Actual persistence
+and rendering are covered by the HTTP/browser suites, not those mocks.
