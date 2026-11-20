@@ -20,6 +20,8 @@ const docker = (args: string[]) => execFileSync("docker", args, { encoding: "utf
 const sql = (query: string) => docker(["exec", "supabase_db_portfolio-kanban", "psql", "-U", "postgres", "-d", "postgres", "-X", "-v", "ON_ERROR_STOP=1", "-At", "-c", query]);
 export const population = () => sql("SELECT json_build_array((SELECT count(*) FROM public.projects),(SELECT count(*) FROM public.project_assets),(SELECT count(*) FROM public.columns),(SELECT count(*) FROM public.tasks),(SELECT count(*) FROM auth.users),(SELECT count(*) FROM private.administrator))::TEXT;");
 
+export const hasLocalAdministrator = () => sql("SELECT EXISTS(SELECT 1 FROM private.administrator);") === "t";
+
 // Use only the existing local administrator. Never log/persist credentials or create users.
 export function localAdministratorToken() {
   const id = z.uuid().parse(sql("SELECT user_id FROM private.administrator;"));

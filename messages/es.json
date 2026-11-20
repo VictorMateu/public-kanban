@@ -15,13 +15,18 @@
   "Navigation": {
     "label": "Navegación principal",
     "overview": "Resumen",
-    "projects": "Proyectos"
+    "projects": "Proyectos",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
   },
   "SidebarIllustration": {
     "pause": "Pausar animación de la barra lateral",
     "resume": "Reanudar animación de la barra lateral"
   },
   "Language": {
+    "english": "English",
+    "spanish": "Español",
+    "catalan": "Català",
     "label": "Idioma de la interfaz",
     "apply": "Aplicar"
   },
@@ -71,6 +76,7 @@
     "dueDate": "Fecha límite:"
   },
   "Auth": {
+    "sessionActive": "Sesión de administrador iniciada",
     "title": "Acceso del administrador",
     "description": "Acceso exclusivo del propietario de {appName}.",
     "email": "Correo electrónico",
@@ -84,7 +90,10 @@
     "notConfigured": "El acceso del administrador no está disponible en este momento.",
     "invalidCredentials": "No se pudo iniciar sesión con los datos proporcionados.",
     "signInUnavailable": "No se pudo iniciar sesión. Vuelve a intentarlo más tarde.",
-    "signOutFailed": "No se pudo cerrar la sesión. Vuelve a intentarlo."
+    "signOutFailed": "No se pudo cerrar la sesión. Vuelve a intentarlo.",
+    "accountMenu": "Opciones de tu cuenta",
+    "accountTitle": "Tu rinconcito",
+    "accountDescription": "Vuelve a ver el jardín como visitante."
   },
   "Error": {
     "title": "No se ha podido cargar el contenido",
@@ -206,5 +215,37 @@
     "close": "Cerrar información",
     "description": "Descripción",
     "empty": "Todavía no se ha añadido información adicional."
+  },
+  "Overview": {
+    "title": "Ideas que van creciendo",
+    "description": "Mis proyectos, las tareas que les dan forma y un vistazo a lo que voy construyendo.",
+    "personalWebsite": "Mi web personal",
+    "projects": "Proyectos",
+    "tasks": "Tareas",
+    "projectTotal": "Total",
+    "projectOpen": "Abiertos",
+    "projectCompleted": "Completados",
+    "projectCanceled": "Cancelados",
+    "taskTotal": "Total",
+    "taskOpen": "Abiertas",
+    "taskCompleted": "Completadas",
+    "taskCanceled": "Canceladas",
+    "pendingValue": "Todavía no disponible",
+    "pending": "Las cifras de proyectos y tareas estarán disponibles próximamente.",
+    "activityTitle": "El ritmo del jardín",
+    "activityEntity": "Tipo de actividad",
+    "activityPeriod": "Agrupación temporal",
+    "month": "Meses",
+    "day": "Días",
+    "taskActivityMonths": "Tareas creadas y completadas por mes",
+    "taskActivityDays": "Tareas creadas y completadas por día",
+    "projectActivityMonths": "Proyectos creados y completados por mes",
+    "projectActivityDays": "Proyectos creados y completados por día",
+    "activityPending": "La actividad crecerá aquí",
+    "activityPendingDescription": "Un espacio para ver cómo evoluciona el trabajo.",
+    "tasksCreated": "Creadas",
+    "tasksCompleted": "Completadas",
+    "projectsCreated": "Creados",
+    "projectsCompleted": "Completados"
   }
 }

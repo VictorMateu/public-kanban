@@ -16,13 +16,18 @@
   "Navigation": {
     "label": "Main navigation",
     "overview": "Overview",
-    "projects": "Projects"
+    "projects": "Projects",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "SidebarIllustration": {
     "pause": "Pause sidebar animation",
     "resume": "Resume sidebar animation"
   },
   "Language": {
+    "english": "English",
+    "spanish": "Español",
+    "catalan": "Català",
     "label": "Interface language",
     "apply": "Apply"
   },
@@ -72,6 +77,7 @@
     "dueDate": "Due date:"
   },
   "Auth": {
+    "sessionActive": "Administrator signed in",
     "title": "Administrator sign-in",
     "description": "Exclusive access for the owner of {appName}.",
     "email": "Email address",
@@ -85,7 +91,10 @@
     "notConfigured": "Administrator sign-in is currently unavailable.",
     "invalidCredentials": "Unable to sign in with the provided credentials.",
     "signInUnavailable": "Unable to sign in. Please try again later.",
-    "signOutFailed": "Unable to sign out. Please try again."
+    "signOutFailed": "Unable to sign out. Please try again.",
+    "accountMenu": "Account options",
+    "accountTitle": "Your little corner",
+    "accountDescription": "See the garden as a visitor."
   },
   "Error": {
     "title": "Unable to load the content",
@@ -207,5 +216,37 @@
     "close": "Close information",
     "description": "Description",
     "empty": "No supporting information has been added yet."
+  },
+  "Overview": {
+    "title": "Ideas taking root",
+    "description": "My projects, the tasks that shape them, and a glimpse of what I am building.",
+    "personalWebsite": "My personal website",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "projectTotal": "Total",
+    "projectOpen": "Open",
+    "projectCompleted": "Completed",
+    "projectCanceled": "Canceled",
+    "taskTotal": "Total",
+    "taskOpen": "Open",
+    "taskCompleted": "Completed",
+    "taskCanceled": "Canceled",
+    "pendingValue": "Not available yet",
+    "pending": "Project and task figures will be available soon.",
+    "activityTitle": "The garden’s rhythm",
+    "activityEntity": "Activity type",
+    "activityPeriod": "Time grouping",
+    "month": "Months",
+    "day": "Days",
+    "taskActivityMonths": "Tasks created and completed each month",
+    "taskActivityDays": "Tasks created and completed each day",
+    "projectActivityMonths": "Projects created and completed each month",
+    "projectActivityDays": "Projects created and completed each day",
+    "activityPending": "Activity will grow here",
+    "activityPendingDescription": "A space to follow how the work evolves.",
+    "tasksCreated": "Created",
+    "tasksCompleted": "Completed",
+    "projectsCreated": "Created",
+    "projectsCompleted": "Completed"
   }
 }

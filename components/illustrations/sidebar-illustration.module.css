@@ -25,7 +25,7 @@
   bottom: 0;
 }
 
-@media (width >= 48rem) and (height >= 42rem) {
+@media (width >= 64rem) and (height >= 42rem) {
   .illustration {
     display: block;
   }

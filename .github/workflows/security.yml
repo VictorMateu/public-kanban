@@ -1,0 +1,144 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - name: Block known vulnerabilities at every reported severity
+        run: npm audit --package-lock-only --ignore-scripts --include=dev --audit-level=low
+
+  dependency-review:
+    name: Dependency review
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+        with:
+          fail-on-severity: low
+          fail-on-scopes: runtime, development, unknown
+          license-check: false
+          vulnerability-check: true
+          warn-only: false
+          comment-summary-in-pr: never
+          retry-on-snapshot-warnings: true
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install checksum-verified Gitleaks
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
+            --output gitleaks.tar.gz
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz' | sha256sum --check --strict
+          mkdir -p gitleaks-bin
+          tar -xzf gitleaks.tar.gz -C gitleaks-bin gitleaks
+          echo "$RUNNER_TEMP/gitleaks-bin" >> "$GITHUB_PATH"
+      - name: Scan all fetched history without exposing findings
+        run: |
+          if [ -e .gitleaks.toml ]; then
+            echo "::error::Project secret-scanning overrides require an approved policy change."
+            exit 1
+          fi
+          test -f .gitleaksignore
+          gitleaks git --log-opts="--all" --redact=100 --no-banner --no-color --verbose=false --ignore-gitleaks-allow --gitleaks-ignore-path .gitleaksignore --exit-code=1 .
+
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - name: Initialize security analysis
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+          dependency-caching: false
+          trap-caching: false
+      - name: Analyze and publish code scanning results
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066
+        with:
+          category: /language:${{ matrix.language }}
+          output: ${{ runner.temp }}/codeql-results
+          upload: always
+      - name: Block all CodeQL findings, including existing alerts
+        run: node scripts/ci/check-codeql.ts "$RUNNER_TEMP/codeql-results"
+
+  gate:
+    name: Security gate
+    if: ${{ always() }}
+    needs: [audit, dependency-review, secrets, codeql]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    env:
+      AUDIT_RESULT: ${{ needs.audit.result }}
+      REVIEW_RESULT: ${{ needs.dependency-review.result }}
+      SECRETS_RESULT: ${{ needs.secrets.result }}
+      CODEQL_RESULT: ${{ needs.codeql.result }}
+      EVENT_NAME: ${{ github.event_name }}
+    steps:
+      - name: Require every applicable security check to pass
+        run: |
+          test "$AUDIT_RESULT" = success
+          test "$SECRETS_RESULT" = success
+          test "$CODEQL_RESULT" = success
+          if [ "$EVENT_NAME" = pull_request ]; then
+            test "$REVIEW_RESULT" = success
+          else
+            test "$REVIEW_RESULT" = skipped
+          fi

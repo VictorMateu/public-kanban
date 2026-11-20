@@ -15,7 +15,7 @@ export async function signIn(_previous: AuthFormState, formData: FormData): Prom
   }
 
   revalidatePath("/", "layout");
-  redirect("/projects");
+  redirect("/");
 }
 
 export async function signOut(): Promise<AuthFormState> {
@@ -28,5 +28,5 @@ export async function signOut(): Promise<AuthFormState> {
   }
 
   revalidatePath("/", "layout");
-  redirect("/admin/login");
+  redirect("/");
 }

@@ -8,9 +8,9 @@ import { z } from "zod";
 import sharp from "sharp";
 import { imageUploadResultSchema } from "../lib/projects/image-input.ts";
 import type { Database } from "../lib/supabase/database.types.ts";
-import { environment, origin, supabaseUrl, population, localAdministratorToken, removeLocalProjectFixture } from "./support/local-project.ts";
+import { environment, origin, supabaseUrl, population, localAdministratorToken, hasLocalAdministrator, removeLocalProjectFixture } from "./support/local-project.ts";
 
-test("rich project HTTP paths enforce image visibility without creating users", async (context) => {
+test("rich project HTTP paths enforce image visibility without creating users", { skip: !hasLocalAdministrator() && "Requires an existing local administrator; never creates users." }, async (context) => {
   const before = population();
   const id = randomUUID(); const assetId = randomUUID();
   const slug = "rich-http-" + id;
@@ -81,7 +81,7 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       assert.ok(!privateResponse.includes("Rich HTTP fixture"));
       assert.ok(!privateResponse.includes("Private board fixture task"));
       const adminEntry = await fetch(origin.origin + "/admin", { redirect: "manual", headers: { Cookie: cookie } });
-      assert.equal(new URL(adminEntry.headers.get("location") ?? "", origin).pathname, "/projects");
+      assert.equal(new URL(adminEntry.headers.get("location") ?? "", origin).pathname, "/");
     });
     await context.test("project Server Actions create, validate, update and change visibility in shared views", async () => {
       // Match the installed Next/React multipart Server Action protocol without another dependency.

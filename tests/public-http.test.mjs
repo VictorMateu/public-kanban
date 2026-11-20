@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
+import { htmlText, serverMarkup } from "./helpers/html.ts";
 
 // Run only against local Next.js and Supabase; no passwords or user creation.
 const origin = new URL(process.env.KANBAN_TEST_URL ?? "http://127.0.0.1:3000");
@@ -34,7 +35,7 @@ function population() {
 async function page(path, headers = {}) {
   const response = await fetch(new URL(path, origin), { headers, redirect: "manual" });
   const html = await response.text();
-  return { status: response.status, html, renderedHtml: html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ""), headers: response.headers };
+  return { status: response.status, html, renderedHtml: serverMarkup(html), headers: response.headers };
 }
 
 test("public project pages use real local data and preserve existing users", async (context) => {
@@ -66,13 +67,16 @@ test("public project pages use real local data and preserve existing users", asy
         ('${tasks[2]}', '${projects[0]}', '${columns[0]}', ${literal(escapedTitle)}, NULL, 'medium', NULL, 0);
       COMMIT;`);
 
-    await context.test("keeps overview content empty even when projects exist", async () => {
+    await context.test("keeps overview metrics pending without serializing project data", async () => {
       const result = await page("/");
       assert.equal(result.status, 200);
-      for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "The blank home must not serialize project data");
-      assert.doesNotMatch(result.renderedHtml, /<(form|input|select)\b/);
+      for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "The pending overview must not serialize project data");
+      const main = result.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1];
+      assert.ok(main);
+      assert.doesNotMatch(main, /<(form|input|select)\b/);
       assert.doesNotMatch(result.renderedHtml, /href="\/projects\//);
-      assert.match(result.renderedHtml, /<main\b[^>]*>\s*<\/main>/);
+      assert.equal((main.match(/<dd\b/g) ?? []).length, 8);
+      assert.equal((main.match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8);
     });
 
     await context.test("lists published projects in order on the projects route without exposing drafts", async () => {
@@ -88,9 +92,9 @@ test("public project pages use real local data and preserve existing users", asy
     await context.test("renders columns, tasks, priorities, dates, and empty columns", async () => {
       const result = await page(`/projects/${marker}-published`);
       assert.equal(result.status, 200);
-      const htmlWithoutComments = result.renderedHtml.replace(/<!--[\s\S]*?-->/g, "");
+      const boardText = htmlText(result.renderedHtml);
       for (const text of [names.published, firstTask, secondTask, "Descripción de tarea", "Priority high", "Priority low", "Priority medium", "Nov 1, 2026", "No tasks yet."]) {
-        assert.ok(htmlWithoutComments.includes(text), "Expected public board content should be rendered");
+        assert.ok(boardText.includes(text), "Expected public board content should be rendered");
       }
       assert.doesNotMatch(result.renderedHtml, />Read only<\/span>/);
       assert.ok(result.html.indexOf(`${marker}-first-column`) < result.html.indexOf(`${marker}-empty-column`), "Column positions should define board order");
@@ -109,8 +113,7 @@ test("public project pages use real local data and preserve existing users", asy
     await context.test("provides keyboard navigation and labelled board regions", async () => {
       const result = await page(`/projects/${marker}-published`);
       const backLink = [...result.renderedHtml.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].find(([, , body]) =>
-        body.replace(/<span\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/span>/g, "")
-          .replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>/g, "").trim() === "All projects",
+        htmlText(body).trim() === "All projects",
       );
       assert.ok(backLink, "The board should expose a return link to the project listing");
       assert.match(backLink[1], /href="\/projects"/);
@@ -180,12 +183,14 @@ test("public project pages use real local data and preserve existing users", asy
     assert.equal(population(), before, "Fixtures should be removed and existing data and users preserved");
   }
 
-  await context.test("keeps the initial screen blank after fixture cleanup", {
-    skip: JSON.parse(before)[0] !== 0,
-  }, async () => {
+  await context.test("keeps overview metrics pending after fixture cleanup", async () => {
     const result = await page("/");
     assert.equal(result.status, 200);
-    assert.match(result.renderedHtml, /<main\b[^>]*>\s*<\/main>/);
+    const main = result.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1];
+    assert.ok(main, "The overview should retain its main landmark after cleanup");
+    assert.equal((main.match(/<dd\b/g) ?? []).length, 8);
+    assert.equal((main.match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8);
+    for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "Cleaned fixtures must not appear in HTML or React payloads");
     assert.ok(!result.renderedHtml.includes("No published projects yet"));
   });
 
