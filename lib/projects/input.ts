@@ -1,4 +1,4 @@
-import { projectDetailsSchema, projectContentSchema, projectPublicationSchema, type ProjectDetails, type ProjectContentField, type ProjectFormField } from "./schemas.ts";
+import { projectDetailsSchema, projectContentSchema, projectPublicationSchema, projectManagementSchema, type ProjectDetails, type ProjectContentField, type ProjectFormField } from "./schemas.ts";
 import { parseRichTextJson } from "./rich-text.ts";
 
 type ProjectField = keyof ProjectDetails;
@@ -61,14 +61,28 @@ export function parseProjectContent(form: FormData) {
 
 export function parseProjectSubmission(form: FormData) {
   const content = parseProjectContent(form);
-  const values = form.getAll("is_published");
-  const publication = projectPublicationSchema.safeParse(values.length === 1 ? values[0] : undefined);
-  if (!content.success || !publication.success) {
+  const field = (name: ProjectFormField): unknown => {
+    const entries = form.getAll(name);
+    return entries.length === 1 ? entries[0] : undefined;
+  };
+  const publication = projectPublicationSchema.safeParse(field("is_published"));
+  const management = projectManagementSchema.safeParse({
+    status: field("status"), is_hidden: field("is_hidden"), cancellation_reason: field("cancellation_reason"),
+  });
+  const managementErrors: Partial<Record<ProjectFormField, InputError>> = {};
+  if (!management.success) for (const issue of management.error.issues) {
+    const field = issue.path[0];
+    if (field === "status" || field === "is_hidden" || field === "cancellation_reason") {
+      managementErrors[field] ??= issue.message === "required" || issue.message === "tooLong" ? issue.message : "invalid";
+    }
+  }
+  if (!content.success || !publication.success || !management.success) {
     const errors: Partial<Record<ProjectFormField, InputError>> = {
       ...(!content.success ? content.errors : {}),
+      ...managementErrors,
       ...(!publication.success ? { is_published: "invalid" as const } : {}),
     };
     return { success: false as const, errors };
   }
-  return { success: true as const, data: { ...content.data, is_published: publication.data } };
+  return { success: true as const, data: { ...content.data, ...management.data, is_published: publication.data } };
 }

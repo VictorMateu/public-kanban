@@ -96,43 +96,52 @@ export type Database = {
             };
             "projects": {
                 Row: {
+                    "cancellation_reason": string | null;
                     "created_at": string;
                     "description": string | null;
                     "description_content": Json | null;
                     "id": string;
+                    "is_hidden": boolean;
                     "is_published": boolean;
                     "name": string;
                     "objectives_content": Json | null;
                     "position": number;
                     "repository_url": string | null;
                     "slug": string;
+                    "status": string;
                     "updated_at": string;
                 };
                 ComputedFields: never;
                 Insert: {
+                    "cancellation_reason"?: string | null;
                     "created_at"?: string;
                     "description"?: string | null;
                     "description_content"?: Json | null;
                     "id"?: string;
+                    "is_hidden"?: boolean;
                     "is_published"?: boolean;
                     "name": string;
                     "objectives_content"?: Json | null;
                     "position"?: number;
                     "repository_url"?: string | null;
                     "slug": string;
+                    "status"?: string;
                     "updated_at"?: string;
                 };
                 Update: {
+                    "cancellation_reason"?: string | null;
                     "created_at"?: string;
                     "description"?: string | null;
                     "description_content"?: Json | null;
                     "id"?: string;
+                    "is_hidden"?: boolean;
                     "is_published"?: boolean;
                     "name"?: string;
                     "objectives_content"?: Json | null;
                     "position"?: number;
                     "repository_url"?: string | null;
                     "slug"?: string;
+                    "status"?: string;
                     "updated_at"?: string;
                 };
                 Relationships: [
@@ -211,6 +220,19 @@ export type Database = {
             "is_admin": {
                 Args: Record<PropertyKey, never>;
                 Returns: boolean;
+            };
+            "list_project_summaries": {
+                Args: Record<PropertyKey, never>;
+                Returns: {
+                    "description": string;
+                    "id": string;
+                    "is_hidden": boolean;
+                    "is_published": boolean;
+                    "name": string;
+                    "position": number;
+                    "slug": string;
+                    "status": string;
+                }[];
             };
         };
         Enums: {

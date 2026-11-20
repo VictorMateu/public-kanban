@@ -35,7 +35,35 @@ export const projectIdentitySchema = z.strictObject({ id: z.uuid(), updated_at: 
 
 export const projectPublicationSchema = z.enum(["true", "false"]).transform((value) => value === "true");
 
-export const projectFormFieldSchema = z.enum(["name", "slug", "description_content", "objectives_content", "repository_url", "is_published"]);
+export const projectStatusSchema = z.enum(["development", "maintenance", "completed", "cancelled"]);
+export type ProjectStatus = z.infer<typeof projectStatusSchema>;
+
+export const projectManagementSchema = z.strictObject({
+  status: projectStatusSchema,
+  is_hidden: projectPublicationSchema,
+  cancellation_reason: requiredText().trim()
+    .refine((value) => [...value].length <= 2000, { error: "tooLong" })
+    .transform((value) => value || null),
+}).superRefine((value, context) => {
+  if (value.status === "cancelled" && !value.cancellation_reason) {
+    context.addIssue({ code: "custom", path: ["cancellation_reason"], message: "required" });
+  }
+});
+
+export const projectSummarySchema = z.strictObject({
+  id: z.uuid(), slug: projectDetailsSchema.shape.slug.nullable(),
+  name: projectDetailsSchema.shape.name, description: z.string().nullable(),
+  status: projectStatusSchema, is_hidden: z.boolean(), is_published: z.boolean(),
+  position: z.number().int().nonnegative(),
+});
+export type ProjectSummary = z.infer<typeof projectSummarySchema>;
+export const publicProjectSummarySchema = projectSummarySchema.refine(
+  (value) => value.is_published && (value.is_hidden
+    ? value.slug === null && value.description === null
+    : value.slug !== null),
+);
+
+export const projectFormFieldSchema = z.enum(["name", "slug", "description_content", "objectives_content", "repository_url", "is_published", "status", "is_hidden", "cancellation_reason"]);
 export const projectFormStateSchema = z.strictObject({
   errors: z.partialRecord(projectFormFieldSchema, z.enum(["required", "invalid", "tooLong"])).optional(),
   error: z.enum(["unauthorized", "unavailable", "slugTaken", "stale", "invalid", "imageUploadFailed"]).optional(),

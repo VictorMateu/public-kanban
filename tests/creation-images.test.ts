@@ -18,7 +18,7 @@ function form(ids: string[]) {
     { type: "paragraph", content: [{ type: "text", text: "Project explanation", marks: [{ type: "bold" }] }] },
     ...ids.map((id) => ({ type: "image" as const, attrs: { assetId: id, alt: "A project diagram" } })),
   ] };
-  for (const [key, value] of Object.entries({ id: "", updated_at: "", name: "Image fixture", slug: "image-fixture", description_content: JSON.stringify(document), objectives_content: JSON.stringify(plainTextDocument(null)), repository_url: "", is_published: "true" })) body.set(key, value);
+  for (const [key, value] of Object.entries({ id: "", updated_at: "", name: "Image fixture", slug: "image-fixture", description_content: JSON.stringify(document), objectives_content: JSON.stringify(plainTextDocument(null)), repository_url: "", is_published: "true", status: "development", is_hidden: "false", cancellation_reason: "" })) body.set(key, value);
   return body;
 }
 function documentFrom(body: FormData) {

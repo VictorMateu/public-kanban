@@ -80,6 +80,7 @@ function contentForm() {
   form.set("description_content", JSON.stringify(plainTextDocument("Description")));
   form.set("objectives_content", JSON.stringify(plainTextDocument(null)));
   form.set("repository_url", "");
+  form.set("status", "development"); form.set("is_hidden", "false"); form.set("cancellation_reason", "");
   return form;
 }
 

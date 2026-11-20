@@ -45,7 +45,7 @@ select throws_ok($$insert into public.tasks (project_id, column_id, title) value
 with changed as (update public.projects set name = 'Denied' returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot update projects');
 with changed as (update public.columns set name = 'Denied' returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot update columns');
 with changed as (update public.tasks set title = 'Denied' returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot update tasks');
-with changed as (delete from public.projects returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot delete projects');
+select throws_ok($$delete from public.projects$$, '42501', null, 'Other user cannot delete projects');
 with changed as (delete from public.columns returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot delete columns');
 with changed as (delete from public.tasks returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot delete tasks');
 reset role;
@@ -74,7 +74,7 @@ select throws_ok($$update public.projects set slug = 'published-test' where slug
 select throws_ok($$update public.tasks set title = ' ' where id = '30000000-0000-4000-8000-000000000003'$$, '23514', null, 'Blank task titles are rejected');
 with changed as (delete from public.tasks where id = '30000000-0000-4000-8000-000000000003' returning id) select is((select count(*) from changed), 1::bigint, 'Administrator can delete task');
 with changed as (delete from public.columns where id = '20000000-0000-4000-8000-000000000003' returning id) select is((select count(*) from changed), 1::bigint, 'Administrator can delete column');
-with changed as (delete from public.projects where slug = 'admin-test' returning id) select is((select count(*) from changed), 1::bigint, 'Administrator can delete project');
+select throws_ok($$delete from public.projects where slug = 'admin-test'$$, '42501', null, 'Administrator cannot delete projects; use cancellation');
 update public.projects set is_published = false where slug = 'published-test';
 reset role;
 
