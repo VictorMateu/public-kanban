@@ -124,7 +124,7 @@
     "invalidDocument": "El contingut inclou formats no admesos o supera els límits. Simplifica’l abans de desar.",
     "image": "Imatge del projecte",
     "imageFile": "Fitxer d’imatge",
-    "imageAlt": "Text alternatiu que descrigui la imatge",
+    "imageAlt": "Text alternatiu que descriu la imatge (obligatori)",
     "imageHelp": "JPEG, PNG o WebP, fins a 8 MiB i 25 milions de píxels. Es redimensiona a un màxim de 4.096 píxels per costat i es desa com a WebP, fins a 2 MiB.",
     "saveBeforeImage": "Desa primer l’esborrany per afegir imatges.",
     "insertImage": "Puja i insereix la imatge",
@@ -139,7 +139,13 @@
     "placeholder": "Comença a escriure les teves idees…",
     "stagedImageHelp": "JPEG, PNG o WebP, fins a 8 MiB per imatge. Fins a 32 MiB de fitxers per formulari de creació, compartits entre descripció i objectius.",
     "stagedImages": "Les imatges es previsualitzen localment i es pugen en crear el projecte. Tancar abans de desar les descarta.",
-    "stagingTooLarge": "Aquest formulari admet fins a 32 MiB de fitxers, inclosos els conservats per desfer. Tanca’l i torna’l a obrir per alliberar-los."
+    "stagingTooLarge": "Aquest formulari admet fins a 32 MiB de fitxers, inclosos els conservats per desfer. Tanca’l i torna’l a obrir per alliberar-los.",
+    "imageAltHelp": "Obligatori abans d’inserir. Descriu la imatge amb entre 1 i 300 caràcters. Retorn insereix la imatge.",
+    "imageSelected": "Seleccionada: {name}. Insereix-la o descarta la selecció abans de desar.",
+    "imageStaged": "Imatge inserida localment. Crea el projecte per pujar-la i desar-la.",
+    "imageUploaded": "Imatge pujada i inserida. Desa el projecte per conservar-la al contingut.",
+    "clearImageSelection": "Descarta la selecció",
+    "stageImage": "Insereix la imatge"
   },
   "ProjectForm": {
     "title": "Gestionar projectes",
@@ -179,7 +185,8 @@
     "publishOnSave": "En desar, el projecte i el seu contingut seran públics.",
     "draftOnSave": "En desar, el projecte serà privat. Només tu el podràs veure.",
     "imageUploadFailed": "No s’ha pogut pujar una imatge. El projecte continua sent privat. Revisa els fitxers seleccionats i torna a intentar desar.",
-    "draftRetained": "S’ha desat un esborrany privat. Torna-ho a intentar aquí per continuar amb el mateix projecte. En tancar es conserven l’esborrany i les imatges desades, però es descarten els fitxers locals que encara no s’han pujat."
+    "draftRetained": "S’ha desat un esborrany privat. Torna-ho a intentar aquí per continuar amb el mateix projecte. En tancar es conserven l’esborrany i les imatges desades, però es descarten els fitxers locals que encara no s’han pujat.",
+    "pendingImages": "Hi ha una imatge seleccionada sense inserir. Insereix-la o descarta la selecció abans de desar."
   },
   "ProjectInformation": {
     "title": "Informació del projecte",

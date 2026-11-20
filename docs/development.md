@@ -722,3 +722,27 @@ inserts on the next click. `tests/image-upload.test.ts` isolates the client
 transport with mocked fetch: multipart fields/bytes, browser-owned boundary,
 server error mapping and malformed/network responses. Actual persistence
 and rendering are covered by the HTTP/browser suites, not those mocks.
+
+
+### Preventing selected images from being lost on submit
+
+EditorImageUpload intercepts Enter in its alternative-text field to run the
+same insertion handler as its button, preventing the enclosing form's implicit
+submit. Composition commits and repeated keydown events do not start another
+upload. Blank/invalid alternative text keeps focus and reports aria-invalid
+with an associated error. The visible required label and aria-required apply
+to image insertion; native required is deliberately absent because the empty
+upload controls must not block saving a project after successful insertion.
+
+ProjectForm's submit capture checks both file inputs before dispatching its
+Server Action. A nonempty selection cancels submission, preserves form/file
+values, announces pendingImages and focuses that file. Discard selection clears
+only the local picker; it does not delete stored assets. Input changes,
+insertion updates and form button interactions clear a previous pending-image
+notice. A subsequent explicit save rechecks the actual file inputs.
+
+The uploader reports the selected filename, local insertion or completed
+upload separately. In creation the preview remains local until Create project;
+in editing upload precedes insertion and the project still needs saving.
+These controls change neither server authorization/validation nor Storage
+permissions. They prevent accidental data omission at the browser boundary.

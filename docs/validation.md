@@ -1084,3 +1084,57 @@ The browser remains Edge/Chromium; other engines and the owner's exact
 failing file/interaction have not been verified. Debug boundaries are
 recorded in docs/development.md. No dependencies, schema/security changes,
 users or remote operations were introduced.
+
+
+## Image Enter-key submission and pending selection fix - 2026-11-20
+
+Read-only inspection initially found the original test project with zero image
+references and no project_assets rows. In the shared browser, a unique private
+fixture was created using the existing public 224x224 WebP illustration as an
+upload source. Selecting it, entering alternative text and pressing Enter
+submitted the entire project, redirected and created no asset/image reference.
+The enclosing form's implicit submit caused the omission. A new tracked
+regression failed before the fix: "Enter inserts into the editor without
+submitting the project" timed out while the other six browser scenarios passed.
+
+The alternative-text input now handles Enter as image insertion; project submit
+capture rejects pending file selections in either editor. Explicit feedback
+and a local Discard selection button distinguish pending selection, creation's
+local preview and editing's completed upload. Required-alt labels/help/errors
+are translated in English, Spanish and Catalan. No server, schema, dependency
+or Storage policy changes were required; visual feedback remains provisional.
+
+After the fix, the shared browser's editing Enter path returned POST
+/project-images 201, followed by a preview GET 200 and a decoded 224x224 image
+in the editor. The completed upload message appeared. Saving the project
+persisted its reference; read-only database/Storage inspection confirmed the
+owned ready asset and decoded WebP bytes. The manual fixture and its exact
+object/asset were removed, preserving the original project/user/administrator.
+All agent-opened review tabs were closed. Some subsequent preview automation
+clicks/snapshots timed out; manual post-navigation visual confirmation through
+that tool was inconclusive. Independent headless browser tests verified decoded
+images after saving/reloading and information-modal opening.
+
+The expanded browser suite checks real Enter events in creation and editing,
+blank alternative-text focus/aria-invalid, no implicit project mutation, blocked
+Save while either field has a pending selection, focus on that selection,
+explicit discard, staging/upload messages and saved image decoding. Existing
+actual-upload/rejection/retry and anonymous/private-access checks remain.
+
+Validation:
+
+- npm run lint and npm run typecheck: passed.
+- npm test: 63 passed.
+- npm run test:images on development port 3015: 8 passed (parent plus seven
+  browser scenarios); the pre-fix keyboard regression failed as described.
+- Local production HTTP and browser suites, run sequentially on port 3016:
+  26 passed, 2 empty-database checks skipped. Fixture population checks passed.
+- npm run build: the first attempt compiled and typechecked but exited with
+  SecurityFatalError for the installed Next.js 16.4.3 security advisory.
+  Repeating the command completed with exit 0 and retained the upgrade warning.
+  Dependency upgrades were not performed and need owner review/confirmation.
+
+No existing data was deleted or repaired. Earlier selections that never reached
+insertion/upload cannot be recovered from Storage and need selecting again.
+The confirmed Enter/unsaved-selection omission is fixed; visual acceptance and
+the separate Next.js security-version review remain pending.

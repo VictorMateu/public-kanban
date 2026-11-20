@@ -344,3 +344,20 @@ content saving. Storage remains private with controlled delivery, no new
 dependency or migration, and no automatic orphan cleanup. The multipart
 reader now preserves browser boundary case so ordinary browser uploads
 are parsed correctly. Visual acceptance remains pending.
+
+
+### Image selection and keyboard submission safety - 2026-11-20
+
+A reproduced form bug submitted the project when Enter was pressed in an
+image's alternative-text field, dropping the selected file before insertion.
+Enter now validates and inserts that image, keeping the project form open.
+Explicit project saving is blocked while either field still has a selected
+file awaiting insertion. The form explains the issue and focuses the pending
+file; the owner can insert it or discard the selection before saving.
+
+Provisional UI feedback distinguishes selection, local insertion awaiting
+creation, and completed upload awaiting content save. Alternative text is
+visibly required for insertion and validation errors are associated with its
+input. Creation's button says Insert image because upload still waits for
+Create project. The accepted staging, visibility and Storage policies are
+unchanged. The feedback presentation remains pending owner review.

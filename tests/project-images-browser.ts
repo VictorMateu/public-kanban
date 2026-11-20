@@ -14,11 +14,12 @@ import { environment, origin, supabaseUrl, population, localAdministratorToken }
 import { launchBrowser, waitFor } from "./support/image-browser.ts";
 
 const messages: unknown = JSON.parse(readFileSync(new URL("../messages/en.json", import.meta.url), "utf8"));
-const editorMessages = z.object({ Editor: z.object({ invalidAlt: z.string(), invalidImage: z.string() }) }).parse(messages).Editor;
+const sourceMessages = z.object({ Editor: z.object({ invalidAlt: z.string(), invalidImage: z.string(), imageStaged: z.string(), imageUploaded: z.string() }), ProjectForm: z.object({ pendingImages: z.string() }) }).parse(messages);
+const editorMessages = sourceMessages.Editor;
 
 test("browser image persistence across creation, reload, editing and visibility", { timeout: 180_000 }, async (context) => {
   const before = population();
-  const slugs = ["images-browser-" + randomUUID(), "images-retry-" + randomUUID()];
+  const slugs = ["images-browser-" + randomUUID(), "images-retry-" + randomUUID(), "images-keyboard-" + randomUUID()];
   const [slug, retrySlug] = slugs; assert.ok(slug && retrySlug);
   const token = localAdministratorToken();
   const key = environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -184,6 +185,10 @@ test("browser image persistence across creation, reload, editing and visibility"
       const uploadCount = uploads.length;
       const invalidFile = path.join(directory, "corrupt.png"); writeFileSync(invalidFile, "This is not an image.");
       await chooseFile(0, invalidFile);
+      await submit();
+      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(sourceMessages.ProjectForm.pendingImages)}`), "editing does not silently discard a selected file");
+      assert.equal(uploads.length, uploadCount, "Saving a pending selection cannot start an upload");
+      assert.equal((await getProject()).updated_at, project.updated_at, "Saving a pending selection cannot change project content");
       const fileId = z.string().parse(await evaluate('document.querySelector("dialog:modal input[type=file]").id'));
       const group = `div[role=group]:has([id=${JSON.stringify(fileId)}])`;
       await click(group + " button");
@@ -202,9 +207,13 @@ test("browser image persistence across creation, reload, editing and visibility"
       const rejectedContent: unknown = JSON.parse(z.string().parse(await evaluate('document.querySelector("input[name=description_content]").value')));
       assert.deepEqual(readRichText(rejectedContent), readRichText(project.description_content), "Rejected bytes cannot insert a rich-text image");
       await chooseFile(0);
-      await click(group + " button");
-      await waitFor(() => truth('[...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt==="Corrected diagram"&&img.complete&&img.naturalWidth===64)'), "corrected file uploads and inserts on the next click");
+      await fill(`[id=${JSON.stringify(altId)}]`, "Corrected diagram");
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+      await waitFor(() => truth('[...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt==="Corrected diagram"&&img.complete&&img.naturalWidth===64)'), "Enter uploads and inserts the corrected file without saving the project");
+      assert.equal((await getProject()).updated_at, project.updated_at, "Enter in the image field must not save project changes");
       assert.equal(uploads.length, uploadCount + 2); assert.equal(uploads.at(-1)?.status, 201);
+      assert.equal(await truth(`[...document.querySelectorAll("dialog:modal [role=status]")].some(el=>el.textContent===${JSON.stringify(editorMessages.imageUploaded)})`), true, "A successful upload is explicitly reported");
       await submit(); await saved(slug, 4);
       await navigate("/projects/" + slug); await openInformation();
       await decodedImages(["Description diagram", "Diagram added while editing", "Corrected diagram", "Objectives diagram"], true);
@@ -255,6 +264,37 @@ test("browser image persistence across creation, reload, editing and visibility"
       } finally { await send("Fetch.disable"); }
       await navigate("/projects/" + retrySlug); await openInformation();
       await decodedImages(["Retained description diagram", "Retried objectives diagram"], true);
+    });
+    await context.test("Enter inserts a selected image instead of saving the enclosing project", async () => {
+      const keyboardSlug = slugs[2]; assert.ok(keyboardSlug);
+      await setAdministrator(); await openCreate();
+      await fill("#project-name", "Keyboard image fixture"); await fill("#project-slug", keyboardSlug);
+      await chooseFile(0);
+      const altId = z.string().parse(await evaluate('document.querySelector("dialog:modal input[type=file]").parentElement.querySelector("input:not([type=file])").id'));
+      await fill(`[id=${JSON.stringify(altId)}]`, "   ");
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(editorMessages.invalidAlt)}`), "Enter validates alternative text without submitting");
+      assert.equal(await truth(`document.activeElement.id===${JSON.stringify(altId)} && document.activeElement.getAttribute("aria-invalid")==="true"`), true, "Invalid alternative text retains focus and is marked invalid");
+      await fill(`[id=${JSON.stringify(altId)}]`, "Keyboard inserted diagram");
+      const initialUploads = uploads.length;
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+      await waitFor(() => truth('[...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt==="Keyboard inserted diagram"&&img.complete&&img.naturalWidth===64)'), "Enter inserts into the editor without submitting the project");
+      assert.equal(uploads.length, initialUploads, "Creation preview stays local until explicit save");
+      assert.equal(await truth(`[...document.querySelectorAll("dialog:modal [role=status]")].some(el=>el.textContent===${JSON.stringify(editorMessages.imageStaged)})`), true, "Local staging is distinct from a completed upload");
+      await chooseFile(1);
+      await submit();
+      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(sourceMessages.ProjectForm.pendingImages)}`), "creation does not silently discard a second selected file");
+      assert.equal(await truth('document.activeElement===document.querySelectorAll("dialog:modal input[type=file]")[1]'), true, "The pending file receives focus");
+      assert.equal(uploads.length, initialUploads);
+      const pendingFileId = z.string().parse(await evaluate('document.querySelectorAll("dialog:modal input[type=file]")[1].id'));
+      await click(`div[role=group]:has([id=${JSON.stringify(pendingFileId)}]) button:last-of-type`);
+      assert.equal(await truth('Boolean(document.querySelector("dialog:modal [role=alert]"))'), false, "Discarding the selection clears the pending error");
+      const unsaved = await admin.from("projects").select("id").eq("slug", keyboardSlug); assert.equal(unsaved.error, null); assert.deepEqual(unsaved.data, []);
+      await submit(); await saved(keyboardSlug, 1);
+      await navigate("/projects/" + keyboardSlug); await openInformation();
+      await decodedImages(["Keyboard inserted diagram"], true);
     });
   } finally {
     try { await browser?.close(); }

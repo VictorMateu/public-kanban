@@ -124,7 +124,7 @@
     "invalidDocument": "El contenido incluye formatos no admitidos o supera los límites. Simplifícalo antes de guardar.",
     "image": "Imagen del proyecto",
     "imageFile": "Archivo de imagen",
-    "imageAlt": "Texto alternativo que describa la imagen",
+    "imageAlt": "Texto alternativo que describe la imagen (obligatorio)",
     "imageHelp": "JPEG, PNG o WebP, hasta 8 MiB y 25 millones de píxeles. Se redimensiona a un máximo de 4.096 píxeles por lado y se guarda como WebP, hasta 2 MiB.",
     "saveBeforeImage": "Guarda primero el borrador para añadir imágenes.",
     "insertImage": "Subir e insertar imagen",
@@ -139,7 +139,13 @@
     "placeholder": "Empieza a escribir tus ideas…",
     "stagedImageHelp": "JPEG, PNG o WebP, hasta 8 MiB por imagen. Hasta 32 MiB de archivos por formulario de creación, compartidos entre descripción y objetivos.",
     "stagedImages": "Las imágenes se previsualizan localmente y se suben al crear el proyecto. Cerrar antes de guardar las descarta.",
-    "stagingTooLarge": "Este formulario admite hasta 32 MiB de archivos, incluidos los conservados para deshacer. Ciérralo y vuelve a abrirlo para liberarlos."
+    "stagingTooLarge": "Este formulario admite hasta 32 MiB de archivos, incluidos los conservados para deshacer. Ciérralo y vuelve a abrirlo para liberarlos.",
+    "imageAltHelp": "Obligatorio antes de insertar. Describe la imagen con entre 1 y 300 caracteres. Intro inserta la imagen.",
+    "imageSelected": "Seleccionada: {name}. Insértala o descarta la selección antes de guardar.",
+    "imageStaged": "Imagen insertada localmente. Crea el proyecto para subirla y guardarla.",
+    "imageUploaded": "Imagen subida e insertada. Guarda el proyecto para conservarla en el contenido.",
+    "clearImageSelection": "Descartar selección",
+    "stageImage": "Insertar imagen"
   },
   "ProjectForm": {
     "title": "Gestionar proyectos",
@@ -179,7 +185,8 @@
     "publishOnSave": "Al guardar, el proyecto y su contenido serán públicos.",
     "draftOnSave": "Al guardar, el proyecto será privado. Solo tú podrás verlo.",
     "imageUploadFailed": "No se ha podido subir una imagen. El proyecto sigue siendo privado. Revisa los archivos seleccionados e intenta guardar de nuevo.",
-    "draftRetained": "Se ha guardado un borrador privado. Reintenta aquí para continuar con el mismo proyecto. Al cerrar se conservan el borrador y las imágenes guardadas, pero se descartan los archivos locales que aún no se han subido."
+    "draftRetained": "Se ha guardado un borrador privado. Reintenta aquí para continuar con el mismo proyecto. Al cerrar se conservan el borrador y las imágenes guardadas, pero se descartan los archivos locales que aún no se han subido.",
+    "pendingImages": "Hay una imagen seleccionada sin insertar. Insértala o descarta la selección antes de guardar."
   },
   "ProjectInformation": {
     "title": "Información del proyecto",

@@ -125,7 +125,7 @@
     "invalidDocument": "This content contains unsupported formatting or exceeds the document limits. Simplify it before saving.",
     "image": "Project image",
     "imageFile": "Image file",
-    "imageAlt": "Alternative text describing the image",
+    "imageAlt": "Alternative text describing the image (required)",
     "imageHelp": "JPEG, PNG or WebP, up to 8 MiB and 25 million pixels. Images are resized to at most 4,096 pixels per side and saved as WebP, up to 2 MiB.",
     "saveBeforeImage": "Save the draft first to add images.",
     "insertImage": "Upload and insert image",
@@ -140,7 +140,13 @@
     "placeholder": "Start writing your ideas…",
     "stagedImageHelp": "JPEG, PNG or WebP, up to 8 MiB each. Up to 32 MiB of image files per creation form, shared by description and objectives.",
     "stagedImages": "Images are previewed locally and uploaded when you create the project. Closing before saving discards them.",
-    "stagingTooLarge": "This form holds up to 32 MiB of image files, including files retained for undo. Close and reopen the form to release them."
+    "stagingTooLarge": "This form holds up to 32 MiB of image files, including files retained for undo. Close and reopen the form to release them.",
+    "imageAltHelp": "Required before insertion. Describe the image in 1–300 characters. Enter inserts the image.",
+    "imageSelected": "Selected: {name}. Insert it or discard the selection before saving.",
+    "imageStaged": "Image inserted locally. Create the project to upload and save it.",
+    "imageUploaded": "Image uploaded and inserted. Save the project to keep it in the content.",
+    "clearImageSelection": "Discard selection",
+    "stageImage": "Insert image"
   },
   "ProjectForm": {
     "title": "Manage projects",
@@ -180,7 +186,8 @@
     "publishOnSave": "Saving makes this project and its content public.",
     "draftOnSave": "Saving keeps this project private. Only you can see it.",
     "imageUploadFailed": "An image could not be uploaded. Your project remains private. Check the selected files and try saving again.",
-    "draftRetained": "A private draft has been saved. Retry here to continue with the same project. Closing keeps the draft and saved images, but discards local files that have not been uploaded."
+    "draftRetained": "A private draft has been saved. Retry here to continue with the same project. Closing keeps the draft and saved images, but discards local files that have not been uploaded.",
+    "pendingImages": "An image is selected but has not been inserted. Insert it or discard the selection before saving."
   },
   "ProjectInformation": {
     "title": "Project information",
