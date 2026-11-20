@@ -186,7 +186,19 @@
     "draftOnSave": "En desar, el projecte serà privat. Només tu el podràs veure.",
     "imageUploadFailed": "No s’ha pogut pujar una imatge. El projecte continua sent privat. Revisa els fitxers seleccionats i torna a intentar desar.",
     "draftRetained": "S’ha desat un esborrany privat. Torna-ho a intentar aquí per continuar amb el mateix projecte. En tancar es conserven l’esborrany i les imatges desades, però es descarten els fitxers locals que encara no s’han pujat.",
-    "pendingImages": "Hi ha una imatge seleccionada sense inserir. Insereix-la o descarta la selecció abans de desar."
+    "pendingImages": "Hi ha una imatge seleccionada sense inserir. Insereix-la o descarta la selecció abans de desar.",
+    "status": "Estat",
+    "development": "Actiu / en desenvolupament",
+    "maintenance": "Manteniment",
+    "completed": "Finalitzat",
+    "cancelled": "Cancel·lat",
+    "cancellationReason": "Motiu de cancel·lació",
+    "cancellationReasonHelp": "Obligatori en cancel·lar. Fins a 2.000 caràcters. El motiu es conserva si canvies l'estat i es mostra a la informació mentre estigui cancel·lat.",
+    "hidden": "Ocult",
+    "hiddenCard": "La informació del projecte no està disponible.",
+    "hiddenOnSave": "En publicar-lo, el projecte continua a la llista, però els visitants no poden obrir-ne la informació, el tauler ni les imatges. Tu pots continuar gestionant-lo.",
+    "visibleOnSave": "En publicar-lo, els visitants poden obrir aquest projecte i el seu contingut.",
+    "hiddenPublishOnSave": "En desar es publica una targeta a Projectes. La informació, el tauler i les imatges continuen sense estar disponibles per als visitants."
   },
   "ProjectInformation": {
     "title": "Informació del projecte",

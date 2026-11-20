@@ -10,7 +10,7 @@ import sharp from "sharp";
 import { z } from "zod";
 import type { Database } from "../lib/supabase/database.types.ts";
 import { readRichText, richTextAssetIds, richTextToPlainText } from "../lib/projects/rich-text.ts";
-import { environment, origin, supabaseUrl, population, localAdministratorToken } from "./support/local-project.ts";
+import { environment, origin, supabaseUrl, population, localAdministratorToken, removeLocalProjectFixture } from "./support/local-project.ts";
 import { launchBrowser, waitFor } from "./support/image-browser.ts";
 
 const messages: unknown = JSON.parse(readFileSync(new URL("../messages/en.json", import.meta.url), "utf8"));
@@ -296,6 +296,50 @@ test("browser image persistence across creation, reload, editing and visibility"
       await navigate("/projects/" + keyboardSlug); await openInformation();
       await decodedImages(["Keyboard inserted diagram"], true);
     });
+    await context.test("lifecycle, cancellation and hidden cards work in the shared form and visitor view", async () => {
+      await navigate("/projects/" + slug); await openInformation(); await edit();
+      const beforeCancel = await getProject(); assert.equal(beforeCancel.status, "development");
+      const selectStatus = async (status: string) => {
+        await evaluate('(()=>{const select=document.querySelector("#project-status");select.value=' + JSON.stringify(status) + ';select.dispatchEvent(new Event("change",{bubbles:true}));})()');
+      };
+      await selectStatus("cancelled");
+      await waitFor(() => truth('Boolean(document.querySelector("textarea[name=cancellation_reason]"))'), "cancellation reason appears");
+      await submit();
+      assert.equal(await truth('Boolean(document.querySelector("dialog:modal textarea:invalid"))'), true);
+      assert.equal((await getProject()).updated_at, beforeCancel.updated_at, "Missing reason never saves the project");
+      const reason = "Cancelled because priorities changed.";
+      await fill("#cancellation-reason", reason);
+      if (!await truth('document.querySelector("#project-published").getAttribute("aria-checked")==="true"')) await click("#project-published");
+      await click("#project-hidden");
+      await submit(); const cancelled = await saved(slug, 4);
+      assert.equal(cancelled.status, "cancelled"); assert.equal(cancelled.is_hidden, true); assert.equal(cancelled.is_published, true);
+      assert.equal(cancelled.cancellation_reason, reason);
+      await openInformation();
+      assert.equal(await truth('document.querySelector("dialog:modal").textContent.includes(' + JSON.stringify(reason) + ')'), true);
+      await edit(); await selectStatus("development");
+      assert.equal(await truth('document.querySelector("input[type=hidden][name=cancellation_reason]").value===' + JSON.stringify(reason)), true);
+      await submit(); const reopened = await saved(slug, 4);
+      assert.equal(reopened.status, "development"); assert.equal(reopened.cancellation_reason, reason);
+      await openInformation();
+      assert.equal(await truth('document.querySelector("dialog:modal").textContent.includes(' + JSON.stringify(reason) + ')'), false);
+      await send("Network.clearBrowserCookies");
+      for (const width of [390, 1440]) {
+        await send("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: 1, mobile: width < 500 });
+        await navigate("/projects");
+        const heading = "#project-" + reopened.id;
+        await waitFor(() => truth('Boolean(document.querySelector(' + JSON.stringify(heading) + '))'), "hidden card listed");
+        assert.equal(await truth('document.querySelector(' + JSON.stringify(heading) + ').closest("article").querySelector("a,button,[tabindex]")===null'), true, "Hidden card has no visitor navigation control");
+        assert.equal(await truth('document.documentElement.scrollWidth<=innerWidth'), true, "Project list has no horizontal overflow");
+      }
+      assert.equal((await fetch(origin.origin + "/projects/" + slug)).status, 404);
+      await setAdministrator(); await navigate("/projects");
+      await waitFor(() => truth('Boolean(document.querySelector("#project-' + reopened.id + '"))'), "owner card rendered");
+      assert.equal(await truth('Boolean(document.querySelector("#project-' + reopened.id + '").closest("a"))'), true, "Owner retains an editable link");
+      await navigate("/projects/" + slug); await openInformation(); await edit();
+      await click("#project-hidden"); await submit();
+      assert.equal((await saved(slug, 4)).is_hidden, false);
+      assert.equal((await fetch(origin.origin + "/projects/" + slug)).status, 200);
+    });
   } finally {
     try { await browser?.close(); }
     finally {
@@ -307,7 +351,7 @@ test("browser image persistence across creation, reload, editing and visibility"
           assert.equal(assets.error, null); assert.ok(assets.data);
           if (assets.data.length) assert.equal((await admin.storage.from("project-images").remove(assets.data.map((asset) => asset.object_path))).error, null);
           assert.equal((await admin.from("project_assets").delete().eq("project_id", project.id)).error, null);
-          assert.equal((await admin.from("projects").delete().eq("id", project.id).eq("slug", project.slug)).error, null);
+          removeLocalProjectFixture(project.id, [project.slug]);
         }
         assert.equal(population(), before, "Existing projects, assets, tasks, columns and users preserved");
       } finally {

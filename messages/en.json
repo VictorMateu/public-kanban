@@ -187,7 +187,19 @@
     "draftOnSave": "Saving keeps this project private. Only you can see it.",
     "imageUploadFailed": "An image could not be uploaded. Your project remains private. Check the selected files and try saving again.",
     "draftRetained": "A private draft has been saved. Retry here to continue with the same project. Closing keeps the draft and saved images, but discards local files that have not been uploaded.",
-    "pendingImages": "An image is selected but has not been inserted. Insert it or discard the selection before saving."
+    "pendingImages": "An image is selected but has not been inserted. Insert it or discard the selection before saving.",
+    "status": "Status",
+    "development": "Active / in development",
+    "maintenance": "Maintenance",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "cancellationReason": "Cancellation reason",
+    "cancellationReasonHelp": "Required when cancelled. Up to 2,000 characters. The reason is kept if you change the status and is shown in project information while cancelled.",
+    "hidden": "Hidden",
+    "hiddenCard": "Project details are unavailable.",
+    "hiddenOnSave": "When published, this project stays in the listing, but visitors cannot open its details, board or images. You can still manage it.",
+    "visibleOnSave": "When published, visitors can open this project and its content.",
+    "hiddenPublishOnSave": "Saving publishes a card in Projects. Its details, board and images remain unavailable to visitors."
   },
   "ProjectInformation": {
     "title": "Project information",

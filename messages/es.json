@@ -186,7 +186,19 @@
     "draftOnSave": "Al guardar, el proyecto será privado. Solo tú podrás verlo.",
     "imageUploadFailed": "No se ha podido subir una imagen. El proyecto sigue siendo privado. Revisa los archivos seleccionados e intenta guardar de nuevo.",
     "draftRetained": "Se ha guardado un borrador privado. Reintenta aquí para continuar con el mismo proyecto. Al cerrar se conservan el borrador y las imágenes guardadas, pero se descartan los archivos locales que aún no se han subido.",
-    "pendingImages": "Hay una imagen seleccionada sin insertar. Insértala o descarta la selección antes de guardar."
+    "pendingImages": "Hay una imagen seleccionada sin insertar. Insértala o descarta la selección antes de guardar.",
+    "status": "Estado",
+    "development": "Activo / en desarrollo",
+    "maintenance": "Mantenimiento",
+    "completed": "Finalizado",
+    "cancelled": "Cancelado",
+    "cancellationReason": "Motivo de cancelación",
+    "cancellationReasonHelp": "Obligatorio al cancelar. Hasta 2.000 caracteres. El motivo se conserva si cambias el estado y se muestra en la información mientras esté cancelado.",
+    "hidden": "Oculto",
+    "hiddenCard": "La información del proyecto no está disponible.",
+    "hiddenOnSave": "Al publicarlo, el proyecto sigue en el listado, pero los visitantes no pueden abrir su información, board ni imágenes. Tú puedes seguir gestionándolo.",
+    "visibleOnSave": "Al publicarlo, los visitantes pueden abrir este proyecto y su contenido.",
+    "hiddenPublishOnSave": "Al guardar se publica una tarjeta en Proyectos. La información, el board y las imágenes siguen sin estar disponibles para visitantes."
   },
   "ProjectInformation": {
     "title": "Información del proyecto",

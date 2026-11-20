@@ -1,25 +1,28 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import type { Project } from "../../lib/projects/queries";
+import type { ProjectSummary } from "../../lib/projects/schemas";
 
-export function ProjectCard({ project, showVisibility = false }: { project: Project; showVisibility?: boolean }) {
+export function ProjectCard({ project, showVisibility = false }: { project: ProjectSummary; showVisibility?: boolean }) {
   const t = useTranslations("Common");
   const form = useTranslations("ProjectForm");
-  return (
-    <article className="h-full">
-      <Link
-        href={`/projects/${encodeURIComponent(project.slug)}`}
-        aria-labelledby={`project-${project.id}`}
-        className="group flex h-full flex-col rounded-2xl border border-border/15 bg-surface/90 p-6 shadow-panel transition-colors hover:border-border/35 hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
-      >
-        <h3 id={`project-${project.id}`} className="text-2xl font-semibold wrap-anywhere">{project.name}</h3>
-        {showVisibility && <p className="mt-2 text-sm">{form(project.is_published ? "published" : "draft")}</p>}
-        {project.description && <p className="mt-3 leading-relaxed whitespace-pre-wrap text-foreground/80 wrap-anywhere">{[...project.description].slice(0, 240).join("")}{[...project.description].length > 240 ? "…" : ""}</p>}
-        <span className="mt-auto flex items-center justify-between gap-4 pt-8 text-sm text-foreground">
-          {t("exploreBoard")}
-          <span aria-hidden="true" className="text-lg">→</span>
-        </span>
-      </Link>
-    </article>
-  );
+  const accessible = Boolean(project.slug) && (showVisibility || !project.is_hidden);
+  const label = "project-" + project.id;
+  const content = <>
+    <h3 id={label} className="text-2xl font-semibold wrap-anywhere">{project.name}</h3>
+    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+      <span>{form(project.status)}</span>
+      {showVisibility && <span>{form(project.is_published ? "published" : "draft")}</span>}
+      {project.is_hidden && <span>{form("hidden")}</span>}
+    </div>
+    {project.description && <p className="mt-3 leading-relaxed whitespace-pre-wrap text-foreground/80 wrap-anywhere">{[...project.description].slice(0, 240).join("")}</p>}
+    <span className="mt-auto flex items-center justify-between gap-4 pt-8 text-sm text-foreground">
+      {accessible ? t("exploreBoard") : form("hiddenCard")}
+      {accessible && <span aria-hidden="true" className="text-lg">→</span>}
+    </span>
+  </>;
+  const classes = "flex h-full flex-col rounded-2xl border border-border/15 bg-surface/90 p-6 shadow-panel";
+  return <article className="h-full">
+    {accessible && project.slug ? <Link href={"/projects/" + encodeURIComponent(project.slug)} aria-labelledby={label} className={classes + " transition-colors hover:border-border/35 hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"}>{content}</Link>
+      : <div aria-labelledby={label} className={classes}>{content}</div>}
+  </article>;
 }

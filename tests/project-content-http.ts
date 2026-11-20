@@ -8,7 +8,7 @@ import { z } from "zod";
 import sharp from "sharp";
 import { imageUploadResultSchema } from "../lib/projects/image-input.ts";
 import type { Database } from "../lib/supabase/database.types.ts";
-import { environment, origin, supabaseUrl, population, localAdministratorToken } from "./support/local-project.ts";
+import { environment, origin, supabaseUrl, population, localAdministratorToken, removeLocalProjectFixture } from "./support/local-project.ts";
 
 test("rich project HTTP paths enforce image visibility without creating users", async (context) => {
   const before = population();
@@ -99,7 +99,7 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       };
       const actionSlug = "action-http-" + id;
       const empty = JSON.stringify({ type: "doc", content: [{ type: "paragraph" }] });
-      const fields = { id: "", updated_at: "", name: actionSlug, slug: actionSlug, description_content: empty, objectives_content: empty, repository_url: "", is_published: "true", position: "999999" };
+      const fields = { id: "", updated_at: "", name: actionSlug, slug: actionSlug, description_content: empty, objectives_content: empty, repository_url: "", is_published: "true", position: "999999", status: "development", is_hidden: "false", cancellation_reason: "" };
       const draftFields = { ...fields, id: draftProjectId, slug: "draft-" + actionSlug, is_published: "false" };
       assert.ok((await (await invoke("saveProjectDraft", draftFields, false)).text()).includes('"unauthorized"'));
       assert.ok((await (await invoke("saveProjectDraft", { ...draftFields, is_published: "true" })).text()).includes('"invalid"'));
@@ -156,6 +156,23 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const hidden = await invoke("saveProject", { ...base, slug: changedSlug, name: "Updated action fixture", updated_at: current.data.updated_at, is_published: "false" });
       assert.equal(hidden.status, 200);
       assert.equal((await fetch(origin.origin + "/projects/" + changedSlug)).status, 404);
+      for (const status of ["development", "maintenance", "completed", "cancelled"]) {
+        const currentRow = await admin.from("projects").select("updated_at").eq("id", original.id).single(); assert.ok(currentRow.data);
+        const result = await invoke("saveProject", { ...base, slug: changedSlug, updated_at: currentRow.data.updated_at, status, cancellation_reason: "Changed priorities", is_hidden: "true", is_published: "true" });
+        assert.ok(result.headers.get("x-action-redirect"));
+        const savedRow = await admin.from("projects").select("status,cancellation_reason,is_hidden,is_published,updated_at").eq("id", original.id).single(); assert.ok(savedRow.data);
+        assert.equal(savedRow.data.status, status); assert.equal(savedRow.data.cancellation_reason, "Changed priorities");
+        assert.equal(savedRow.data.is_hidden, true); assert.equal(savedRow.data.is_published, true);
+        const invalidReason = await invoke("saveProject", { ...base, slug: changedSlug, updated_at: savedRow.data.updated_at, status: "cancelled", cancellation_reason: " " });
+        assert.ok((await invalidReason.text()).includes('"cancellation_reason":"required"'));
+        const invalidStatus = await invoke("saveProject", { ...base, slug: changedSlug, updated_at: savedRow.data.updated_at, status: "archived" });
+        assert.ok((await invalidStatus.text()).includes('"status":"invalid"'));
+        assert.equal((await admin.from("projects").select("updated_at").eq("id", original.id).single()).data?.updated_at, savedRow.data.updated_at);
+      }
+      const cancelled = await admin.from("projects").select("updated_at").eq("id", original.id).single(); assert.ok(cancelled.data);
+      await invoke("saveProject", { ...base, slug: changedSlug, updated_at: cancelled.data.updated_at, status: "development", cancellation_reason: "Changed priorities" });
+      const reopened = await admin.from("projects").select("status,cancellation_reason").eq("id", original.id).single();
+      assert.equal(reopened.data?.status, "development"); assert.equal(reopened.data.cancellation_reason, "Changed priorities");
     });
     await context.test("upload endpoint authorizes, rejects hostile files and normalizes actual image bytes", async () => {
       const send = async (bytes: Buffer, type: string, options: { authenticated?: boolean; source?: string; project?: string } = {}) => {
@@ -207,23 +224,64 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       assert.ok((await publicClient.storage.from("project-images").createSignedUrl(objectPath, 60)).error);
       assert.ok((await admin.storage.from("project-images").createSignedUrl(objectPath, 60)).error);
     });
+    await context.test("hidden cards remain listed while all detail and data paths deny visitors", async () => {
+      const cardName = "Lifecycle hidden card " + id;
+      for (const published of [false, true]) for (const hidden of [false, true]) {
+        assert.equal((await admin.from("projects").update({ name: cardName, is_published: published, is_hidden: hidden }).eq("id", id)).error, null);
+        const summaries = await publicClient.rpc("list_project_summaries"); assert.equal(summaries.error, null);
+        const summary = summaries.data?.find((item) => item.id === id);
+        assert.equal(Boolean(summary), published);
+        if (summary) {
+          assert.deepEqual(Object.keys(summary).sort(), ["id", "slug", "name", "description", "status", "is_hidden", "is_published", "position"].sort());
+          assert.equal(summary.slug, hidden ? null : slug);
+          assert.equal(summary.description, hidden ? null : "Rich HTTP fixture");
+        }
+        const accessible = published && !hidden;
+        const directProject = await publicClient.from("projects").select("*").eq("id", id);
+        const columns = await publicClient.from("columns").select("*").eq("project_id", id);
+        const tasks = await publicClient.from("tasks").select("*").eq("project_id", id);
+        const assets = await publicClient.from("project_assets").select("*").eq("id", assetId);
+        for (const result of [directProject, columns, tasks, assets]) {
+          assert.equal(result.error, null); assert.equal(result.data?.length, accessible ? 1 : 0);
+        }
+        const list = await (await fetch(origin.origin + "/projects")).text();
+        const listRsc = await (await fetch(origin.origin + "/projects", { headers: { RSC: "1" } })).text();
+        for (const body of [list, listRsc]) {
+          assert.equal(body.includes(cardName), published);
+          if (hidden || !published) { assert.ok(!body.includes(slug)); assert.ok(!body.includes("Rich HTTP fixture")); }
+        }
+        const detail = await fetch(origin.origin + "/projects/" + slug); assert.equal(detail.status, accessible ? 200 : 404);
+        if (!accessible) {
+          for (const body of [await detail.text(), await (await fetch(origin.origin + "/projects/" + slug, { headers: { RSC: "1" } })).text()]) {
+            for (const secret of [cardName, "Rich HTTP fixture", "Private board fixture task", "https://example.com/repository", assetId]) assert.ok(!body.includes(secret), "Private detail leaked: " + secret);
+          }
+        }
+        assert.equal((await fetch(origin.origin + publicPath)).status, accessible ? 200 : 404);
+        assert.equal((await fetch(origin.origin + publicPath, { headers: { Cookie: cookie } })).status, accessible ? 200 : 404);
+        assert.equal(Boolean((await publicClient.storage.from("project-images").download(objectPath)).error), !accessible);
+        assert.equal((await fetch(origin.origin + "/projects/" + slug + "?edit=1", { headers: { Cookie: cookie } })).status, 200);
+        assert.equal((await fetch(origin.origin + publicPath + "?preview=1", { headers: { Cookie: cookie } })).status, 200);
+      }
+      const deniedDelete = await admin.from("projects").delete().eq("id", id); assert.ok(deniedDelete.error);
+      assert.equal((await admin.from("projects").select("id").eq("id", id)).data?.length, 1);
+    });
     assert.equal((await admin.from("projects").update({ is_published: false }).eq("id", id)).error, null);
-    await context.test("hiding cuts off the same image URL immediately", async () => {
+    await context.test("unpublishing cuts off the same image URL immediately", async () => {
       assert.equal((await fetch(origin.origin + publicPath)).status, 404);
       assert.ok((await publicClient.storage.from("project-images").download(objectPath)).error);
       assert.equal((await fetch(origin.origin + "/projects/" + slug)).status, 404);
     });
   } finally {
     // Delete exactly this run's fixtures, object first; preserve all existing data/users.
-    assert.equal((await admin.from("projects").delete().eq("id", draftProjectId).eq("slug", "draft-action-http-" + id)).error, null);
-    if (actionProjectId) assert.equal((await admin.from("projects").delete().eq("id", actionProjectId)).error, null);
+    removeLocalProjectFixture(draftProjectId, ["draft-action-http-" + id]);
+    if (actionProjectId) removeLocalProjectFixture(actionProjectId, ["action-http-" + id, "action-http-" + id + "-edited"]);
     for (const asset of routeAssets) {
       assert.equal((await admin.storage.from("project-images").remove([asset.objectPath])).error, null);
       assert.equal((await admin.from("project_assets").delete().eq("id", asset.id).eq("project_id", id)).error, null);
     }
     if (uploaded) assert.equal((await admin.storage.from("project-images").remove([objectPath])).error, null);
     if (assetCreated) assert.equal((await admin.from("project_assets").delete().eq("id", assetId).eq("project_id", id)).error, null);
-    if (projectCreated) assert.equal((await admin.from("projects").delete().eq("id", id)).error, null);
+    if (projectCreated) removeLocalProjectFixture(id, [slug]);
     assert.equal(population(), before);
   }
 });

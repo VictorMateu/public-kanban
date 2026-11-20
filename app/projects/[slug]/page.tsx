@@ -59,6 +59,11 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
           <h1 className="min-w-0 text-3xl wrap-anywhere sm:text-4xl">{project.name}</h1>
           <ProjectInformation key={project.updated_at} project={administrator ? project : undefined} initiallyEditing={administrator && edit === "1"}>
             <div className="space-y-6">
+              <p>{form("status")}: {form(project.status)}</p>
+              {project.status === "cancelled" && project.cancellation_reason && <section>
+                <h3 className="mb-3 text-2xl">{form("cancellationReason")}</h3>
+                <p className="whitespace-pre-wrap wrap-anywhere">{project.cancellation_reason}</p>
+              </section>}
               <p className="text-2xl wrap-anywhere">{project.name}</p>
               {project.description_content || project.description ? <section><h3 className="mb-3 text-2xl">{information("description")}</h3><RichTextContent preview={administrator} document={readRichText(project.description_content, project.description)} /></section> : null}
               {project.objectives_content && <section><h3 className="mb-3 text-2xl">{t("objectives")}</h3><RichTextContent preview={administrator} document={readRichText(project.objectives_content)} /></section>}
@@ -68,7 +73,9 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
           </ProjectInformation>
         </div>
         {administrator && <div className="flex flex-wrap items-center justify-end gap-3">
+          <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form(project.status)}</span>
           <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form(project.is_published ? "published" : "draft")}</span>
+          {project.is_hidden && <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form("hidden")}</span>}
         </div>}
       </div>
       {administrator && saved === "1" && <p role="status" className="sr-only">{form("saved")}</p>}
