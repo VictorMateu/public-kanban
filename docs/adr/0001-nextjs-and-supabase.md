@@ -150,8 +150,9 @@ Exact appearance remains provisional pending owner review.
 
 ## Project lifecycle and hidden flag proposal - 2026-11-15
 
-- Status: fields requested; default values and hidden access semantics
-  await owner confirmation before migration/implementation.
+- Status: historical proposal, superseded by the owner decisions of 2026-11-20
+  recorded below. The SQL and unlisted-hidden semantics in this section were
+  not implemented.
 
 The owner requested project status and hidden columns. The concrete
 proposal is status TEXT NOT NULL with a CHECK allowing development,
@@ -207,3 +208,64 @@ mode; reopening the icon shows information. The title change refocuses
 the heading, and explicit edit=1 links retain administrator-only direct
 editor entry. This supersedes the placement beside the title described
 above; visual acceptance remains pending. No data/access decision changes.
+
+## Project lifecycle, cancellation and column scope - 2026-11-20
+
+- Status: the owner confirmed the concrete plan and instructed implementation
+  on 2026-11-20. Implemented and validated locally; new controls await visual
+  review. Earlier proposal wording below records the decision context.
+
+Projects cannot be deleted. Cancellation preserves the project and requires a
+reason in an additional persisted field. The four lifecycle values remain
+Active / in development, Maintenance, Completed and Cancelled. The owner chose
+Active / in development for both new and existing projects. Cancellation does
+not itself change publication or hidden access.
+
+Hidden means listed but inaccessible to visitors: a published hidden project
+has a card in Projects, without a usable link; its detail URL, board and images
+must not expose content. The administrator retains access. This supersedes the
+unlisted-but-publicly-readable proposal above. A separate safe public listing
+projection is needed because exposing full project rows for listing would also
+expose the hidden content. The concrete security proposal is in ADR 0002.
+
+Column CRUD is excluded from the initial product. A shared predefined set will
+be defined during task CRUD. Four columns is provisional; neither the final
+count nor names or meanings are settled. Existing per-project rows remain
+untouched until that increment has its own data-preserving proposal.
+
+Proposed schema and form details requiring confirmation:
+
+- Add status TEXT NOT NULL DEFAULT 'development', checked against development,
+  maintenance, completed and cancelled. Preserve all existing projects and set
+  their initial value to development as the owner requested.
+- Add is_hidden BOOLEAN NOT NULL DEFAULT FALSE. Existing projects retain their
+  current publication/access until explicitly hidden.
+- Add cancellation_reason TEXT, with a proposed limit of 2,000 Unicode code
+  points. Cancelled requires nonblank trimmed text in Zod and a database CHECK.
+  Plain text avoids another editor and is sufficient for a reason; rich text
+  remains an alternative if formatting/images are needed.
+- Proposed behavior: retain an existing reason when leaving Cancelled; show it
+  in project information only while cancelled, according to the project's
+  access. Returning to Cancelled requires reviewing/saving a nonblank reason.
+  This is a proposed retention/presentation choice, not an accepted requirement.
+- Add status and hidden controls to the shared create/edit form. Show the reason
+  control for Cancelled and its validation error before submitting invalid data.
+  The working form/card prototype will be the owner's visual review method.
+
+Affected code: a new versioned migration, generated Supabase types,
+lib/projects/schemas.ts, input.ts and queries.ts, app/projects/actions.ts,
+project form/list/card/information components, the project detail route and
+English/Spanish/Catalan catalogs. Existing SQL migrations stay unchanged.
+No new dependencies are proposed. See ADR 0002 for access risks and tests.
+
+### Implementation of the confirmed plan - 2026-11-20
+
+The project now uses status/is_hidden/cancellation_reason with the agreed defaults
+and constraints. Plain-text cancellation reasons are limited to 2,000 Unicode
+code points, retained on reopening and displayed in information only while
+cancelled. No project-deletion control exists and authenticated DELETE is denied.
+The shared form uses a native status select, conditional reason textarea and the
+existing switch style for hiding. Public hidden cards have no navigation; owner
+cards retain it. The common column set remains deferred, with no column/task
+mutations added. No dependencies were introduced. See ADR 0002 for implemented
+access and validation.md for actual test results.

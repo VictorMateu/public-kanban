@@ -19,8 +19,9 @@ Language preference is stored in a cookie while URLs remain unchanged. Without a
 - Provide a project listing; more than one project may be active at a time.
 - Each project has its own independent board and tasks.
 - Initial supporting information includes a description, objectives and a repository link.
-- The owner can create, read, update, delete, publish and hide projects.
-- Visitors can access only published content. Unpublished projects remain private.
+- The owner can create, read, update, publish, unpublish and hide projects. Projects cannot be deleted; cancellation preserves the project and requires a reason.
+- Lifecycle states are Active / in development, Maintenance, Completed and Cancelled. New and existing projects start as Active / in development when the status field is introduced.
+- Visitors can see published projects in the listing. A published hidden project remains listed but its card does not open, and its detail URL and underlying content are unavailable to visitors. The administrator retains access. Unpublished projects remain private regardless of the hidden flag.
 
 The home page may show a summary, all projects or another presentation chosen after exploring alternatives. The project entry point and navigation between information and board views remain open.
 
@@ -34,12 +35,11 @@ The home page may show a summary, all projects or another presentation chosen af
 
 ### Columns
 
-- Support creating, reading, updating, deleting and ordering columns.
-- Projects choose which columns they use; column definitions may be reused across projects.
-- When changing a definition used by multiple projects, offer a choice between applying the change only to the current project or propagating it to other projects using that definition.
-- No fixed set of default columns has been selected.
+- Column CRUD is excluded from the initial product scope. This supersedes the earlier reusable-definition and propagation requirements.
+- Projects will use the same predefined set of columns. Define and implement that set during the task CRUD increment, not during project management.
+- Four columns were mentioned as a provisional starting point; the owner explicitly left the final count, names and meanings undecided.
 
-Storage, propagation details and the behavior of deleting a populated or reused column need a proposal before implementation. Reusable definitions are not present in the existing schema.
+The existing database stores columns per project. No schema conversion, column creation, rename, deletion or task movement is authorized by this deferral. The task increment must propose how to populate the selected set for new and existing projects while preserving current data.
 
 ### Tasks
 
@@ -143,9 +143,9 @@ The Overview content remains blank pending KPI definitions. The known project-40
 | Project foundation | Phase 1 complete |
 | Supabase integration, Auth and initial RLS | Phase 2 validated locally; owner account manually authorized locally |
 | Public project listing and read-only boards | Listing available at `/projects`; existing board routes preserved; Overview content remains empty until KPIs are defined |
-| Administration | Shared project views support draft creation, selection, details updates, publishing and hiding; forms open in a modal; deletion and visual acceptance remain pending |
+| Administration | Shared views implement creation, reading, editing, publication, lifecycle, required cancellation reasons and listed-but-inaccessible hidden cards. Project DELETE is denied. Local validation passes; visual review of the new controls remains pending |
 | Project information | Description and objectives use optional rich-text JSONB; repository is optional HTTPS; editor, public rendering and private image upload/processing are implemented |
-| Columns | Currently stored per project; reusable definitions and propagation choices are not implemented |
+| Columns | Stored per project today; column CRUD is excluded from the initial scope. A common predefined set is deferred to task CRUD; count, labels and meanings remain undecided |
 | Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
 | New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
 | Language | English instructions and documentation; existing interface localized in English, Spanish and Catalan, with cookie selection and English fallback |
@@ -161,13 +161,13 @@ Project 404 responses currently deliver localized content through the React payl
 1. Home-page content, navigation and project information/board entry points.
 2. Screen-level visual design beyond the selected cozy direction and palette, component-library adoption and the review method for each UI change.
 3. Code-structure adjustments justified by the selected screens and interactions.
-4. Reusable column modeling, propagation choices and deletion behavior.
+4. The common predefined column set (final count, labels and meanings), its initial population and data-preserving migration during task CRUD; column CRUD is excluded.
 5. Task completion semantics, automatic date behavior and reopening rules.
 6. Task ordering/movement interactions and deletion or archival behavior.
 7. Comment visibility options, editing and deletion.
 8. Presentation of project evolution, if brought into a later task's scope.
 
-## Current work boundary
+## Earlier work boundary - superseded by the project increments below
 
 Interface internationalization is implemented. The owner subsequently approved removing the `(public)` route group and sharing the root layout with the sign-in page, keeping existing URLs and authentication behavior. This structure decision does not accept the remaining phase 3 navigation or visual design. The language selector is a provisional native form; shadcn/ui adoption, administration CRUD, role-aware board queries and database changes remain outside this adjustment. The existing `/admin` authorization placeholder is preserved until inline administration is implemented. Further UI work requires its own confirmed scope.
 
@@ -177,7 +177,7 @@ Successful tests do not imply acceptance of provisional product or design decisi
 
 ### Project CRUD increment — scope confirmed on 2026-11-14
 
-The owner requested starting project CRUD interactively and confirmed that objectives and a repository link are included in this increment. Zod and strict typing without `any` have also been selected. The owner subsequently confirmed optional supporting fields, HTTPS repository URLs, Tiptap, JSONB content and private image delivery as recorded below. Shared-route administrator access was subsequently confirmed as recorded below. Project deletion behavior still requires a decision.
+The owner requested starting project CRUD interactively and confirmed that objectives and a repository link are included in this increment. Zod and strict typing without `any` have also been selected. The owner subsequently confirmed optional supporting fields, HTTPS repository URLs, Tiptap, JSONB content and private image delivery as recorded below. Shared-route administrator access was subsequently confirmed as recorded below. The 2026-11-20 decision below excludes project deletion and introduces cancellation with a required reason.
 ### Rich project content — confirmed on 2026-11-14
 
 The owner selected a substantial visual rich-text editor for description and objectives, including image support. Tiptap, strict Zod-validated JSONB documents, Supabase Storage in a private bucket and controlled image delivery through Next.js are confirmed (ADRs 0001 and 0002). Optional description/objectives/repository values may be empty even when publishing. The repository is an optional HTTPS URL, without embedded credentials, at most 2,048 characters and not restricted to a provider. Supporting information follows project publication.
@@ -361,3 +361,38 @@ visibly required for insertion and validation errors are associated with its
 input. Creation's button says Insert image because upload still waits for
 Create project. The accepted staging, visibility and Storage policies are
 unchanged. The feedback presentation remains pending owner review.
+
+### Project management closure decisions - 2026-11-20
+
+The owner verified that image insertion/upload now works correctly. This accepts
+that reported image flow; it does not constitute acceptance of every prior UI
+or the whole project-management increment.
+
+The owner selected the following remaining project requirements:
+
+- Projects cannot be deleted. Cancelled is a lifecycle state and must have a
+  reason stored in an additional field. Preserve project content and descendants.
+- The lifecycle values are Active / in development, Maintenance, Completed and
+  Cancelled. Both existing and new projects start as Active / in development.
+- Hidden is independent of publication. Published hidden projects remain in
+  Projects, but visitors cannot open the card or access the project by URL.
+  Protect detail content, boards, images, metadata and direct data access;
+  the administrator must retain management access.
+- Column CRUD is excluded from the initial scope. During task CRUD, define a
+  common set used by all projects. Four is provisional; the final count, labels
+  and meanings still need the owner's decision.
+
+These requirements supersede the 2026-11-15 unlisted-hidden proposal and earlier
+project-deletion/reusable-column plans. The owner confirmed the concrete plan
+and instructed implementation. Cancellation uses plain text up to 2,000 Unicode
+code points, retained when leaving Cancelled and shown in project information
+only while cancelled. Lifecycle is independent of publication and hiding.
+
+The two local migrations are applied: lifecycle/hidden/reason fields, public
+summary RPC, content/descendant RLS and application DELETE denial, followed by a
+Unicode-whitespace constraint correction. Shared creation/editing controls and
+status/reason presentation are implemented in English, Spanish and Catalan.
+Published hidden cards expose name/status without navigation or content to
+visitors; owner cards retain management access. Database, HTTP and isolated
+browser tests pass. The new form/card presentation remains pending owner visual
+review; see ADRs 0001/0002 and validation.md. No task or column CRUD was added.

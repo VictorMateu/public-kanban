@@ -746,3 +746,60 @@ upload separately. In creation the preview remains local until Create project;
 in editing upload precedes insertion and the project still needs saving.
 These controls change neither server authorization/validation nor Storage
 permissions. They prevent accidental data omission at the browser boundary.
+
+## Confirmed project follow-up boundary - 2026-11-20
+
+The owner verified the fixed image flow. This project increment implements
+lifecycle, mandatory cancellation reasons and a listed-but-inaccessible hidden
+flag. New and existing projects start in Active / in development. Projects cannot
+be deleted; cancellation preserves their data. Earlier deletion discussions in
+this document are historical and do not authorize a deletion action or cleanup.
+Column CRUD is excluded from the initial scope. The common predefined column set
+belongs to task CRUD; four columns is provisional and the final count/labels
+remain undecided.
+
+The owner confirmed the plan and instructed implementation. The local migrated
+schema now contains status/is_hidden/cancellation_reason; ADRs 0001/0002 record
+the schema, reason behavior and safe listing/detail split. Remote migrations,
+broad file cleanup and deployment remain outside this increment. No dependency
+or new Markdown file was added.
+
+### Lifecycle and hidden-project implementation
+
+ProjectForm submits explicit status, is_hidden and cancellation_reason values.
+parseProjectSubmission validates them with Zod before existing Server Actions
+persist changes with authorization and optimistic updated_at matching. Cancelled
+requires a trimmed, nonblank plain-text reason up to 2,000 Unicode code points.
+The shared form retains the reason in other states; the information modal shows
+it only for Cancelled. Publication, hiding and lifecycle remain independent.
+
+Anonymous listing queries call list_project_summaries and validate a fixed
+summary type. Hidden cards have name/status only and no link; unpublished rows
+never appear. Full project queries and descendant/asset RLS exclude hidden rows.
+Owner listing/detail queries remain separately authorized and permit management
+of every visibility combination. Metadata and ordinary image requests stay
+anonymous even when a request includes administrator cookies.
+
+Local migrations:
+
+- 20261120000100_project_lifecycle_and_hidden.sql adds fields, checks, listing RPC,
+  access policies and authenticated project DELETE denial.
+- 20261120000200_cancellation_reason_whitespace.sql aligns database whitespace
+  validation with JavaScript trim after its BOM-only regression failed.
+
+New management tests are tests/project-management.test.ts and
+tests/project-management-db.sql. The SQL suite runs in one rolled-back transaction
+with unique fixtures and the existing local administrator; it creates no users
+and is safe for the populated local instance. Run it with:
+
+~~~powershell
+Get-Content -Raw -Encoding UTF8 tests/project-management-db.sql | docker exec -i supabase_db_portfolio-kanban psql -U postgres -d postgres -X -v ON_ERROR_STOP=1
+~~~
+
+The existing HTTP and browser suites also exercise lifecycle, visibility and
+reason controls. Their local-only fixture cleanup requires the existing Docker
+PostgreSQL container because the application is no longer allowed to delete
+projects. Cleanup validates exact fixture UUIDs/slugs and removes only those
+projects after their exact test image objects are removed. The empty-database
+pgTAP suite's project-delete expectation was updated but that suite must still
+not run against a populated owner instance.

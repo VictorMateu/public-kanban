@@ -152,3 +152,85 @@ browser decoding memory. Closing after a failure preserves the private
 draft and saved references but discards remaining local files; the UI
 explains this. No automatic orphan cleanup is included. Visual review
 will use the working form at desktop/mobile sizes and keyboard checks.
+
+## Listed hidden projects and cancellation proposal - 2026-11-20
+
+- Status: the owner confirmed this permissions/query plan and instructed
+  implementation on 2026-11-20. Implemented and validated locally. The following
+  proposal text records its rationale; the implementation receipt is below.
+
+The owner excluded project deletion and selected mandatory cancellation reasons.
+The owner also defined hidden as a published project that stays in the listing
+but cannot be opened by visitors. The current projects_published_read policy
+allows complete published rows and therefore cannot implement that boundary.
+Disabling a Link or filtering only the detail page would leave API and descendant
+access open. No permissions or application behavior changed in this revision.
+
+Proposed implementation:
+
+1. Keep public detail queries independent of the administrator's session. Allow
+   anonymous full-row reads only when is_published AND NOT is_hidden. Apply the
+   same boundary to columns, tasks and referenced ready assets. Reuse asset RLS
+   to protect private Storage downloads. Explicitly authorized owner access
+   remains available for hidden projects and drafts.
+2. Introduce a narrowly projected, session-independent public listing RPC that
+   returns published projects, including hidden ones. A SECURITY DEFINER SQL
+   function must have an empty search_path, schema-qualified references, fixed
+   output columns and an explicit publication filter. Revoke implicit PUBLIC
+   execution, then grant the required anon/authenticated execution only.
+   The proposed hidden-card output exposes only identity, name, lifecycle status,
+   hidden flag and ordering; no slug, description, objectives, repository, reason
+   or asset references. Non-hidden cards can retain their current description
+   excerpt and link. Return a bounded description excerpt rather than rich text.
+   Validate the RPC result and use a separate inferred summary type; do not pass
+   full project rows to public listing Client Components or React payloads.
+3. Hidden visitor cards have no anchor or click handler; owner cards still open
+   for management. Hidden detail URLs use the existing not-found response and
+   generic nonindexable metadata. Image requests are denied through both the
+   controlled route and direct Storage/Data API access. Previously downloaded
+   information cannot be retracted from a visitor's device.
+4. Revoke authenticated DELETE on projects in the new migration; keep owner
+   SELECT/INSERT/UPDATE. Existing foreign keys remain as migration history, but
+   application users cannot invoke project deletion. No rows/objects/users are
+   removed and no cleanup is introduced.
+
+A separate summary table would avoid a definer listing function but would require
+synchronization, additional schema and integrity rules. Letting public users read
+full project rows to populate the cards is rejected because it bypasses the
+owner's hidden-detail requirement. A security-invoker view alone cannot bypass
+the deliberately restrictive project RLS to include hidden cards.
+
+Validation must include new/existing default values, the four status values,
+mandatory cancellation reasons, reason retention, invalid and duplicate form
+fields, optimistic updates and all publication/hidden combinations. Database,
+HTTP and browser checks must verify listing projection, absent visitor links,
+blocked direct project/detail/metadata/HTML/RSC/task/column/asset/Storage access,
+owner editing and explicit project DELETE denial. Preserve existing rows/users;
+use identifiable local fixtures and clean only that run's fixtures. Do not run
+the empty-database suite against the populated local instance or apply remote
+migrations. Run lint, typecheck, unit tests and production build after code changes.
+
+### Implementation and local validation - 2026-11-20
+
+Migration 20261120000100 implements the approved projection/access plan. The
+list_project_summaries RPC has fixed output columns, a publication predicate and
+an empty search_path. Hidden output includes no slug, description or supporting
+content; runtime schemas validate its result. Full-row/column/task/asset policies
+require publication AND NOT hidden for public access. Existing Storage RLS follows
+asset visibility; private owner previews still authorize independently. The
+controlled image route stays session independent unless preview is explicitly
+requested and authorized. Authenticated project DELETE is revoked.
+
+A database regression found that PostgreSQL's POSIX whitespace check accepted a
+BOM-only cancellation reason that Zod rejects. Because the first migration was
+already applied, migration 20261120000200 corrects the CHECK using the explicit
+JavaScript trim whitespace set, preserving migration history. Both migrations
+are applied only to the populated local instance. Existing application records,
+users and administrator authorization were preserved.
+
+Database rollback suites and actual HTTP/browser tests validate all four
+publication/hidden combinations, API/Storage/HTML/RSC access, owner management,
+required reasons, reopening retention and DELETE denial. Test cleanup alone uses
+local PostgreSQL access for exact UUID-and-slug fixtures; application DELETE
+permissions remain denied. No broad cleanup, users, remote migration or deployment
+was introduced.

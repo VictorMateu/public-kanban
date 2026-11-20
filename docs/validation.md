@@ -1138,3 +1138,98 @@ No existing data was deleted or repaired. Earlier selections that never reached
 insertion/upload cannot be recovered from Storage and need selecting again.
 The confirmed Enter/unsaved-selection omission is fixed; visual acceptance and
 the separate Next.js security-version review remain pending.
+
+## Image acceptance and project scope clarification - 2026-11-20
+
+The owner reported that the corrected image flow works correctly. This records
+acceptance of the reported insertion/upload behavior and supersedes its pending
+owner check in the preceding entry; it does not imply acceptance of all UI or
+completion of project management.
+
+Documentation now records no project deletion, mandatory cancellation reasons,
+Active / in development as the new/existing default, hidden cards that remain
+listed while visitor detail access is blocked, and deferral of the common column
+set to task CRUD without column CRUD. Four columns remains provisional because
+the final count/labels were explicitly left open.
+
+Read-only review found only is_published in the current project schema and no
+project-deletion action. Current public full-row queries and publication-only
+RLS do not yet enforce the newly requested hidden boundary. ADRs 0001/0002
+contain the concrete schema/security proposals awaiting confirmation. No
+application code, database permissions/data, migrations, dependencies, services
+or browser state changed. Documentation checks: git diff --check passed. The
+application suites were not rerun for this documentation-only update; the prior
+entry contains the last actual application/browser results.
+
+## Lifecycle, cancellation and listed hidden projects - 2026-11-20
+
+The owner confirmed the concrete schema/security/reason plan and requested its
+implementation. Local migrations 20261120000100 and 20261120000200 are applied;
+the generated Supabase types were refreshed from that local schema. Existing
+migrations remain unchanged. The first new migration initially failed to parse
+because position needed quoting in the RPC RETURNS TABLE declaration; its
+transaction rolled back, the unapplied file was corrected and application then
+succeeded. No existing data was removed.
+
+Implemented:
+
+- Four lifecycle states with Active / in development as the new/existing default.
+- Cancelled requires a nonblank plain-text reason up to 2,000 Unicode code points.
+  The shared form retains it on reopening; information shows it only if cancelled.
+- Published hidden cards stay listed without visitor navigation or description.
+  A fixed public RPC projection prevents private content from entering listing
+  HTML/RSC. Full project, descendant and asset RLS block hidden public access;
+  existing controlled image delivery/Storage permissions follow that boundary.
+- Owner access and previews remain separately authorized. Authenticated project
+  DELETE is denied; no deletion UI, task CRUD or column CRUD was added.
+- English, Spanish and Catalan controls/help/status labels are present. The common
+  column set remains deferred to task CRUD; count and values are still undecided.
+
+A real database regression rejected the first POSIX whitespace implementation:
+a BOM-only reason was accepted by SQL while JavaScript trim rejected it. The
+already-applied migration was preserved. A second migration adds an explicit
+JavaScript whitespace set to the CHECK, and the failing regression now passes.
+
+Actual checks:
+
+- npm run lint: passed without warnings.
+- npm run typecheck: passed.
+- npm test: 67 passed, zero failed/skipped.
+- npm run build: initial attempts compiled/typechecked but exited with the known
+  Next.js 16.4.3 SecurityFatalError. Repeating the same command passed with the
+  advisory warning retained. No dependencies, upgrade agents or guard changes
+  were introduced; the Next.js security update remains a separate pending task.
+- tests/project-management-db.sql through local docker/psql with ON_ERROR_STOP:
+  passed after the regression fix. Tests use unique fixtures in a rolled-back
+  transaction and the existing administrator, never create users, and verify
+  status/defaults/reason limits/whitespace, projection, descendants, direct
+  Storage access, owner management and project DELETE denial.
+- tests/project-content-db.sql through local docker/psql: passed and rolled back.
+- Final production HTTP/browser run on temporary loopback port 3016:
+  node --test --test-concurrency=1 tests/project-content-http.ts
+  tests/public-http.test.mjs tests/project-images-browser.ts: 28 passed,
+  zero failed, two existing empty-database checks skipped. A local temporary
+  runner supplied only the public local config and stopped its own server.
+  Tests exercise actual Server Actions, every publication/hidden combination,
+  API/HTML/RSC/image/Storage denial, owner previews, form cancellation/reopening,
+  no hidden-card navigation and visibility restoration.
+- Isolated Edge checks covered the shared modal at 320/390/1440px, keyboard focus
+  containment and image behavior; the new hidden cards were checked at 390/1440px.
+  These are automated DOM/interaction assertions, not owner visual acceptance.
+- Exact fixture cleanup preserved the before/after population:
+  [1,2,0,0,1,1] for projects/assets/columns/tasks/users/administrator registry.
+  The original project and two assets remain, and the project is active.
+
+The empty-database pgTAP suite was not run; its DELETE expectation was updated
+for disposable-database use. No remote migration, deployment, new user or broad
+file cleanup occurred. The new form/card presentation remains pending owner
+review. The existing project-404 initial-HTML limitation remains outside this
+increment.
+
+Final review checks: git diff --check passed. Public-schema types were generated
+with --schema public and formatted with the existing TypeScript printer, keeping
+the generated diff focused; lint and typecheck passed again afterward. The local
+development review server was restarted at http://127.0.0.1:3015/projects and
+returned HTTP 200. Its initial launch also stopped for the existing Next.js
+security advisory; repeating the same command started the server with the warning
+retained. The generated AGENTS.md block was preserved.
