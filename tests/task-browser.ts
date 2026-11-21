@@ -248,6 +248,20 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await click(confirm);
     await waitFor(async () => !await exists(dialog), "save expected completion date");
     assert.equal((await task(alpha)).due_date, selectedDate);
+    const cardDate = `${card(alpha)} time[datetime="${selectedDate}"]`;
+    await has(cardDate);
+    assert.equal(await evaluate(`function(selector) {
+      const date = document.querySelector(selector);
+      const bounds = date.closest("article").getBoundingClientRect();
+      const dateBounds = date.getBoundingClientRect();
+      const label = date.closest("dd").previousElementSibling;
+      return dateBounds.left >= bounds.left && dateBounds.right <= bounds.right && label.textContent === "Due date:";
+    }`, [cardDate]), true);
+    await click(open(alpha));
+    await has(`${dialog} time[datetime="${selectedDate}"]`);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "return from the task detail");
+    assert.equal(await exists(open(alpha) + ":focus"), true);
 
     await edit(alpha);
     const hiddenSwitch = `${dialog} input[name=hidden][role=switch]`;

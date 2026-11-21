@@ -957,7 +957,9 @@ The board scrolls horizontally on narrow viewports. The workspace keeps a
 The space below the board uses 1.25rem on phones and 1.5rem on wider layouts.
 Successful task changes update the board without a confirmation banner.
 Add task opens the editor with that column selected. Completed cards carry
-a visual check and a struck-through title.
+a visual check and a struck-through title. Compact priority badges and
+calendar dates sit below the title and wrap to fit the card. The detail
+dialog shows the full metadata labels.
 
 Activating a card opens the task detail dialog, with read-only content for
 visitors and separate edit, reorder and archive controls for the owner.

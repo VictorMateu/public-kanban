@@ -1944,3 +1944,15 @@ creation action is a row below the task cards inside each column list.
 - The task browser suite passed on the development server. It verified
   that the inline action is reachable after scrolling a long column on
   mobile, opens the editor for that column and restores focus on Escape.
+
+### Compact task card metadata
+
+Task cards place the short priority badge and calendar date in a wrapping
+row. The task detail retains the full labels.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- The task browser suite passed against the local production build on port
+  3134. It verified that the date fits within the card on a narrow viewport,
+  retains its semantic label and appears in the detail dialog. Escape
+  returns focus to the card.

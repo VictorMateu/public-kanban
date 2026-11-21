@@ -3,6 +3,7 @@ import type { MouseEventHandler, PointerEventHandler, TouchEventHandler } from "
 import type { Task } from "../../lib/tasks/queries";
 import { formatDueDate } from "../../lib/tasks/due-date";
 import styles from "./task-board.module.css";
+import fieldStyles from "./task-fields.module.css";
 
 const priorities = {
   low: "bg-surface-positive",
@@ -27,10 +28,23 @@ export function TaskMetadata({ task, detail = false }: { task: TaskPreview; deta
   const completedOn = detail && task.completed_on ? formatDueDate(task.completed_on, locale) : null;
   if (!(priority || dueDate || completedOn || task.is_hidden)) return null;
 
-  return <dl className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
-    {priority && <div className={`rounded-full px-2.5 py-0.5 ${priority.color}`}><dt className="sr-only">{t("priority")}</dt><dd>{t("priorityValue", { priority: priority.label })}</dd></div>}
-    {task.is_hidden && <div className="rounded-full bg-surface-warm px-2.5 py-0.5"><dt className="sr-only">{t("visibility")}</dt><dd>{t("hidden")}</dd></div>}
-    {dueDate && <div className={`flex flex-wrap gap-x-1 text-foreground/85${detail ? "" : " basis-full"}`}><dt>{t("dueDate")}</dt><dd><time dateTime={task.due_date ?? undefined}>{dueDate}</time></dd></div>}
+  const badgeClass = detail ? "px-2.5 py-0.5" : "px-2 leading-5";
+  return <dl className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ${detail ? "mt-2" : "mt-1.5"}`}>
+    {priority && <div className={`rounded-full ${badgeClass} ${priority.color}`}>
+      <dt className="sr-only">{t("priority")}</dt>
+      <dd>{detail ? t("priorityValue", { priority: priority.label }) : priority.label}</dd>
+    </div>}
+    {dueDate && <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-foreground/85">
+      <dt className={detail ? undefined : "sr-only"}>{t("dueDate")}</dt>
+      <dd className="flex min-w-0 items-center gap-1.5">
+        {!detail && <span aria-hidden="true" className={`${fieldStyles.calendarIcon} shrink-0`} />}
+        <time className="wrap-anywhere" dateTime={task.due_date ?? undefined}>{dueDate}</time>
+      </dd>
+    </div>}
+    {task.is_hidden && <div className={`rounded-full bg-surface-warm ${badgeClass}`}>
+      <dt className="sr-only">{t("visibility")}</dt>
+      <dd>{t("hidden")}</dd>
+    </div>}
     {completedOn && <div className="flex flex-wrap gap-x-1 text-foreground/85"><dt>{t("completedOn")}</dt><dd><time dateTime={task.completed_on ?? undefined}>{completedOn}</time></dd></div>}
   </dl>;
 }
