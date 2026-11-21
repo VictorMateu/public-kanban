@@ -12,7 +12,7 @@ export async function ProjectBoard({ projectId, administrator = false }: { proje
 
   return administrator
     ? <ManagedBoard projectId={projectId} columns={columns} tasks={tasks} archived={archived} />
-    : <PublicBoard columns={columns} tasks={tasks.map(({ id, column_id, title, description, description_content, priority, due_date, completed_on, is_hidden }) => ({
-        id, column_id, title, description, description_content, priority, due_date, completed_on, is_hidden,
+    : <PublicBoard columns={columns} tasks={tasks.map(({ id, column_id, title, description, description_content, priority, due_date, completed_on, is_hidden, is_system }) => ({
+        id, column_id, title, description, description_content, priority, due_date, completed_on, is_hidden, is_system,
       }))} />;
 }

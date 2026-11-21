@@ -39,7 +39,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const starterCount = starters.data.length;
     assert.equal(starterCount, 5);
     const architecture = starters.data.find(({ title }) => title === "Define the architecture and its boundaries");
-    assert.ok(architecture?.description);
+    assert.ok(architecture);
     const denied = await anon.rpc("mutate_task", { p_operation: "create", p_project: projectId, p_task: randomUUID(),
       p_column: todo.id, p_title: "Denied", p_hidden: false });
     assert.equal(denied.error?.code, "42501");
@@ -163,11 +163,17 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await evaluate("document.fonts.ready.then(() => true)");
     const initialBoardTop = await boardTop();
     const descriptionEditor = `${dialog} [contenteditable=true][role=textbox]`;
-    await edit(architecture.id);
-    await has(descriptionEditor);
-    assert.equal(await evaluate("function(selector) { return document.querySelector(selector).textContent; }", [descriptionEditor]), architecture.description);
+    assert.match(z.string().parse(await evaluate("function(selector) { return document.querySelector(selector).closest('article').textContent; }", [open(architecture.id)])), /System task/u);
+    await click(open(architecture.id));
+    await has(`${dialog} dl + .rich-text h3`);
+    await has(`${dialog} .rich-text ul li`);
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('dialog:modal dl dd')].map(item => item.textContent)"), ["To do", "System task", "Hidden"]);
+    assert.equal(await exists(`${dialog} fieldset, ${dialog} [data-edit-task], ${dialog} [data-archive-task]`), false);
+    const starterDescription = `${dialog} .rich-text`;
+    assert.deepEqual(await evaluate("function(selector) { return [...document.querySelectorAll(selector + ' h3')].map(heading => heading.textContent); }", [starterDescription]), ["Objective", "Steps", "Done when"]);
+    assert.match(z.string().parse(await evaluate("function(selector) { return document.querySelector(selector).textContent; }", [starterDescription])), /modular monolith.*microservices/u);
     await press("Escape", 27);
-    await waitFor(async () => !await exists(dialog), "dismiss starter task editing");
+    await waitFor(async () => !await exists(dialog), "dismiss starter task details");
     const descriptionImage = `${dialog} .rich-text img[alt="Task diagram"]`;
     const png = await sharp({ create: { width: 64, height: 32, channels: 3, background: "#cba56b" } }).png().toBuffer();
     let imagePath = "";
@@ -237,19 +243,15 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await has("[data-new-task]:not(:disabled)");
     assert.equal(await boardTop(), initialBoardTop);
 
-    // Use the keyboard alternative for ordering and the editor for changing stages.
+    // Reorder from the focused card, then change its stage in the editor.
     await waitFor(async () => !await exists(dialog), "drag does not open the task");
     await evaluate("function(selector) { document.querySelector(selector).focus(); }", [open(beta)]);
-    await press("Enter", 13);
-    await has(dialog + " [data-edit-task]");
-    const moveDown = dialog + " [data-move-down]:not(:disabled)";
-    await has(moveDown);
-    await evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
-    await evaluate("function(selector) { document.querySelector(selector).focus(); }", [moveDown]);
-    assert.equal(await evaluate("document.activeElement?.hasAttribute('data-move-down')"), true);
-    await send("Input.dispatchKeyEvent", { type: "keyDown", key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " });
-    await send("Input.dispatchKeyEvent", { type: "keyUp", key: " ", code: "Space", windowsVirtualKeyCode: 32 });
+    assert.equal(await exists(open(beta) + '[aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"]:focus'), true);
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: "ArrowDown", code: "ArrowDown", modifiers: 1, windowsVirtualKeyCode: 40 });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "ArrowDown", code: "ArrowDown", modifiers: 1, windowsVirtualKeyCode: 40 });
     await has(firstAdded + card(alpha));
+    await has(open(beta) + ":focus");
+    assert.equal(await exists(dialog), false);
     await edit(alpha);
     const status = `${dialog} select[name=columnId]`;
     await click(status);

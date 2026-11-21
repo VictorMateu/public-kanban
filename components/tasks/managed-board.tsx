@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, useTransition, type FormEvent, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { mutateTask } from "../../app/projects/task-actions";
 import type { KanbanColumn } from "../../lib/columns/queries";
@@ -38,6 +38,7 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
   const boardText = useTranslations("Board");
   const board = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const focusAfterMutation = useRef<string | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
@@ -45,11 +46,17 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
   const [content, setContent] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
+  const reorderHintId = useId();
   const task = editor?.task;
   const taskColumn = columns.find(({ id }) => id === task?.column_id);
-  const columnTasks = showDetail && task ? tasks.filter(({ column_id }) => column_id === task.column_id) : [];
-  const taskIndex = columnTasks.findIndex(({ id }) => id === task?.id);
-  const previousTask = columnTasks[taskIndex - 1];
+
+  useEffect(() => {
+    const taskId = focusAfterMutation.current;
+    if (pending || !taskId) return;
+    focusAfterMutation.current = null;
+    const card = board.current?.querySelector<HTMLButtonElement>(`[data-open-task="${taskId}"]`);
+    (card ?? board.current?.querySelector<HTMLElement>("[data-task-scroll]"))?.focus();
+  }, [pending]);
 
   function submit(mutation: TaskMutation) {
     if (pending) return;
@@ -58,12 +65,10 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
       const outcome = await mutateTask(mutation).catch(() => "unavailable" as const);
       if (outcome !== "ok") {
         setError(outcome);
+        if (mutation.operation === "move") focusAfterMutation.current = mutation.taskId;
       } else {
         setEditor(null);
-        if (mutation.operation !== "create") requestAnimationFrame(() => {
-          const edit = board.current?.querySelector<HTMLButtonElement>(`[data-open-task="${mutation.taskId}"]`);
-          (edit ?? board.current?.querySelector<HTMLElement>("[data-task-scroll]"))?.focus();
-        });
+        if (mutation.operation !== "create") focusAfterMutation.current = mutation.taskId;
       }
     });
   }
@@ -73,6 +78,19 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
     const index = following.findIndex((candidate) => candidate.id === item.id);
     if (target.columnId === item.column_id && target.beforeId === (following[index + 1]?.id ?? null)) return;
     submit({ operation: "move", projectId, taskId: item.id, version: item.updated_at, ...target });
+  }
+
+  function reorderWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, item: Task) {
+    if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+        (event.key !== "ArrowUp" && event.key !== "ArrowDown")) return;
+    event.preventDefault();
+
+    const columnTasks = tasks.filter(({ column_id }) => column_id === item.column_id);
+    const index = columnTasks.findIndex(({ id }) => id === item.id);
+    const offset = event.key === "ArrowUp" ? -1 : 1;
+    if (event.repeat || index < 0 || !columnTasks[index + offset]) return;
+    const before = columnTasks[index + (offset < 0 ? -1 : 2)];
+    move(item, { columnId: item.column_id, beforeId: before?.id ?? null });
   }
 
   const drag = useTaskDrag(board, move);
@@ -88,7 +106,7 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editor || content === null || uploading) return;
+    if (!editor || task?.is_system || content === null || uploading) return;
     const fields = new FormData(event.currentTarget);
     const values = {
       projectId, taskId: editor.id, columnId: String(fields.get("columnId")),
@@ -105,6 +123,7 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
   return <div ref={board} className="flex min-h-0 flex-1 flex-col">
     {!editor && error && <p role="alert" className="mb-3 shrink-0 text-sm">{t(error)}</p>}
     <div className="mb-2 flex shrink-0 justify-end"><ArchivedTasks tasks={archived} columns={columns} /></div>
+    <p id={reorderHintId} className="sr-only">{t("reorderHint")}</p>
     <BoardColumns columns={columns} tasks={tasks} dropTarget={drag.preview?.target} draggedTaskId={drag.preview?.task.id} renderAddTask={(column) => (
       <button type="button" data-new-task="" aria-haspopup="dialog" aria-label={t("addTaskInColumn", { column: boardText(column.stage) })}
         className={`${boardStyles.addTask} flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border px-2 py-1`}
@@ -113,6 +132,9 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
       </button>
     )} cardControl={(item) => ({
       disabled: pending,
+      onKeyDown: (event) => reorderWithKeyboard(event, item),
+      "aria-keyshortcuts": "Alt+ArrowUp Alt+ArrowDown",
+      "aria-describedby": reorderHintId,
       onClick: (event) => {
         if (!drag.suppressesClick(event)) open(event.currentTarget, item.column_id, item);
       },
@@ -125,10 +147,10 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
     <ProjectDialog id="task-editor" open={editor !== null} busy={pending || uploading} triggerRef={trigger}
       title={confirmArchive ? t("archiveTask") : task?.title ?? t("newTask")}
       closeLabel={t("close")} onClose={() => setEditor(null)}
-      leadingAction={task && !confirmArchive && <button type="button" data-archive-task="" disabled={pending || uploading}
+      leadingAction={task && !task.is_system && !confirmArchive && <button type="button" data-archive-task="" disabled={pending || uploading}
         className="project-secondary-action me-auto"
         onClick={() => { setError(null); setConfirmArchive(true); setContent(null); }}>{t("archiveTask")}</button>}
-      actions={confirmArchive && task
+      actions={task?.is_system ? null : confirmArchive && task
         ? <button type="button" className="project-primary-action" disabled={pending} onClick={() => submit({
           operation: "archive", projectId, taskId: task.id, version: task.updated_at,
         })}>{t("archiveTask")}</button>
@@ -136,16 +158,9 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
           ? <button key="edit" type="button" data-edit-task="" className="project-primary-action" disabled={pending}
             onClick={() => { setShowDetail(false); document.getElementById("task-editor-heading")?.focus(); }}>{t("editTask")}</button>
           : <button key="save" type="submit" form={formId} className="project-primary-action" disabled={pending || uploading || content === null}>{t(pending ? "saving" : "save")}</button>}>
-      {confirmArchive ? <p>{t("archivePrompt", { title: task?.title ?? "" })}</p> : showDetail && task ? <>
+      {confirmArchive ? <p>{t("archivePrompt", { title: task?.title ?? "" })}</p> : showDetail && task ? (
         <TaskDetail task={task} stage={taskColumn?.stage} preview />
-        {columnTasks.length > 1 && <fieldset disabled={pending} className="mt-4 flex flex-wrap gap-2">
-          <legend className="mb-1">{t("order")}</legend>
-          <button type="button" data-move-up="" className="project-secondary-action" disabled={!previousTask}
-            onClick={() => { if (previousTask) move(task, { columnId: task.column_id, beforeId: previousTask.id }); }}>{t("moveUp")}</button>
-          <button type="button" data-move-down="" className="project-secondary-action" disabled={taskIndex >= columnTasks.length - 1}
-            onClick={() => move(task, { columnId: task.column_id, beforeId: columnTasks[taskIndex + 2]?.id ?? null })}>{t("moveDown")}</button>
-        </fieldset>}
-      </> : <form id={formId} key={editor?.id} onSubmit={save} className="space-y-4">
+      ) : <form id={formId} key={editor?.id} onSubmit={save} className="space-y-4">
         <fieldset disabled={pending} className="grid min-w-0 gap-4">
           <label className="grid gap-1">{t("title")}
             <input className={fieldClass} name="title" required defaultValue={task?.title} />
