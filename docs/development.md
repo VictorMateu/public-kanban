@@ -748,8 +748,15 @@ HTTP loopback URLs. Docker and the existing authorized administrator are
 required. No users are created. Run integration suites sequentially and
 avoid editing application data while their preservation checks run.
 
-The suite uses an installed Chromium browser through its debugging protocol,
-with an isolated temporary profile and generated PNG fixture. On Windows it
+The suite uses an installed Chromium browser through inherited CDP pipes,
+with an isolated temporary profile and generated PNG fixture. It opens no
+remote-debugging TCP port and does not read DevToolsActivePort to construct a
+network destination. Static assertion expressions use Runtime.evaluate;
+parameterized functions use Runtime.callFunctionOn with arguments transmitted
+separately from function source. Selectors, interface messages, URLs and other
+test values must never be interpolated into executable JavaScript. Pointer
+helpers wait until their target is enabled, stable across animation frames and
+reachable before dispatching trusted input events. On Windows it
 defaults to Edge at `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe`.
 For another installation, set `KANBAN_TEST_BROWSER` to the absolute executable
 path. It does not download a browser or add a dependency. Browser protocol

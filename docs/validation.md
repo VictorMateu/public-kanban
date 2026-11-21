@@ -1743,3 +1743,62 @@ Documentation-only handoff checks: git diff --check and README local path/link
 checks passed. Application, database and browser checks were not repeated for
 these prose changes; the preceding integration entry records their actual
 results. Hosted validation of the feature branch remains pending.
+
+
+## PR 11 CodeQL browser-helper findings - 2026-11-21
+
+Security run 44893871529 at feature head 1ce1854 completed its analyses but
+blocked publication with two JavaScript/TypeScript findings:
+
+- js/bad-code-sanitization in tests/project-images-browser.ts: JSON.stringify
+  values were interpolated into JavaScript sent to the test browser.
+- js/file-access-to-http in tests/support/image-browser.ts: data read from
+  DevToolsActivePort contributed to an outbound WebSocket URL.
+
+Both locations are test infrastructure. The run's dependency audit, dependency
+review, secret scan and Actions CodeQL checks passed; the aggregate security
+gate failed because the JavaScript/TypeScript findings were nonzero. No result
+was dismissed, excluded or downgraded, and the blocking policy is unchanged.
+
+The browser helper now communicates over inherited CDP pipes rather than a
+TCP debugging listener, removing the file-to-network construction. Static
+expressions retain Runtime.evaluate; parameterized functions use
+Runtime.callFunctionOn with separately serialized arguments and released remote
+object handles. All dynamic selectors/messages/statuses/URLs in the browser
+suite use those arguments, preserving unknown/Zod result boundaries. A new
+isolated-browser regression round-trips quotes, closing script tags, backslashes,
+line/Unicode separators, false and null without executing the supplied text.
+No library, application code, schema, permission or migration changed.
+
+Actual checks:
+
+- npm run lint and npm run typecheck: passed after explicit typed pipe handles
+  fixed the initial TypeScript closure-narrowing errors.
+- npm test: 88 passed, zero failed or skipped.
+- npm run build: passed with Next.js 16.4.6.
+- A direct browser smoke check returned 42 and a parameterized string over CDP
+  pipes. The hostile-argument regression also passed independently with
+  node --test --test-name-pattern='browser commands keep hostile text'
+  tests/project-images-browser.ts.
+- The first full HTTP/browser run had two timeout failures in image insertion
+  and pending-selection assertions; its parent suite also failed. An isolated
+  browser rerun passed all 10 checks. The pointer helper was then hardened to
+  wait for enabled, stable, reachable targets across animation frames, without
+  increasing assertion timeouts or adding blanket sleeps. Timeout diagnostics
+  retain only image readiness, selection flags and interface-error text.
+- The final production HTTP/browser run through the temporary local runner on
+  port 3016 passed 39 checks with zero failures and one existing empty-list
+  assertion skipped. Files: tests/project-content-http.ts,
+  tests/public-http.test.mjs, tests/i18n-http.test.mjs and
+  tests/project-images-browser.ts. Actual image upload/retry/persistence,
+  lifecycle, visibility and locale assertions all passed. Exact fixture cleanup
+  verified that the existing population and users were preserved.
+- Docker Desktop was initially stopped after the environment restart. Starting
+  it restored the existing local Supabase containers; local CLI startup output
+  was captured without logging credentials. No reset or user creation occurred.
+- git diff --check passed. No dependencies or scanner configuration changed.
+
+CodeQL was not run locally; a fresh hosted analysis after pushing this correction
+is required to confirm both findings are resolved. The empty-database SQL suite
+was not run on the populated owner instance. Browser checks are automated
+assertions, not a new owner visual review or cross-platform certification.

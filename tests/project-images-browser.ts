@@ -17,6 +17,26 @@ const messages: unknown = JSON.parse(readFileSync(new URL("../messages/en.json",
 const sourceMessages = z.object({ Editor: z.object({ invalidAlt: z.string(), invalidImage: z.string(), imageStaged: z.string(), imageUploaded: z.string() }), ProjectForm: z.object({ pendingImages: z.string() }) }).parse(messages);
 const editorMessages = sourceMessages.Editor;
 
+test("browser commands keep hostile text as data instead of executable source", async () => {
+  const browser = await launchBrowser();
+  const { evaluate } = browser;
+  const truth = async (expression: string, values?: readonly unknown[]) => z.boolean().parse(await evaluate(expression, values));
+  try {
+    await evaluate('globalThis.argumentInjection = false');
+    const payloads = [
+      '\");globalThis.argumentInjection=true;//',
+      "</script><script>globalThis.argumentInjection=true</script>",
+      "Quotes: \" ' ` \\ and separators: \u2028\u2029\n",
+    ];
+    for (const payload of payloads) {
+      assert.equal(await evaluate("function(value) { return value; }", [payload]), payload);
+      assert.equal(await truth("globalThis.argumentInjection"), false);
+    }
+    assert.equal(await truth("function(value) { return value; }", [false]), false, "Falsy arguments are passed as data");
+    assert.equal(await evaluate("function(value) { return value; }", [null]), null);
+  } finally { await browser.close(); }
+});
+
 test("browser image persistence across creation, reload, editing and visibility", { timeout: 180_000 }, async (context) => {
   const before = population();
   const slugs = ["images-browser-" + randomUUID(), "images-retry-" + randomUUID(), "images-keyboard-" + randomUUID()];
@@ -38,11 +58,11 @@ test("browser image persistence across creation, reload, editing and visibility"
     writeFileSync(file, await sharp({ create: { width: 64, height: 32, channels: 3, background: "#cba56b" } }).png().toBuffer());
     browser = await launchBrowser();
     const { send, evaluate, click, nextUpload, uploads } = browser;
-    const truth = async (expression: string) => z.boolean().parse(await evaluate(expression));
+    const truth = async (expression: string, values?: readonly unknown[]) => z.boolean().parse(await evaluate(expression, values));
     const setAdministrator = () => send("Network.setCookies", { cookies: cookies.map(({ name, value }) => ({ name, value, url: origin.origin, sameSite: "Lax" })) });
     const navigate = async (pathname: string) => { await send("Page.navigate", { url: origin.origin + pathname }); };
     const fill = async (selector: string, text: string) => {
-      await evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});input.focus();input.select();})()`);
+      await evaluate("function(selector) { const input=document.querySelector(selector); input.focus(); input.select(); }", [selector]);
       await send("Input.insertText", { text });
     };
     const openInformation = async () => {
@@ -81,26 +101,30 @@ test("browser image persistence across creation, reload, editing and visibility"
     };
     const insertImage = async (index: number, alt: string) => {
       await chooseFile(index);
-      const group = `document.querySelectorAll("dialog:modal input[type=file]")[${index}].parentElement`;
-      await evaluate(`(()=>{const input=${group}.querySelector("input:not([type=file])");input.focus();input.select();})()`);
+      await evaluate('function(index) { const input=document.querySelectorAll("dialog:modal input[type=file]")[index].parentElement.querySelector("input:not([type=file])"); input.focus(); input.select(); }', [index]);
       await send("Input.insertText", { text: alt });
-      const fileId = z.string().parse(await evaluate(`${group}.querySelector("input[type=file]").id`));
+      const fileId = z.string().parse(await evaluate('function(index) { return document.querySelectorAll("dialog:modal input[type=file]")[index].id; }', [index]));
       await click(`div[role=group]:has([id=${JSON.stringify(fileId)}]) button`);
-      await waitFor(() => truth(`[...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt===${JSON.stringify(alt)}&&img.complete&&img.naturalWidth===64)`), "inserted image preview decodes");
-      return z.string().parse(await evaluate(`[...document.querySelectorAll("dialog:modal .rich-text img")].find(img=>img.alt===${JSON.stringify(alt)}).getAttribute("src")`));
+      try {
+        await waitFor(() => truth('function(alt) { return [...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt===alt&&img.complete&&img.naturalWidth===64); }', [alt]), "inserted image preview decodes");
+      } catch (error) {
+        console.error("Image insertion diagnostics:", await evaluate('function(alt) { return { creationPath:location.pathname==="/projects", images:[...document.querySelectorAll("dialog:modal .rich-text img")].map(img=>({expected:img.alt===alt,complete:img.complete,width:img.naturalWidth})), selected:[...document.querySelectorAll("dialog:modal input[type=file]")].map(input=>({files:input.files.length,disabled:input.disabled})), matchingAlt:[...document.querySelectorAll("dialog:modal input")].some(input=>input.value===alt), alerts:[...document.querySelectorAll("dialog:modal [role=alert]")].map(element=>element.textContent) }; }', [alt]));
+        throw error;
+      }
+      return z.string().parse(await evaluate('function(alt) { return [...document.querySelectorAll("dialog:modal .rich-text img")].find(img=>img.alt===alt).getAttribute("src"); }', [alt]));
     };
     const decodedImages = async (expectedAlts: string[], preview: boolean) => {
-      await waitFor(() => truth(`document.querySelectorAll("dialog:modal .rich-text img").length===${expectedAlts.length}`), "all saved image elements present");
+      await waitFor(() => truth('function(count) { return document.querySelectorAll("dialog:modal .rich-text img").length===count; }', [expectedAlts.length]), "all saved image elements present");
       for (let index = 0; index < expectedAlts.length; index++) {
-        await evaluate(`document.querySelectorAll("dialog:modal .rich-text img")[${index}].scrollIntoView({block:"center"})`);
-        await waitFor(() => truth(`(()=>{const img=document.querySelectorAll("dialog:modal .rich-text img")[${index}];return img.complete&&img.naturalWidth===64&&img.naturalHeight===32})()`), "saved image decodes after reload");
+        await evaluate('function(index) { document.querySelectorAll("dialog:modal .rich-text img")[index].scrollIntoView({block:"center"}); }', [index]);
+        await waitFor(() => truth('function(index) { const img=document.querySelectorAll("dialog:modal .rich-text img")[index]; return img.complete&&img.naturalWidth===64&&img.naturalHeight===32; }', [index]), "saved image decodes after reload");
       }
       const images = z.array(z.object({ src: z.string(), alt: z.string() })).parse(await evaluate('[...document.querySelectorAll("dialog:modal .rich-text img")].map(img=>({src:img.getAttribute("src"),alt:img.alt}))'));
       assert.deepEqual(images.map((image) => image.alt), expectedAlts);
       for (const image of images) assert.match(image.src, preview ? /^\/project-images\/[\da-f-]{36}\?preview=1$/u : /^\/project-images\/[\da-f-]{36}$/u);
     };
     const saved = async (projectSlug: string, expectedImageCount: number) => {
-      await waitFor(() => truth(`location.pathname===${JSON.stringify("/projects/" + projectSlug)}&&!document.querySelector("dialog:modal")`), "save redirects without reopening modal");
+      await waitFor(() => truth('function(pathname) { return location.pathname===pathname&&!document.querySelector("dialog:modal"); }', ["/projects/" + projectSlug]), "save redirects without reopening modal");
       const project = await getProject(projectSlug);
       const assets = await assetsFor(project.id);
       assert.equal(assets.length, expectedImageCount); assert.ok(assets.every((asset) => asset.status === "ready"));
@@ -129,7 +153,7 @@ test("browser image persistence across creation, reload, editing and visibility"
       await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
       await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
       await waitFor(() => truth('!document.querySelector("dialog:modal")'), "creation dismissed");
-      assert.equal(await truth(`fetch(${JSON.stringify(preview)}).then(()=>false,()=>true)`), true, "Closing revokes local preview URLs");
+      assert.equal(await truth("function(url) { return fetch(url).then(()=>false,()=>true); }", [preview]), true, "Closing revokes local preview URLs");
       assert.equal(population(), before);
       assert.equal(uploads.length, 0, "Staging and cancellation do not send an upload");
     });
@@ -186,22 +210,22 @@ test("browser image persistence across creation, reload, editing and visibility"
       const invalidFile = path.join(directory, "corrupt.png"); writeFileSync(invalidFile, "This is not an image.");
       await chooseFile(0, invalidFile);
       await submit();
-      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(sourceMessages.ProjectForm.pendingImages)}`), "editing does not silently discard a selected file");
+      await waitFor(() => truth('function(message) { return document.querySelector("dialog:modal [role=alert]")?.textContent===message; }', [sourceMessages.ProjectForm.pendingImages]), "editing does not silently discard a selected file");
       assert.equal(uploads.length, uploadCount, "Saving a pending selection cannot start an upload");
       assert.equal((await getProject()).updated_at, project.updated_at, "Saving a pending selection cannot change project content");
       const fileId = z.string().parse(await evaluate('document.querySelector("dialog:modal input[type=file]").id'));
       const group = `div[role=group]:has([id=${JSON.stringify(fileId)}])`;
       await click(group + " button");
-      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(editorMessages.invalidAlt)}`), "alternative text validation");
+      await waitFor(() => truth('function(message) { return document.querySelector("dialog:modal [role=alert]")?.textContent===message; }', [editorMessages.invalidAlt]), "alternative text validation");
       assert.equal(uploads.length, uploadCount, "Invalid alternative text must not send a POST");
-      const altId = z.string().parse(await evaluate(`document.querySelector(${JSON.stringify(group)}).querySelector("input:not([type=file])").id`));
+      const altId = z.string().parse(await evaluate('function(selector) { return document.querySelector(selector).querySelector("input:not([type=file])").id; }', [group]));
       await fill(`[id=${JSON.stringify(altId)}]`, "Corrected diagram");
       await evaluate('document.addEventListener("click",event=>{if(event.target.closest("button"))document.body.dataset.uploadClickTrusted=String(event.isTrusted)},{once:true})');
       await click(group + " button");
-      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(editorMessages.invalidImage)} && !document.querySelector("dialog:modal input[type=file]").disabled`), "server image rejection is recoverable");
+      await waitFor(() => truth('function(message) { return document.querySelector("dialog:modal [role=alert]")?.textContent===message&&!document.querySelector("dialog:modal input[type=file]").disabled; }', [editorMessages.invalidImage]), "server image rejection is recoverable");
       assert.equal(await evaluate('document.body.dataset.uploadClickTrusted'), "true", "Upload uses a real browser pointer click");
       assert.equal(uploads.length, uploadCount + 1); assert.equal(uploads.at(-1)?.status, 400);
-      assert.equal(await evaluate(`document.querySelector(${JSON.stringify(`[id=${JSON.stringify(altId)}]`)}).value`), "Corrected diagram");
+      assert.equal(await evaluate('function(id) { return document.getElementById(id).value; }', [altId]), "Corrected diagram");
       assert.equal(await truth('document.querySelector("dialog:modal input[type=file]").files.length===1'), true, "Rejection retains the selected file");
       assert.deepEqual((await assetsFor(project.id)).map((asset) => asset.id).sort(), initialAssets.map((asset) => asset.id).sort(), "Rejected bytes cannot create an asset");
       const rejectedContent: unknown = JSON.parse(z.string().parse(await evaluate('document.querySelector("input[name=description_content]").value')));
@@ -213,7 +237,7 @@ test("browser image persistence across creation, reload, editing and visibility"
       await waitFor(() => truth('[...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt==="Corrected diagram"&&img.complete&&img.naturalWidth===64)'), "Enter uploads and inserts the corrected file without saving the project");
       assert.equal((await getProject()).updated_at, project.updated_at, "Enter in the image field must not save project changes");
       assert.equal(uploads.length, uploadCount + 2); assert.equal(uploads.at(-1)?.status, 201);
-      assert.equal(await truth(`[...document.querySelectorAll("dialog:modal [role=status]")].some(el=>el.textContent===${JSON.stringify(editorMessages.imageUploaded)})`), true, "A successful upload is explicitly reported");
+      assert.equal(await truth('function(message) { return [...document.querySelectorAll("dialog:modal [role=status]")].some(el=>el.textContent===message); }', [editorMessages.imageUploaded]), true, "A successful upload is explicitly reported");
       await submit(); await saved(slug, 4);
       await navigate("/projects/" + slug); await openInformation();
       await decodedImages(["Description diagram", "Diagram added while editing", "Corrected diagram", "Objectives diagram"], true);
@@ -274,18 +298,18 @@ test("browser image persistence across creation, reload, editing and visibility"
       await fill(`[id=${JSON.stringify(altId)}]`, "   ");
       await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
       await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
-      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(editorMessages.invalidAlt)}`), "Enter validates alternative text without submitting");
-      assert.equal(await truth(`document.activeElement.id===${JSON.stringify(altId)} && document.activeElement.getAttribute("aria-invalid")==="true"`), true, "Invalid alternative text retains focus and is marked invalid");
+      await waitFor(() => truth('function(message) { return document.querySelector("dialog:modal [role=alert]")?.textContent===message; }', [editorMessages.invalidAlt]), "Enter validates alternative text without submitting");
+      assert.equal(await truth('function(id) { return document.activeElement.id===id&&document.activeElement.getAttribute("aria-invalid")==="true"; }', [altId]), true, "Invalid alternative text retains focus and is marked invalid");
       await fill(`[id=${JSON.stringify(altId)}]`, "Keyboard inserted diagram");
       const initialUploads = uploads.length;
       await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
       await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
       await waitFor(() => truth('[...document.querySelectorAll("dialog:modal .rich-text img")].some(img=>img.alt==="Keyboard inserted diagram"&&img.complete&&img.naturalWidth===64)'), "Enter inserts into the editor without submitting the project");
       assert.equal(uploads.length, initialUploads, "Creation preview stays local until explicit save");
-      assert.equal(await truth(`[...document.querySelectorAll("dialog:modal [role=status]")].some(el=>el.textContent===${JSON.stringify(editorMessages.imageStaged)})`), true, "Local staging is distinct from a completed upload");
+      assert.equal(await truth('function(message) { return [...document.querySelectorAll("dialog:modal [role=status]")].some(el=>el.textContent===message); }', [editorMessages.imageStaged]), true, "Local staging is distinct from a completed upload");
       await chooseFile(1);
       await submit();
-      await waitFor(() => truth(`document.querySelector("dialog:modal [role=alert]")?.textContent === ${JSON.stringify(sourceMessages.ProjectForm.pendingImages)}`), "creation does not silently discard a second selected file");
+      await waitFor(() => truth('function(message) { return document.querySelector("dialog:modal [role=alert]")?.textContent===message; }', [sourceMessages.ProjectForm.pendingImages]), "creation does not silently discard a second selected file");
       assert.equal(await truth('document.activeElement===document.querySelectorAll("dialog:modal input[type=file]")[1]'), true, "The pending file receives focus");
       assert.equal(uploads.length, initialUploads);
       const pendingFileId = z.string().parse(await evaluate('document.querySelectorAll("dialog:modal input[type=file]")[1].id'));
@@ -300,7 +324,7 @@ test("browser image persistence across creation, reload, editing and visibility"
       await navigate("/projects/" + slug); await openInformation(); await edit();
       const beforeCancel = await getProject(); assert.equal(beforeCancel.status, "development");
       const selectStatus = async (status: string) => {
-        await evaluate('(()=>{const select=document.querySelector("#project-status");select.value=' + JSON.stringify(status) + ';select.dispatchEvent(new Event("change",{bubbles:true}));})()');
+        await evaluate('function(status) { const select=document.querySelector("#project-status"); select.value=status; select.dispatchEvent(new Event("change",{bubbles:true})); }', [status]);
       };
       await selectStatus("cancelled");
       await waitFor(() => truth('Boolean(document.querySelector("textarea[name=cancellation_reason]"))'), "cancellation reason appears");
@@ -315,26 +339,26 @@ test("browser image persistence across creation, reload, editing and visibility"
       assert.equal(cancelled.status, "cancelled"); assert.equal(cancelled.is_hidden, true); assert.equal(cancelled.is_published, true);
       assert.equal(cancelled.cancellation_reason, reason);
       await openInformation();
-      assert.equal(await truth('document.querySelector("dialog:modal").textContent.includes(' + JSON.stringify(reason) + ')'), true);
+      assert.equal(await truth('function(reason) { return document.querySelector("dialog:modal").textContent.includes(reason); }', [reason]), true);
       await edit(); await selectStatus("development");
-      assert.equal(await truth('document.querySelector("input[type=hidden][name=cancellation_reason]").value===' + JSON.stringify(reason)), true);
+      assert.equal(await truth('function(reason) { return document.querySelector("input[type=hidden][name=cancellation_reason]").value===reason; }', [reason]), true);
       await submit(); const reopened = await saved(slug, 4);
       assert.equal(reopened.status, "development"); assert.equal(reopened.cancellation_reason, reason);
       await openInformation();
-      assert.equal(await truth('document.querySelector("dialog:modal").textContent.includes(' + JSON.stringify(reason) + ')'), false);
+      assert.equal(await truth('function(reason) { return document.querySelector("dialog:modal").textContent.includes(reason); }', [reason]), false);
       await send("Network.clearBrowserCookies");
       for (const width of [390, 1440]) {
         await send("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: 1, mobile: width < 500 });
         await navigate("/projects");
         const heading = "#project-" + reopened.id;
-        await waitFor(() => truth('Boolean(document.querySelector(' + JSON.stringify(heading) + '))'), "hidden card listed");
-        assert.equal(await truth('document.querySelector(' + JSON.stringify(heading) + ').closest("article").querySelector("a,button,[tabindex]")===null'), true, "Hidden card has no visitor navigation control");
+        await waitFor(() => truth('function(selector) { return Boolean(document.querySelector(selector)); }', [heading]), "hidden card listed");
+        assert.equal(await truth('function(selector) { return document.querySelector(selector).closest("article").querySelector("a,button,[tabindex]")===null; }', [heading]), true, "Hidden card has no visitor navigation control");
         assert.equal(await truth('document.documentElement.scrollWidth<=innerWidth'), true, "Project list has no horizontal overflow");
       }
       assert.equal((await fetch(origin.origin + "/projects/" + slug)).status, 404);
       await setAdministrator(); await navigate("/projects");
-      await waitFor(() => truth('Boolean(document.querySelector("#project-' + reopened.id + '"))'), "owner card rendered");
-      assert.equal(await truth('Boolean(document.querySelector("#project-' + reopened.id + '").closest("a"))'), true, "Owner retains an editable link");
+      await waitFor(() => truth('function(id) { return Boolean(document.getElementById("project-"+id)); }', [reopened.id]), "owner card rendered");
+      assert.equal(await truth('function(id) { return Boolean(document.getElementById("project-"+id).closest("a")); }', [reopened.id]), true, "Owner retains an editable link");
       await navigate("/projects/" + slug); await openInformation(); await edit();
       await click("#project-hidden"); await submit();
       assert.equal((await saved(slug, 4)).is_hidden, false);
