@@ -61,11 +61,13 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const publicList = await fetch(origin.origin + "/projects");
       const publicHtml = await publicList.text();
       assert.ok(!publicHtml.includes(slug));
+      assert.ok(!publicHtml.includes(assetId));
       assert.doesNotMatch(publicHtml, />New project<\/button>/);
       const ownerList = await fetch(origin.origin + "/projects", { headers: { Cookie: cookie } });
       assert.match(ownerList.headers.get("cache-control") ?? "", /no-store/);
       const ownerHtml = await ownerList.text();
       assert.ok(ownerHtml.includes(slug));
+      assert.ok(ownerHtml.includes(`src="${publicPath}?preview=1"`));
       assert.match(ownerHtml, />New project<\/button>/);
       const ownerDetail = await fetch(origin.origin + "/projects/" + slug + "?edit=1", { headers: { Cookie: cookie } });
       assert.equal(ownerDetail.status, 200);
@@ -226,15 +228,17 @@ test("rich project HTTP paths enforce image visibility without creating users", 
     });
     await context.test("hidden cards remain listed while all detail and data paths deny visitors", async () => {
       const cardName = "Lifecycle hidden card " + id;
+      const excerpt = ("Public card description " + id).padEnd(240, "x");
+      const descriptionTail = "Private description tail " + id;
       for (const published of [false, true]) for (const hidden of [false, true]) {
-        assert.equal((await admin.from("projects").update({ name: cardName, is_published: published, is_hidden: hidden }).eq("id", id)).error, null);
+        assert.equal((await admin.from("projects").update({ name: cardName, description: excerpt + descriptionTail, is_published: published, is_hidden: hidden }).eq("id", id)).error, null);
         const summaries = await publicClient.rpc("list_project_summaries"); assert.equal(summaries.error, null);
         const summary = summaries.data?.find((item) => item.id === id);
         assert.equal(Boolean(summary), published);
         if (summary) {
           assert.deepEqual(Object.keys(summary).sort(), ["id", "slug", "name", "description", "status", "is_hidden", "is_published", "position"].sort());
           assert.equal(summary.slug, hidden ? null : slug);
-          assert.equal(summary.description, hidden ? null : "Rich HTTP fixture");
+          assert.equal(summary.description, excerpt);
         }
         const accessible = published && !hidden;
         const directProject = await publicClient.from("projects").select("*").eq("id", id);
@@ -248,12 +252,18 @@ test("rich project HTTP paths enforce image visibility without creating users", 
         const listRsc = await (await fetch(origin.origin + "/projects", { headers: { RSC: "1" } })).text();
         for (const body of [list, listRsc]) {
           assert.equal(body.includes(cardName), published);
-          if (hidden || !published) { assert.ok(!body.includes(slug)); assert.ok(!body.includes("Rich HTTP fixture")); }
+          assert.equal(body.includes(assetId), accessible);
+          assert.equal(body.includes("Fixture diagram"), accessible);
+          assert.equal(body.includes(excerpt), published);
+          assert.equal(body.includes(descriptionTail), accessible);
+          assert.ok(!body.includes("Rich HTTP fixture"));
+          if (!accessible) assert.ok(!body.includes(slug));
         }
+        if (accessible) assert.ok(list.includes(`src="${publicPath}"`));
         const detail = await fetch(origin.origin + "/projects/" + slug); assert.equal(detail.status, accessible ? 200 : 404);
         if (!accessible) {
           for (const body of [await detail.text(), await (await fetch(origin.origin + "/projects/" + slug, { headers: { RSC: "1" } })).text()]) {
-            for (const secret of [cardName, "Rich HTTP fixture", "Private board fixture task", "https://example.com/repository", assetId]) assert.ok(!body.includes(secret), "Private detail leaked: " + secret);
+            for (const secret of [cardName, excerpt, descriptionTail, "Rich HTTP fixture", "Private board fixture task", "https://example.com/repository", assetId]) assert.ok(!body.includes(secret), "Private detail leaked: " + secret);
           }
         }
         assert.equal((await fetch(origin.origin + publicPath)).status, accessible ? 200 : 404);

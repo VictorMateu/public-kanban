@@ -234,3 +234,13 @@ required reasons, reopening retention and DELETE denial. Test cleanup alone uses
 local PostgreSQL access for exact UUID-and-slug fixtures; application DELETE
 permissions remain denied. No broad cleanup, users, remote migration or deployment
 was introduced.
+
+
+## Description excerpts on published hidden cards - 2026-11-21
+
+The owner approved making the plain-text description excerpt public on
+published hidden cards. The listing RPC now returns at most 240 Unicode
+characters of the description for every published project. It still returns a
+null slug for hidden projects. Drafts, hidden project detail, rich documents,
+assets, columns and tasks keep their existing access policies. Hidden visitor
+cards use the decorative cover and provide no navigation to the board.

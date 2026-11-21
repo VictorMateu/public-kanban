@@ -35,17 +35,17 @@
     "description": "Explore portfolio projects and follow the progress of their tasks on a public Kanban board."
   },
   "Home": {
-    "eyebrow": "Ideas in motion",
-    "introduction": "Discover portfolio projects and follow their progress, task by task.",
+    "introduction": "Explore portfolio projects and follow their progress.",
     "projects": "Projects",
-    "openProject": "Open a project to explore its board.",
     "loading": "Loading projects…",
     "publishedProjects": "Published projects",
     "unavailableTitle": "Projects unavailable",
     "unavailableDescription": "Projects cannot be loaded right now. Please try again later.",
     "emptyTitle": "No published projects yet",
     "emptyDescription": "This space will bring together portfolio projects and their progress. Come back soon to discover them.",
-    "managedProjects": "All projects, including drafts"
+    "managedProjects": "All projects, including drafts",
+    "managedEmptyTitle": "You haven’t created any projects yet",
+    "managedEmptyDescription": "Use New project to create your first draft."
   },
   "Project": {
     "label": "Project",

@@ -14,11 +14,11 @@ async function Projects({ administrator }: { administrator: boolean }) {
   }
   const projects = administrator ? await listManagedProjects() : await listPublishedProjects();
   if (!projects.length) {
-    return <EmptyState title={t("emptyTitle")} description={t("emptyDescription")} />;
+    return <EmptyState title={t(administrator ? "managedEmptyTitle" : "emptyTitle")} description={t(administrator ? "managedEmptyDescription" : "emptyDescription")} />;
   }
   return (
-    <ul aria-label={t(administrator ? "managedProjects" : "publishedProjects")} className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
-      {projects.map((project) => <li key={project.id}><ProjectCard project={project} showVisibility={administrator} /></li>)}
+    <ul aria-label={t(administrator ? "managedProjects" : "publishedProjects")} className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18.75rem),1fr))] gap-5">
+      {projects.map((project) => <li key={project.id} className="min-w-0"><ProjectCard project={project} showVisibility={administrator} /></li>)}
     </ul>
   );
 }
@@ -27,18 +27,16 @@ export async function ProjectList() {
   const t = await getTranslations("Home");
   const administrator = Boolean(await getAdministrator());
   return (
-    <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-5 pt-10 pb-16 sm:px-10 sm:pt-14">
-      <div>
-        <p className="mb-4 text-sm tracking-widest text-foreground/75 uppercase">{t("eyebrow")}</p>
-        <h1 className="text-4xl text-balance sm:text-5xl">{t("projects")}</h1>
-        <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
-          <p className="max-w-2xl text-lg leading-relaxed text-pretty text-foreground/80">{t("introduction")}</p>
-          {administrator && <ProjectManagement className="lg:w-auto lg:shrink-0" triggerClassName="w-full lg:w-auto" />}
+    <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-5 pt-7 pb-12 sm:px-10 sm:pt-10">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-4xl text-balance sm:text-5xl">{t("projects")}</h1>
+          <p className="mt-2 max-w-2xl text-lg leading-relaxed text-pretty text-foreground/90">{t("introduction")}</p>
         </div>
-      </div>
-      <section aria-labelledby="projects-heading" className="mt-10">
+        {administrator && <ProjectManagement className="lg:shrink-0" triggerClassName="w-full lg:w-auto" />}
+      </header>
+      <section aria-labelledby="projects-heading" className="mt-6 sm:mt-8">
         <h2 id="projects-heading" className="sr-only">{t(administrator ? "managedProjects" : "publishedProjects")}</h2>
-        <p className="mb-6 text-sm text-foreground/80">{t("openProject")}</p>
         <Suspense fallback={<p role="status" className="rounded-2xl border border-border/15 bg-surface/90 p-6 text-foreground/80">{t("loading")}</p>}>
           <Projects administrator={administrator} />
         </Suspense>
