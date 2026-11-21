@@ -95,8 +95,12 @@ test("public project pages use real local data and preserve existing users", asy
       const result = await page(`/projects/${marker}-published`);
       assert.equal(result.status, 200);
       const boardText = htmlText(result.renderedHtml);
-      for (const text of [names.published, firstTask, secondTask, "Descripción de tarea", "Priority high", "Priority low", "Priority medium", "Nov 1, 2026", "No tasks yet."]) {
-        assert.ok(boardText.includes(text), "Expected public board content should be rendered");
+      for (const text of [names.published, firstTask, secondTask, "Nov 1, 2026", "No tasks yet."]) {
+        assert.ok(boardText.includes(text), `Missing public board content: ${text}`);
+      }
+      assert.ok(result.html.includes("Descripción de tarea"), "Task description should be available in the detail payload");
+      for (const priority of ["high", "low", "medium"]) {
+        assert.match(result.renderedHtml, new RegExp(`<dt\\b[^>]*>Priority</dt><dd>${priority}</dd>`, "u"));
       }
       assert.doesNotMatch(result.renderedHtml, />Read only<\/span>/);
       assert.match(boardText, /To do[\s\S]*In progress[\s\S]*In review[\s\S]*Done/);
@@ -153,16 +157,18 @@ test("public project pages use real local data and preserve existing users", asy
 
     await context.test("localizes board labels without translating data or exposing drafts", async () => {
       const labels = {
-        en: ["Board columns and tasks", "Priority high", "2 tasks"],
-        es: ["Columnas y tareas del tablero", "Prioridad alta", "2 tareas"],
-        ca: ["Columnes i tasques del tauler", "Prioritat alta", "2 tasques"],
+        en: ["Board columns and tasks", "2 tasks", "Priority", "high"],
+        es: ["Columnas y tareas del tablero", "2 tareas", "Prioridad", "alta"],
+        ca: ["Columnes i tasques del tauler", "2 tasques", "Prioritat", "alta"],
       };
-      for (const [locale, texts] of Object.entries(labels)) {
+      for (const [locale, [boardLabel, count, priorityLabel, priority]] of Object.entries(labels)) {
         const headers = { Cookie: `portfolio-kanban-locale=${locale}` };
         const result = await page(`/projects/${marker}-published`, headers);
         assert.equal(result.status, 200);
         assert.ok(result.html.includes(`<html lang="${locale}"`));
-        for (const text of [names.published, "Descripción de tarea", ...texts]) assert.ok(result.renderedHtml.includes(text));
+        for (const text of [names.published, boardLabel, count]) assert.ok(result.renderedHtml.includes(text), `Missing ${locale} board content: ${text}`);
+        assert.ok(result.html.includes("Descripción de tarea"));
+        assert.match(result.renderedHtml, new RegExp(`<dt\\b[^>]*>${priorityLabel}</dt><dd>${priority}</dd>`, "u"));
         const missing = await page(`/projects/${marker}-draft`, headers);
         assert.equal(missing.status, 404);
         assert.ok(!missing.html.includes(names.draft));

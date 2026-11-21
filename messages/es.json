@@ -34,17 +34,17 @@
     "description": "Explora los proyectos del portfolio y sigue la evolución de sus tareas en un tablero Kanban público."
   },
   "Home": {
-    "eyebrow": "Ideas en movimiento",
-    "introduction": "Conoce los proyectos del portfolio y sigue su evolución, tarea a tarea.",
+    "introduction": "Explora los proyectos del portfolio y sigue su evolución.",
     "projects": "Proyectos",
-    "openProject": "Abre un proyecto para explorar su tablero.",
     "loading": "Cargando proyectos…",
     "publishedProjects": "Proyectos publicados",
     "unavailableTitle": "Proyectos no disponibles",
     "unavailableDescription": "No se pueden consultar los proyectos en este momento. Vuelve a intentarlo más tarde.",
     "emptyTitle": "Todavía no hay proyectos publicados",
     "emptyDescription": "Este espacio irá reuniendo los proyectos del portfolio y su evolución. Vuelve pronto para descubrirlos.",
-    "managedProjects": "Todos los proyectos, incluidos los borradores"
+    "managedProjects": "Todos los proyectos, incluidos los borradores",
+    "managedEmptyTitle": "Todavía no has creado proyectos",
+    "managedEmptyDescription": "Usa Nuevo proyecto para crear tu primer borrador."
   },
   "Project": {
     "label": "Proyecto",

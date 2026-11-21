@@ -244,10 +244,31 @@ test("browser image persistence across creation, reload, editing and visibility"
     });
     await context.test("visitors see decoded published images; saving private removes public access", async () => {
       await send("Network.clearBrowserCookies");
+      const project = await getProject();
+      const coverPath = "/project-images/" + richTextAssetIds(readRichText(project.description_content))[0];
+      const cardId = "project-" + project.id;
+      for (const [width, columns] of [[320, 1], [390, 1], [1440, 3]] as const) {
+        await send("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: 1, mobile: width < 500 });
+        await navigate("/projects");
+        await waitFor(() => truth(`function(id, path) {
+          const card = document.getElementById(id)?.closest("article");
+          const images = card?.querySelectorAll("img");
+          const cover = images?.[0];
+          return images?.length === 1 && cover.alt === "Description diagram" && cover.src === new URL(path, location.origin).href && cover.complete && cover.naturalWidth === 64;
+        }`, [cardId, coverPath]), "first description image loads as the only card cover");
+        assert.equal(await truth(`function(id, columns) {
+          const grid = document.getElementById(id).closest("ul");
+          return getComputedStyle(grid).gridTemplateColumns.split(" ").length === columns && document.documentElement.scrollWidth <= innerWidth;
+        }`, [cardId, columns]), true, "Grid fits the available width");
+      }
+      await evaluate('function(id) { document.getElementById(id).closest("a").focus(); }', [cardId]);
+      assert.equal(await truth('function(id) { const link = document.getElementById(id).closest("a"); return document.activeElement === link && link.matches(":focus-visible") && getComputedStyle(link).outlineStyle !== "none"; }', [cardId]), true, "Card link has a visible keyboard focus indicator");
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+      await waitFor(() => truth('function(path) { return location.pathname === path; }', ["/projects/" + slug]), "Enter opens the card's board");
       await navigate("/projects/" + slug); await openInformation();
       await decodedImages(["Description diagram", "Diagram added while editing", "Corrected diagram", "Objectives diagram"], false);
       assert.equal(await truth('Boolean(document.querySelector("dialog:modal button.project-primary-action"))'), false);
-      const project = await getProject();
       for (const asset of await assetsFor(project.id)) {
         const response = await fetch(origin.origin + "/project-images/" + asset.id);
         assert.equal(response.status, 200); assert.equal(response.headers.get("content-type"), "image/webp");
@@ -346,13 +367,16 @@ test("browser image persistence across creation, reload, editing and visibility"
       assert.equal(reopened.status, "development"); assert.equal(reopened.cancellation_reason, reason);
       await openInformation();
       assert.equal(await truth('function(reason) { return document.querySelector("dialog:modal").textContent.includes(reason); }', [reason]), false);
+      assert.ok(reopened.description);
+      const excerpt = Array.from(reopened.description).slice(0, 240).join("").trim();
       await send("Network.clearBrowserCookies");
-      for (const width of [390, 1440]) {
+      for (const width of [320, 390, 1440]) {
         await send("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: 1, mobile: width < 500 });
         await navigate("/projects");
         const heading = "#project-" + reopened.id;
         await waitFor(() => truth('function(selector) { return Boolean(document.querySelector(selector)); }', [heading]), "hidden card listed");
-        assert.equal(await truth('function(selector) { return document.querySelector(selector).closest("article").querySelector("a,button,[tabindex]")===null; }', [heading]), true, "Hidden card has no visitor navigation control");
+        assert.equal(await truth('function(selector) { return document.querySelector(selector).closest("article").querySelector("a,button,[tabindex],img")===null; }', [heading]), true, "Hidden visitor card has no navigation control or cover image");
+        assert.equal(await truth('function(selector, excerpt) { return document.querySelector(selector).closest("article").querySelector("p")?.textContent === excerpt; }', [heading, excerpt]), true, "Hidden visitor card displays its description excerpt");
         assert.equal(await truth('document.documentElement.scrollWidth<=innerWidth'), true, "Project list has no horizontal overflow");
       }
       assert.equal((await fetch(origin.origin + "/projects/" + slug)).status, 404);

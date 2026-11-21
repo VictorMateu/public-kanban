@@ -473,15 +473,17 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await send("Page.navigate", { url: origin.origin + "/projects" });
     await openReason(catalogTrigger, "/projects");
 
-    const hiddenDescription = "Hidden project description for cancellation fixture";
-    assert.equal((await admin.from("projects").update({ is_hidden: true, description: hiddenDescription }).eq("id", projectId)).error, null);
+    const hiddenExcerpt = "Hidden project description for cancellation fixture".padEnd(240, "x");
+    const hiddenDescriptionTail = "Text beyond the public excerpt";
+    assert.equal((await admin.from("projects").update({ is_hidden: true, description: hiddenExcerpt + hiddenDescriptionTail }).eq("id", projectId)).error, null);
     for (const headers of [new Headers(), new Headers({ RSC: "1" })]) {
       const listing = await fetch(origin.origin + "/projects", { headers });
       assert.equal(listing.status, 200);
       const body = await listing.text();
       assert.match(body, new RegExp(projectId, "u"));
       assert.doesNotMatch(body, new RegExp(reason, "u"));
-      assert.doesNotMatch(body, new RegExp(hiddenDescription, "u"));
+      assert.ok(body.includes(hiddenExcerpt));
+      assert.ok(!body.includes(hiddenDescriptionTail));
     }
     await send("Page.navigate", { url: origin.origin + "/projects" });
     await has(`#project-${projectId}`);

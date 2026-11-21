@@ -1994,3 +1994,60 @@ row. The task detail retains the full labels.
   returns excerpts through that RPC. The application discards those excerpts
   before validating the catalog response, and browser checks verified that
   hidden descriptions and reasons stay out of public HTML and RSC.
+
+## Responsive project catalog and covers - 2026-11-21
+
+`npm run lint`, `npm run typecheck`, `npm test` (88 passed),
+`npm run build` and `git diff --check` passed. The production HTTP checks in
+`tests/project-content-http.ts`, `tests/public-http.test.mjs` and
+`tests/i18n-http.test.mjs` passed for public and owner listings. The cover checks
+assert that visitor HTML and React payloads omit the image ID and alternative
+text for drafts and hidden projects while the owner can use the private preview.
+The empty public list check was skipped against the populated local database.
+The localized unavailable state was checked with a separate unconfigured dev
+server. The empty administrator list and application error were not forced.
+
+Focused Chrome checks passed in English, Spanish and Catalan at 320, 390 and
+1440px. They covered grid tracks, long-name reflow, a decoded public cover,
+visible focus and Enter navigation, and the fallback after blocking the image
+request. Spanish screenshots at 390 and 1440px were inspected locally. Combined
+HTTP/browser runs encountered click-target failures and timeouts before the
+shared creation fixture completed. The isolated Chrome run of
+`tests/project-images-browser.ts` passed all 10 checks against a fresh
+production server, including the new cover assertions. The baseline image
+suite also passed all 10 checks in isolation.
+
+The integration suites cleaned up their own fixtures and preserved the existing
+project and user counts. Cover crop, fallback artwork and spacing remain pending
+owner visual review.
+
+
+## Public excerpts on hidden project cards - 2026-11-21
+
+Lint, type checking, all 88 unit tests and the production build passed.
+The isolated Chrome suite passed all 10 checks, including a static hidden card
+with an excerpt and no cover image at 320, 390 and 1440px. An earlier Edge run
+failed in the image editor before it reached the new card assertion.
+
+Migration `20261121000200` was applied to local Supabase. The populated local
+instance also already had the task-management migration from another branch.
+The lifecycle SQL suite and all eight rich-content HTTP checks passed with
+run-only fixture adaptations using the generated columns. The nine i18n HTTP
+checks passed. The legacy public-board fixture suite was not run against the
+new column schema. The privacy assertions covered the 240-character excerpt in
+RPC, HTML and RSC, draft omission, and continued denial of hidden details,
+columns, tasks and images. No remote database migration was applied.
+
+## Task archive and project catalog integration - 2026-11-21
+
+- Lint, TypeScript, all 91 unit tests and the production build passed.
+- The production HTTP suite passed 29 checks. The empty catalog check was
+  skipped because the local database contains existing projects. Board checks
+  verify the localized priority label and value and the task description in
+  the detail payload.
+- The Chromium suites passed all 11 checks. The catalog cancellation test
+  verifies keyboard access for visible projects. It confirms that a published
+  hidden project exposes only its allowed description excerpt and omits the
+  cancellation reason in HTML and RSC responses.
+- The project and task database suite passed using a rolled-back transaction
+  against the local Supabase instance.

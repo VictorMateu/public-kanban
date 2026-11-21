@@ -15,7 +15,7 @@ CREATE TEMP TABLE lifecycle_fixtures (
 INSERT INTO lifecycle_fixtures (published, hidden) VALUES (TRUE,FALSE),(TRUE,TRUE),(FALSE,FALSE),(FALSE,TRUE);
 GRANT SELECT ON lifecycle_fixtures TO anon, authenticated;
 INSERT INTO public.projects (id, slug, name, description, is_published, is_hidden, repository_url)
-SELECT id, 'lifecycle-db-' || id::TEXT, 'Lifecycle fixture', 'Private description ' || id::TEXT,
+SELECT id, 'lifecycle-db-' || id::TEXT, 'Lifecycle fixture', repeat(chr(127793),240) || 'Private description tail ' || id::TEXT,
   published, hidden, 'https://example.com/private-repository' FROM lifecycle_fixtures;
 INSERT INTO public.tasks (project_id, column_id, title)
 SELECT c.project_id, c.id, 'Private task' FROM public.columns c JOIN lifecycle_fixtures f ON f.id = c.project_id WHERE c.stage = 'todo';
@@ -63,7 +63,7 @@ SELECT set_config('storage.operation','storage.object.get_authenticated',TRUE);
 DO $$
 BEGIN
   PERFORM pg_temp.assert_true((SELECT count(*) = 2 FROM public.list_project_summaries() WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Both published cards are listed');
-  PERFORM pg_temp.assert_true((SELECT bool_and(slug IS NULL AND description IS NULL AND is_published) FROM public.list_project_summaries() WHERE is_hidden AND id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden summaries contain no link or description');
+  PERFORM pg_temp.assert_true((SELECT bool_and(slug IS NULL AND description = repeat(chr(127793),240) AND is_published) FROM public.list_project_summaries() WHERE is_hidden AND id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden summaries contain a 240-character excerpt without a slug');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.projects WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Only published nonhidden full projects are public');
   PERFORM pg_temp.assert_true((SELECT count(*) = 4 FROM public.columns WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden columns remain private');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.tasks WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden tasks remain private');

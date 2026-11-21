@@ -21,7 +21,7 @@ Language preference is stored in a cookie while URLs remain unchanged. Without a
 - Initial supporting information includes a description, objectives and a repository link.
 - The owner can create, read, update, publish, unpublish and hide projects. Projects cannot be deleted; cancellation preserves the project and requires a reason. A cancelled project exposes its reason through the status on its detail page and through a separate action in the catalog, subject to existing project visibility.
 - Lifecycle states are Active / in development, Maintenance, Completed and Cancelled. New and existing projects start as Active / in development when the status field is introduced.
-- Visitors can see published projects in the listing. A published hidden project remains listed but its card does not open, and its detail URL and underlying content are unavailable to visitors. The administrator retains access. Unpublished projects remain private regardless of the hidden flag.
+- Visitors can see published projects in the listing. A published hidden project remains listed with a plain-text description excerpt and a decorative cover. Its card is static, and its detail URL and board are unavailable to visitors. The administrator retains access. Unpublished projects remain private regardless of the hidden flag.
 
 The owner selected a presentation-only summary for the home page, with an introduction, project/task metrics and an activity area. The separate Projects route remains the project listing entry point. Navigation between project information and board views remains open.
 
@@ -399,8 +399,8 @@ The two local migrations are applied: lifecycle/hidden/reason fields, public
 summary RPC, content/descendant RLS and application DELETE denial, followed by a
 Unicode-whitespace constraint correction. Shared creation/editing controls and
 status/reason presentation are implemented in English, Spanish and Catalan.
-Published hidden cards expose name/status without navigation or content to
-visitors; owner cards retain management access. Database, HTTP and isolated
+At that point, published hidden cards exposed name/status without navigation
+or content to visitors; owner cards retain management access. Database, HTTP and isolated
 browser tests pass. The new form/card presentation remains pending owner visual
 review; see ADRs 0001/0002 and validation.md. No task or column CRUD was added.
 
@@ -414,3 +414,22 @@ information dialogs, rich-text/image flow, lifecycle/cancellation and hidden
 visibility behavior within this increment. Earlier WIP commits and review notes
 remain historical. Task/column CRUD, the common column definition, file cleanup
 policy and remote deployment remain outside this acceptance.
+
+### Responsive project catalog and covers
+
+The owner requested a cozier, responsive project catalog with optional photo
+covers. The listing uses the shared palette, a shorter header and a grid that
+fits the available content width. Cards distinguish lifecycle from the owner's
+publication and hidden labels, and show up to three lines of description. The
+visitor and administrator have distinct empty states.
+
+The first image in the description supplies the cover and its alternative text.
+The current prototype uses a top-aligned 16:9 crop. A decorative palette
+illustration fills the same space when there is no image or loading fails. A
+hidden visitor card uses the illustration and remains non-interactive. It now
+shows the plain-text description excerpt, when present. The public listing API
+returns up to 240 Unicode characters for any published project, including hidden
+projects. Hidden slugs, full details, covers, columns and tasks remain protected.
+Authorized administrators can open drafts and hidden projects and see their
+covers through the existing private preview route. The cover selection, crop
+and styling await owner visual review.

@@ -54,10 +54,12 @@ test("missing, duplicate and forged management input fails at the runtime bounda
   assert.deepEqual(parseProjectSubmission(form), { success: false, errors: { status: "invalid", is_hidden: "invalid", cancellation_reason: "invalid" } });
 });
 
-test("public summaries reject hidden content, missing visible links and draft exposure", () => {
+test("public summaries allow hidden excerpts and reject private fields, invalid links and drafts", () => {
   const summary = { id: "a655e963-5a33-45cc-b054-815ed6bc6965", slug: null, name: "Project", description: null, status: "development", is_hidden: true, is_published: true, position: 0 };
   assert.ok(publicProjectSummarySchema.safeParse(summary).success);
-  for (const extra of [{ slug: "private-slug" }, { description: "Private content" }, { repository_url: "https://example.com" }, { is_published: false }, { is_hidden: false }]) {
+  const excerpt = "\u{1F331}".repeat(240);
+  assert.ok(publicProjectSummarySchema.safeParse({ ...summary, description: excerpt }).success);
+  for (const extra of [{ slug: "private-slug" }, { description: excerpt + "!" }, { repository_url: "https://example.com" }, { is_published: false }, { is_hidden: false }]) {
     assert.equal(publicProjectSummarySchema.safeParse({ ...summary, ...extra }).success, false);
   }
 });

@@ -266,3 +266,12 @@ checks also cover direct downloads. A separate bucket and asset table
 would provide storage isolation at the cost of duplicating the upload and
 access policy surface. Unreferenced assets remain private; automated file
 cleanup is a separate decision.
+
+## Description excerpts on published hidden cards - 2026-11-21
+
+The owner approved making the plain-text description excerpt public on
+published hidden cards. The listing RPC now returns at most 240 Unicode
+characters of the description for every published project. It still returns a
+null slug for hidden projects. Drafts, hidden project detail, rich documents,
+assets, columns and tasks keep their existing access policies. Hidden visitor
+cards use the decorative cover and provide no navigation to the board.

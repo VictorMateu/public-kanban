@@ -1,0 +1,7 @@
+.cover {
+  background:
+    radial-gradient(ellipse 64% 110% at 0% 108%, var(--palette-sage) 69%, transparent 70%),
+    radial-gradient(ellipse 62% 99% at 103% 102%, var(--palette-peach) 69%, transparent 70%),
+    radial-gradient(circle at 73% 29%, var(--palette-honey) 0 7%, transparent 7.5%),
+    linear-gradient(150deg, var(--palette-cream), var(--palette-peach-soft));
+}
