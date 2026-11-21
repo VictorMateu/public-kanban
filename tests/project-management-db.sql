@@ -30,10 +30,11 @@ BEGIN
         'Choose the technology stack', 'Set up the repository and local environment',
         'Set up tests and continuous integration'
       ]
-      AND bool_and(c.stage = 'todo' AND t.is_hidden AND t.completed_on IS NULL
-        AND t.archived_at IS NULL AND coalesce(t.description, '') <> '')
+      AND bool_and(c.stage = 'todo' AND t.is_system AND t.is_hidden AND t.completed_on IS NULL
+        AND t.archived_at IS NULL AND coalesce(t.description, '') <> ''
+        AND (t.description_content->>'type' = 'doc') IS TRUE)
       AND bool_or(t.title = 'Define the architecture and its boundaries' AND t.description LIKE '%microservices%')
-  ) AS initialized), 'Each new project receives five ordered hidden To do tasks with English descriptions');
+  ) AS initialized), 'Each new project receives five ordered hidden system tasks in To do with English descriptions');
 END;
 $$;
 INSERT INTO public.tasks (project_id, column_id, title)
@@ -127,6 +128,7 @@ DECLARE
   visible_project UUID; todo UUID; done UUID; wrong_column UUID;
   first_id UUID := gen_random_uuid(); second_id UUID := gen_random_uuid();
   original_version TIMESTAMPTZ; new_version TIMESTAMPTZ;
+  system_task public.tasks%ROWTYPE;
 BEGIN
   SELECT id INTO visible_project FROM lifecycle_fixtures WHERE published AND NOT hidden;
   SELECT id INTO todo FROM public.columns WHERE project_id = visible_project AND stage = 'todo';
@@ -139,7 +141,7 @@ BEGIN
     p_column => todo, p_title => 'First task', p_hidden => FALSE) = 'ok', 'Task is created');
   PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, first_id,
     p_column => todo, p_title => 'Retried creation', p_hidden => FALSE) = 'ok', 'Create is retry-safe');
-  PERFORM pg_temp.assert_true((SELECT title = 'First task' FROM public.tasks WHERE id = first_id), 'Create retry preserves first write');
+  PERFORM pg_temp.assert_true((SELECT title = 'First task' AND NOT is_system FROM public.tasks WHERE id = first_id), 'Create retry preserves the manual task');
   PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, second_id,
     p_column => todo, p_title => 'Second task', p_hidden => TRUE) = 'ok', 'Owner can create hidden task');
   SELECT updated_at INTO original_version FROM public.tasks WHERE id = first_id;
@@ -157,6 +159,19 @@ BEGIN
   SELECT updated_at INTO new_version FROM public.tasks WHERE id = first_id;
   PERFORM pg_temp.assert_true(public.mutate_task('archive', visible_project, first_id, new_version) = 'ok', 'Task is archived');
   PERFORM pg_temp.assert_true((SELECT archived_at IS NOT NULL FROM public.tasks WHERE id = first_id), 'Archived data retained');
+
+  SELECT * INTO STRICT system_task FROM public.tasks
+    WHERE project_id = visible_project AND is_system ORDER BY position, id LIMIT 1;
+  PERFORM pg_temp.assert_true(public.mutate_task('edit', visible_project, system_task.id,
+    system_task.updated_at, todo, p_title => 'Changed title', p_hidden => FALSE) = 'invalid',
+    'System tasks cannot be edited through the task RPC');
+  PERFORM pg_temp.assert_true(public.mutate_task('archive', visible_project, system_task.id,
+    system_task.updated_at) = 'invalid', 'System tasks cannot be archived through the task RPC');
+  PERFORM pg_temp.assert_true(public.mutate_task('move', visible_project, system_task.id,
+    system_task.updated_at, done) = 'ok', 'System tasks can move to Done');
+  PERFORM pg_temp.assert_true((SELECT title = system_task.title AND is_system AND is_hidden
+    AND archived_at IS NULL AND column_id = done AND completed_on IS NOT NULL
+    FROM public.tasks WHERE id = system_task.id), 'Moving preserves system task content and visibility');
 END;
 $$;
 RESET ROLE;

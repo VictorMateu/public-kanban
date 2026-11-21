@@ -41,14 +41,14 @@ The owner selected a presentation-only summary for the home page, with an introd
 ### Tasks
 
 - Support creating, reading, editing, archiving and individually hiding tasks. Archiving removes a task from the board and preserves its data. The owner can open a read-only archive from the same project, ordered most recently archived first.
-- A task belongs directly to one project. The owner can select its state in the edit dialog, drag the card to a specific position in or across columns, or use the up and down controls in the task detail to reorder it within its column.
+- A task belongs directly to one project. The owner can select its state in the edit dialog, drag the card to a specific position in or across columns, or press Alt + Up or Alt + Down on the focused card to reorder it within its column.
 - Task content includes a title and an optional rich-text description with images. The form and detail dialog reuse the project editor and renderer. Existing plain-text descriptions are readable and editable.
 - Priority and an expected completion date are optional. Task comments remain a separate product decision.
 - Entering Done records the actual completion date automatically. Leaving Done clears it. The date is read-only.
 - A hidden task inside a public project is visible only to the administrator. Task images follow the visibility of the referencing task and its project.
 - Successful task changes update the board without a confirmation banner. Failures remain visible.
 
-The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action sits directly below the cards and scrolls with the column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit, reorder or archive from the dialog. On touch screens, swiping scrolls and holding the card initiates dragging. Visual acceptance of the implementation awaits owner review.
+The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action sits directly below the cards and scrolls with the column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit or archive from the dialog. The detail groups status, priority, dates and visibility above the description. On touch screens, swiping scrolls and holding the card initiates dragging. Visual acceptance of the implementation awaits owner review.
 
 ### Comments
 
@@ -417,13 +417,15 @@ policy and remote deployment remain outside this acceptance.
 
 ### Starter tasks for new projects
 
-New projects start with five editable English tasks in To do. Each has a title
+New projects start with five English system tasks in To do. Each has a title
 and a description covering the first milestone, architecture and its boundaries,
 the technology stack, repository and local setup, or tests and continuous
-integration. The architecture task includes deciding between a modular monolith
-and separate services. The owner can publish the tasks individually by turning
-off their hidden setting, and can edit, move or archive them like other tasks.
-Existing projects receive no new tasks.
+integration. Each description has an objective, actionable steps, and criteria
+for completion. The architecture task includes deciding between a modular
+monolith and separate services. System tasks carry a badge, start hidden, and
+can be moved or reordered. Their content and visibility are read-only, and they
+cannot be archived. Existing tasks keep their regular task behavior because
+the database previously stored no reliable record of how they were created.
 
 ### Responsive project catalog and covers
 

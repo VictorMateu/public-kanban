@@ -2082,3 +2082,40 @@ columns, tasks and images. No remote database migration was applied.
 - The disposable `supabase test db --local` suite was left to CI because it
   requires an empty instance and creates user fixtures. No remote migration
   was applied.
+
+### Task detail metadata and board ordering
+
+- Lint, TypeScript, all 91 unit tests and the production build passed.
+- Chromium verified that the task detail groups status and visibility above
+  the description. The board supports drag and drop and Alt + Down from
+  the focused card, with focus restored after the order is saved.
+- The HTTP suite passed 29 checks. The empty catalog check was skipped
+  against the populated local database.
+
+### Structured starter task descriptions
+
+- Migration `20261121000500` applied to local Supabase. The existing task
+  descriptions were identical before and after, and the project-management
+  SQL suite passed with rolled-back fixtures.
+- Lint, TypeScript, all 91 unit tests and the production build passed.
+- The HTTP suite passed 29 checks and skipped the empty catalog check on
+  the populated instance. The new checks validate each starter document
+  against the editor schema, verify its three sections and lists, and
+  compare the plain-text field to the rich-text document.
+- The task browser check verified that the structured architecture description
+  renders in the detail and opens with its headings intact in the editor.
+
+
+### System task protection
+
+- Migration `20261121000600` applied locally. `supabase db lint --local
+  --fail-on warning` and the populated-database-safe project management SQL
+  suite passed. The suite verifies the flag on seeded and manual tasks, rejects
+  edits and archival through the task RPC, and moves a system task to Done.
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests), and `npm run build`
+  passed. The HTTP suite passed 29 checks and skipped the empty catalog check
+  on the populated instance. Draft creation, retry and publication preserve
+  the starter tasks and their flag.
+- `node --test tests/task-browser.ts` passed against the local production build.
+  Chromium verified the System task badge on the card and in its detail,
+  the read-only description, and the absence of edit and archive controls.

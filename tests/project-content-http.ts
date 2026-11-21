@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { z } from "zod";
 import sharp from "sharp";
+import { richTextDocumentSchema, richTextToPlainText } from "../lib/projects/rich-text.ts";
 import { imageUploadResultSchema } from "../lib/projects/image-input.ts";
 import type { Database } from "../lib/supabase/database.types.ts";
 import { environment, origin, supabaseUrl, population, localAdministratorToken, hasLocalAdministrator, removeLocalProjectFixture } from "./support/local-project.ts";
@@ -114,12 +115,22 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const draft = await admin.from("projects").select("*").eq("id", draftProjectId).single();
       assert.ok(draft.data); assert.equal(draft.data.is_published, false);
       assert.equal((await fetch(origin.origin + "/projects/" + draftFields.slug)).status, 404);
-      const starterTasks = () => admin.from("tasks").select("id, title, description, is_hidden")
+      const starterTasks = () => admin.from("tasks").select("id, title, description, description_content, is_hidden, is_system")
         .eq("project_id", draftProjectId).order("position");
       const initialTasks = await starterTasks();
       assert.equal(initialTasks.error, null);
-      assert.equal(initialTasks.data?.length, 5);
-      assert.ok(initialTasks.data?.every(({ description, is_hidden }) => description && is_hidden));
+      assert.ok(initialTasks.data);
+      assert.equal(initialTasks.data.length, 5);
+      for (const task of initialTasks.data) {
+        const document = richTextDocumentSchema.parse(task.description_content);
+        const headings = document.content.flatMap(block => block.type === "heading"
+          ? block.content?.flatMap(node => node.type === "text" ? [node.text] : []) ?? [] : []);
+        assert.deepEqual(headings, ["Objective", "Steps", "Done when"]);
+        assert.deepEqual(document.content.flatMap(block => block.type === "bulletList" ? [block.content.length] : []), [4, 2]);
+        assert.equal(richTextToPlainText(document), task.description);
+        assert.equal(task.is_hidden, true);
+        assert.equal(task.is_system, true);
+      }
       const replay = await invoke("saveProjectDraft", draftFields);
       assert.ok((await replay.text()).includes('"success":true'));
       assert.equal((await admin.from("projects").select("id").eq("id", draftProjectId)).data?.length, 1);
