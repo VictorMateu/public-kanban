@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { richTextToPlainText } from "../../lib/projects/rich-text";
 import { getAdministrator } from "../../lib/auth/server";
 import { createServerSupabaseClient } from "../../lib/supabase/server";
-import { taskMutationSchema, type TaskMutationResult } from "../../lib/tasks/schemas";
+import { INSUFFICIENT_PRIVILEGE } from "../../lib/supabase/sqlstate";
+import { taskMutationRpcResultSchema, taskMutationSchema, type TaskMutationResult } from "../../lib/tasks/schemas";
 
 export async function mutateTask(input: unknown): Promise<TaskMutationResult> {
   try {
@@ -29,9 +30,11 @@ export async function mutateTask(input: unknown): Promise<TaskMutationResult> {
         p_priority: task.priority ?? undefined, p_due_date: task.due_date ?? undefined, p_hidden: task.hidden,
       }),
     });
-    if (error) return error.code === "42501" ? "unauthorized" : "unavailable";
-    if (data === "ok" || data === "stale") revalidatePath("/projects/[slug]", "page");
-    return data === "ok" || data === "invalid" || data === "stale" ? data : "unavailable";
+    if (error) return error.code === INSUFFICIENT_PRIVILEGE ? "unauthorized" : "unavailable";
+    const result = taskMutationRpcResultSchema.safeParse(data);
+    if (!result.success) return "unavailable";
+    if (result.data === "ok" || result.data === "stale") revalidatePath("/projects/[slug]", "page");
+    return result.data;
   } catch {
     return "unavailable";
   }

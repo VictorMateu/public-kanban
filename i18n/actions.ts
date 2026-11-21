@@ -2,10 +2,10 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { isLocale, localeCookie } from "./locales";
+import { isLocale, localeCookie, localeFormField } from "./locales";
 
 export async function setLocale(formData: FormData): Promise<void> {
-  const locale = formData.get("locale");
+  const locale = formData.get(localeFormField);
   if (!isLocale(locale)) return;
 
   const store = await cookies();

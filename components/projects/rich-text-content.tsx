@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import type { RichTextDocument, RichTextInline, RichTextList, RichTextBlock } from "../../lib/projects/rich-text";
-import { projectImageUrl } from "../../lib/projects/rich-text";
+import { projectImageUrl } from "../../lib/projects/urls";
 
 function inline(nodes: RichTextInline[] = []): ReactNode {
   return nodes.map((node, index) => {

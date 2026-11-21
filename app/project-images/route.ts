@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
 import { getAdministrator } from "../../lib/auth/server";
 import { createServerSupabaseClient } from "../../lib/supabase/server";
 import { isSupabaseConfigured } from "../../lib/supabase/env";
 import { ImageInputError, normalizeProjectImage, readImageForm } from "../../lib/projects/image-processing";
-import { IMAGE_LIMITS, type ImageUploadResult } from "../../lib/projects/image-input";
+import { IMAGE_LIMITS, PROJECT_IMAGE_MIME_TYPE, parseImageUploadForm, type ImageUploadResult } from "../../lib/projects/image-input";
+import { PROJECT_IMAGE_BUCKET, READY_PROJECT_IMAGE } from "../../lib/projects/image-storage";
 
 export const runtime = "nodejs";
 const headers = { "Cache-Control": "private, no-store", "Vary": "Cookie", "X-Content-Type-Options": "nosniff" };
@@ -24,41 +24,36 @@ export async function POST(request: Request) {
   try {
     const client = await createServerSupabaseClient(true);
     if (!await getAdministrator(client)) return result({ success: false, error: "unauthorized" }, 401);
-    const form = await readImageForm(request);
-    if ([...form.keys()].some((key) => key !== "project_id" && key !== "task_id" && key !== "file")) return result({ success: false, error: "invalidImage" }, 400);
-    const projectId = z.uuid().safeParse(form.getAll("project_id").length === 1 ? form.get("project_id") : undefined);
-    const taskIds = form.getAll("task_id");
-    const taskId = z.uuid().optional().safeParse(taskIds[0]);
-    const files = form.getAll("file");
-    const file = files.length === 1 ? files[0] : null;
-    if (!projectId.success || taskIds.length > 1 || !taskId.success || !(file instanceof File) || !file.size) return result({ success: false, error: "invalidImage" }, 400);
+    const input = parseImageUploadForm(await readImageForm(request));
+    if (!input) return result({ success: false, error: "invalidImage" }, 400);
+    const { projectId, taskId, file } = input;
     if (file.size > IMAGE_LIMITS.sourceBytes) return result({ success: false, error: "imageTooLarge" }, 413);
-    const project = await client.from("projects").select("id").eq("id", projectId.data).maybeSingle();
+    const project = await client.from("projects").select("id").eq("id", projectId).maybeSingle();
     if (project.error || !project.data) return result({ success: false, error: "invalidImage" }, 400);
-    if (taskId.data) {
-      const task = await client.from("tasks").select("project_id, archived_at").eq("id", taskId.data).maybeSingle();
-      if (task.error || (task.data && (task.data.project_id !== projectId.data || task.data.archived_at))) {
+    if (taskId) {
+      const task = await client.from("tasks").select("project_id, archived_at").eq("id", taskId).maybeSingle();
+      if (task.error || (task.data && (task.data.project_id !== projectId || task.data.archived_at))) {
         return result({ success: false, error: "invalidImage" }, 400);
       }
     }
     const image = await normalizeProjectImage(Buffer.from(await file.arrayBuffer()), file.type);
     const assetId = randomUUID();
-    const objectPath = projectId.data + "/" + assetId + ".webp";
-    const inserted = await client.from("project_assets").insert({ id: assetId, project_id: projectId.data, task_id: taskId.data, object_path: objectPath, byte_size: image.bytes.length, width: image.width, height: image.height });
+    const objectPath = projectId + "/" + assetId + ".webp";
+    const inserted = await client.from("project_assets").insert({ id: assetId, project_id: projectId, task_id: taskId, object_path: objectPath, byte_size: image.bytes.length, width: image.width, height: image.height });
     if (inserted.error) return result({ success: false, error: "uploadUnavailable" }, 503);
     let ready = false;
     try {
-      const upload = await client.storage.from("project-images").upload(objectPath, image.bytes, { contentType: "image/webp", cacheControl: "0", upsert: false });
+      const upload = await client.storage.from(PROJECT_IMAGE_BUCKET).upload(objectPath, image.bytes, { contentType: PROJECT_IMAGE_MIME_TYPE, cacheControl: "0", upsert: false });
       if (upload.error) return result({ success: false, error: "uploadUnavailable" }, 503);
-      const saved = await client.from("project_assets").update({ status: "ready" }).eq("id", assetId).eq("project_id", projectId.data).select("id").single();
+      const saved = await client.from("project_assets").update({ status: READY_PROJECT_IMAGE }).eq("id", assetId).eq("project_id", projectId).select("id").single();
       if (saved.error) return result({ success: false, error: "uploadUnavailable" }, 503);
       ready = true;
       return result({ success: true, assetId }, 201);
     } finally {
       if (!ready) {
         // Compensate only this request's new asset. Preserve its row if object removal fails.
-        const removed = await client.storage.from("project-images").remove([objectPath]);
-        if (!removed.error) await client.from("project_assets").delete().eq("id", assetId).eq("project_id", projectId.data);
+        const removed = await client.storage.from(PROJECT_IMAGE_BUCKET).remove([objectPath]);
+        if (!removed.error) await client.from("project_assets").delete().eq("id", assetId).eq("project_id", projectId);
       }
     }
   } catch (error) {

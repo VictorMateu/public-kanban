@@ -40,4 +40,5 @@ export const taskMutationSchema = z.discriminatedUnion("operation", [
 ]);
 
 export type TaskMutation = z.input<typeof taskMutationSchema>;
-export type TaskMutationResult = "ok" | "invalid" | "stale" | "unauthorized" | "unavailable";
+export const taskMutationRpcResultSchema = z.enum(["ok", "invalid", "stale"]);
+export type TaskMutationResult = z.infer<typeof taskMutationRpcResultSchema> | "unauthorized" | "unavailable";

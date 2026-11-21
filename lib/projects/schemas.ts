@@ -32,6 +32,7 @@ export type ProjectContent = z.infer<typeof projectContentSchema>;
 export type ProjectContentField = keyof ProjectContent;
 
 export const projectIdentitySchema = z.strictObject({ id: z.uuid(), updated_at: z.iso.datetime({ offset: true }) });
+export const projectIdentityFields = projectIdentitySchema.keyof().enum;
 
 export const projectPublicationSchema = z.enum(["true", "false"]).transform((value) => value === "true");
 
@@ -62,6 +63,7 @@ export const publicProjectSummarySchema = projectSummarySchema.extend({
 }).refine((value) => value.is_published && (value.is_hidden ? value.slug === null : value.slug !== null));
 
 export const projectFormFieldSchema = z.enum(["name", "slug", "description_content", "objectives_content", "repository_url", "is_published", "status", "is_hidden", "cancellation_reason"]);
+export const projectFormFields = projectFormFieldSchema.enum;
 export const projectFormStateSchema = z.strictObject({
   errors: z.partialRecord(projectFormFieldSchema, z.enum(["required", "invalid", "tooLong"])).optional(),
   error: z.enum(["unauthorized", "unavailable", "slugTaken", "stale", "invalid", "imageUploadFailed"]).optional(),

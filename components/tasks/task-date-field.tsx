@@ -12,7 +12,7 @@ function dateValue(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-export function TaskDateField({ fieldClass, initialDate }: { fieldClass: string; initialDate?: string | null }) {
+export function TaskDateField({ name, fieldClass, initialDate }: { name: string; fieldClass: string; initialDate?: string | null }) {
   const id = useId();
   const locale = useLocale();
   const t = useTranslations("TaskManagement");
@@ -80,7 +80,7 @@ export function TaskDateField({ fieldClass, initialDate }: { fieldClass: string;
   return <div className="grid min-w-0 content-start gap-1">
     <label htmlFor={id}>{t("expectedDate")}</label>
     <div className={styles.dateField}>
-      <input ref={input} id={id} className={`${fieldClass} ${styles.dateInput}`} type="date" name="due_date"
+      <input ref={input} id={id} className={`${fieldClass} ${styles.dateInput}`} type="date" name={name}
         min="0001-01-01" max="9999-12-31" value={value} onChange={(event) => setValue(event.target.value)} />
       <button ref={trigger} type="button" className={styles.calendarTrigger} popoverTarget={`${id}-calendar`}
         onClick={openCalendar} aria-label={t("openCalendar")}>

@@ -1,9 +1,16 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
-import { taskDetailsSchema, taskMutationSchema } from "../lib/tasks/schemas.ts";
+import { taskDetailsSchema, taskMutationRpcResultSchema, taskMutationSchema } from "../lib/tasks/schemas.ts";
 
 const fields = { title: "  Ship the first release  ", description: "", priority: "", due_date: "" };
+
+test("task RPC accepts only database mutation results, not action-only errors or unexpected payloads", () => {
+  for (const value of ["ok", "invalid", "stale"]) assert.equal(taskMutationRpcResultSchema.parse(value), value);
+  for (const value of ["unauthorized", "unavailable", "OK", null, { result: "ok" }]) {
+    assert.equal(taskMutationRpcResultSchema.safeParse(value).success, false);
+  }
+});
 
 test("task details normalize empty optional fields and preserve authored description", () => {
   assert.deepEqual(taskDetailsSchema.parse(fields), {

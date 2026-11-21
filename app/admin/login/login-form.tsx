@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { signIn } from "../actions";
+import { SIGN_IN_FIELDS } from "../../../lib/auth/password";
 
 export function LoginForm() {
   const t = useTranslations("Auth");
@@ -12,14 +13,14 @@ export function LoginForm() {
       <div>
         <label htmlFor="email" className="block text-sm font-normal">{t("email")}</label>
         <input
-          id="email" name="email" type="email" autoComplete="username" required maxLength={254}
+          id="email" name={SIGN_IN_FIELDS.email} type="email" autoComplete="username" required maxLength={254}
           className="mt-2 min-h-11 w-full rounded-xl border border-border/60 bg-surface px-3 py-2 text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         />
       </div>
       <div>
         <label htmlFor="password" className="block text-sm font-normal">{t("password")}</label>
         <input
-          id="password" name="password" type="password" autoComplete="current-password" required maxLength={1024}
+          id="password" name={SIGN_IN_FIELDS.password} type="password" autoComplete="current-password" required maxLength={1024}
           className="mt-2 min-h-11 w-full rounded-xl border border-border/60 bg-surface px-3 py-2 text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         />
       </div>

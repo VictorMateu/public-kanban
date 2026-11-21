@@ -19,6 +19,7 @@ import { useTaskDrag } from "./use-task-drag";
 
 type Editor = { id: string; columnId: string; task?: Task };
 const fieldClass = "min-h-11 w-full min-w-0 rounded-xl border border-border/30 bg-surface px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+const taskFormFields = { columnId: "columnId", title: "title", priority: "priority", dueDate: "due_date", hidden: "hidden" } as const;
 
 function initialDescription(task?: Task): RichTextDocument {
   if (task?.description_content) return task.description_content;
@@ -109,9 +110,9 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
     if (!editor || task?.is_system || content === null || uploading) return;
     const fields = new FormData(event.currentTarget);
     const values = {
-      projectId, taskId: editor.id, columnId: String(fields.get("columnId")),
-      title: String(fields.get("title")), description: "", descriptionContent: content,
-      priority: fields.get("priority"), due_date: String(fields.get("due_date")), hidden: fields.has("hidden"),
+      projectId, taskId: editor.id, columnId: String(fields.get(taskFormFields.columnId)),
+      title: String(fields.get(taskFormFields.title)), description: "", descriptionContent: content,
+      priority: fields.get(taskFormFields.priority), due_date: String(fields.get(taskFormFields.dueDate)), hidden: fields.has(taskFormFields.hidden),
     };
     const priority = values.priority === "" ? "" as const : taskPrioritySchema.safeParse(values.priority).data;
     if (priority === undefined) { setError("invalid"); return; }
@@ -163,28 +164,28 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
       ) : <form id={formId} key={editor?.id} onSubmit={save} className="space-y-4">
         <fieldset disabled={pending} className="grid min-w-0 gap-4">
           <label className="grid gap-1">{t("title")}
-            <input className={fieldClass} name="title" required defaultValue={task?.title} />
+            <input className={fieldClass} name={taskFormFields.title} required defaultValue={task?.title} />
           </label>
           {editor && <RichTextEditor label={t("description")} projectId={projectId} taskId={editor.id}
             initial={initialDescription(task)} maxTextLength={TASK_DESCRIPTION_LIMIT} disabled={pending}
             onBusyChange={setUploading} onChange={(value, valid) => setContent(valid ? value : null)} />}
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="grid gap-1">{t("stage")}
-              <select className={`${fieldClass} ${selectStyles.select}`} name="columnId" required defaultValue={editor?.columnId}>
+              <select className={`${fieldClass} ${selectStyles.select}`} name={taskFormFields.columnId} required defaultValue={editor?.columnId}>
                 {columns.map((column) => <option key={column.id} value={column.id}>{boardText(column.stage)}</option>)}
               </select>
             </label>
             <label className="grid gap-1">{taskText("priority")}
-              <select className={`${fieldClass} ${selectStyles.select}`} name="priority" defaultValue={task?.priority ?? ""}>
+              <select className={`${fieldClass} ${selectStyles.select}`} name={taskFormFields.priority} defaultValue={task?.priority ?? ""}>
                 <option value="">{t("noPriority")}</option>
                 {taskPrioritySchema.options.map((priority) => <option key={priority} value={priority}>{taskText(priority)}</option>)}
               </select>
             </label>
-            <TaskDateField fieldClass={fieldClass} initialDate={task?.due_date} />
+            <TaskDateField name={taskFormFields.dueDate} fieldClass={fieldClass} initialDate={task?.due_date} />
           </div>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4 rounded-2xl border border-border/20 bg-surface-warm/40 px-4 py-2 has-[:disabled]:cursor-default">
             <span>{t("hideTask")}</span>
-            <input type="checkbox" role="switch" className="sr-only" name="hidden" defaultChecked={task?.is_hidden} />
+            <input type="checkbox" role="switch" className="sr-only" name={taskFormFields.hidden} defaultChecked={task?.is_hidden} />
             <span aria-hidden="true" className="project-visibility-switch">
               <span className="project-visibility-thumb" />
             </span>

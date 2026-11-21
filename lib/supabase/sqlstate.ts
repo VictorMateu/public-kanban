@@ -1,0 +1,2 @@
+export const UNIQUE_VIOLATION = "23505";
+export const INSUFFICIENT_PRIVILEGE = "42501";

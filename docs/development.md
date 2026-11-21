@@ -407,6 +407,15 @@ Current organization:
 
 Generated Next.js and TypeScript files are ignored by Git. This inventory describes the preserved implementation; it does not authorize new layers or settle future structure choices.
 
+### Shared application contracts
+
+Keep form field names and query flags next to their owning feature when a
+producer and a consumer must agree on their spelling. Reuse Zod schema keys
+where the fields match; keep browser-facing names separate from unrelated SQL
+identifiers. Keep typed Supabase table, column and RPC names inline when an
+alias would not add meaning. Validate RPC results at the boundary when the
+generated database type is broader than the application's result set.
+
 ### Components and UI tooling
 
 The UI components are custom React components styled with Tailwind and the shared CSS color/font roles. The project does not install or generate shadcn/ui, Radix primitives or a separate component system. Its future adoption remains an owner decision; it is not needed to style the current pages.

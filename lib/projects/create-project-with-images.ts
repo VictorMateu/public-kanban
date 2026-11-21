@@ -1,6 +1,6 @@
 import { parseProjectSubmission, type ProjectFormState } from "./input.ts";
 import { richTextAssetIds, plainTextDocument } from "./rich-text.ts";
-import { projectDraftResultSchema, type ProjectIdentity } from "./schemas.ts";
+import { projectFormFields, projectIdentityFields, projectDraftResultSchema, type ProjectIdentity } from "./schemas.ts";
 import type { ProjectImageStaging } from "./image-staging.ts";
 import type { ImageUploadResult } from "./image-input.ts";
 
@@ -19,14 +19,14 @@ export async function prepareCreationImages(form: FormData, images: ProjectImage
   const resolved = () => {
     const result = new FormData();
     for (const [key, value] of form) result.append(key, value);
-    result.set("id", session.project?.id ?? attemptId);
-    result.set("updated_at", session.project?.updated_at ?? "");
-    result.set("description_content", JSON.stringify(images.resolve(input.data.description_content ?? plainTextDocument(null))));
-    result.set("objectives_content", JSON.stringify(images.resolve(input.data.objectives_content ?? plainTextDocument(null))));
+    result.set(projectIdentityFields.id, session.project?.id ?? attemptId);
+    result.set(projectIdentityFields.updated_at, session.project?.updated_at ?? "");
+    result.set(projectFormFields.description_content, JSON.stringify(images.resolve(input.data.description_content ?? plainTextDocument(null))));
+    result.set(projectFormFields.objectives_content, JSON.stringify(images.resolve(input.data.objectives_content ?? plainTextDocument(null))));
     return result;
   };
   async function saveDraft(): Promise<ProjectFormState | null> {
-    const draft = resolved(); draft.set("is_published", "false");
+    const draft = resolved(); draft.set(projectFormFields.is_published, "false");
     const parsed = projectDraftResultSchema.safeParse(await operations.saveDraft(draft));
     if (!parsed.success) return { error: "unavailable" };
     if (!parsed.data.success) return parsed.data.state;

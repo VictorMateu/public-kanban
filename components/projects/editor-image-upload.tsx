@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { IMAGE_LIMITS, imageAltSchema } from "../../lib/projects/image-input";
+import { PROJECT_IMAGE_ACCEPT, IMAGE_LIMITS, imageAltSchema } from "../../lib/projects/image-input";
 
 import { uploadProjectImage } from "../../lib/projects/image-upload";
 import type { ProjectImageStaging } from "../../lib/projects/image-staging";
@@ -51,7 +51,7 @@ export function EditorImageUpload({ projectId, taskId, imageStaging, disabled, o
   return <div role="group" aria-label={t("image")} className="space-y-3 border-t border-border/15 bg-surface-warm/40 p-5">
     <p id={id + "-help"} className="text-sm">{t(imageStaging ? "stagedImageHelp" : "imageHelp")}</p>
     <label htmlFor={id + "-file"} className="block">{t("imageFile")}</label>
-    <input ref={fileInput} id={id + "-file"} type="file" accept="image/jpeg,image/png,image/webp" disabled={disabled || busy} onChange={(event) => { setSelectedName(event.target.files?.[0]?.name ?? null); setError(null); }} aria-describedby={id + "-help"} className="block min-h-11 w-full max-w-full text-sm file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border/45 file:px-3 file:py-2" />
+    <input ref={fileInput} id={id + "-file"} type="file" accept={PROJECT_IMAGE_ACCEPT} disabled={disabled || busy} onChange={(event) => { setSelectedName(event.target.files?.[0]?.name ?? null); setError(null); }} aria-describedby={id + "-help"} className="block min-h-11 w-full max-w-full text-sm file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-border/45 file:px-3 file:py-2" />
     <label htmlFor={id + "-alt"} className="block">{t("imageAlt")}</label>
     <input ref={altInput} id={id + "-alt"} value={alt} maxLength={300} aria-required="true" aria-invalid={error === "invalidAlt"} aria-describedby={id + "-alt-help" + (error === "invalidAlt" ? " " + id + "-error" : "")} disabled={disabled || busy}
       onChange={(event) => { setAlt(event.target.value); if (error === "invalidAlt") setError(null); }}
