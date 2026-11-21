@@ -255,7 +255,6 @@
     "hiddenPublishOnSave": "Saving publishes a card in Projects. Its details, board and images remain unavailable to visitors."
   },
   "ProjectInformation": {
-    "openCancellation": "View reason",
     "openCancellationFor": "View reason for cancelling {project}",
     "title": "Project information",
     "open": "View project information",

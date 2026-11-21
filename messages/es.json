@@ -108,7 +108,7 @@
     "archiveTask": "Archivar tarea",
     "archivePrompt": "¿Archivar «{title}»? Se retirará del tablero y se conservará en la base de datos.",
     "archivedTasks": "Archivadas",
-    "archiveEmpty": "Todav?a no hay tareas archivadas.",
+    "archiveEmpty": "Todavía no hay tareas archivadas.",
     "archiveUnavailable": "No se pudieron cargar las tareas archivadas.",
     "archivedOn": "Archivada el",
     "close": "Cerrar",
@@ -254,8 +254,7 @@
     "hiddenPublishOnSave": "Al guardar se publica una tarjeta en Proyectos. La información, el board y las imágenes siguen sin estar disponibles para visitantes."
   },
   "ProjectInformation": {
-    "openCancellation": "Ver motivo",
-    "openCancellationFor": "Ver motivo de cancelaci?n de {project}",
+    "openCancellationFor": "Ver motivo de cancelación de {project}",
     "title": "Información del proyecto",
     "open": "Ver información del proyecto",
     "close": "Cerrar información",

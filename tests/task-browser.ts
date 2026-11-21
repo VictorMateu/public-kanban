@@ -469,9 +469,27 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
 
     await send("Page.navigate", { url: origin.origin + pathname });
     await openReason(reasonTrigger, pathname);
-    const catalogTrigger = `article:has(#project-${projectId}) ${reasonTrigger}`;
+    const catalogCard = `article:has(#project-${projectId})`;
+    const catalogTrigger = `${catalogCard} button${reasonTrigger}`;
     await send("Page.navigate", { url: origin.origin + "/projects" });
     await openReason(catalogTrigger, "/projects");
+    assert.equal(await evaluate("function(selector) { return document.querySelector(selector).textContent.trim(); }", [catalogTrigger]), "Cancelled");
+    assert.equal(await exists(`${catalogCard} a ${reasonTrigger}`), false);
+
+    await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"center",behavior:"instant"}); }', [catalogTrigger]);
+    await send("Emulation.setTouchEmulationEnabled", { enabled: true });
+    await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [await point(catalogTrigger)] });
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await send("Emulation.setTouchEmulationEnabled", { enabled: false });
+    await has(dialog);
+    assert.equal(await evaluate("location.pathname"), "/projects");
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "close the reason after tapping the badge");
+
+    const catalogAction = `#project-${projectId}-action`;
+    await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"center",behavior:"instant"}); }', [catalogAction]);
+    const boardLink = await evaluate("function({x, y}) { return document.elementFromPoint(x, y).closest('a')?.pathname; }", [await point(catalogAction)]);
+    assert.equal(boardLink, pathname);
 
     const hiddenExcerpt = "Hidden project description for cancellation fixture".padEnd(240, "x");
     const hiddenDescriptionTail = "Text beyond the public excerpt";

@@ -2051,3 +2051,14 @@ columns, tasks and images. No remote database migration was applied.
   cancellation reason in HTML and RSC responses.
 - The project and task database suite passed using a rolled-back transaction
   against the local Supabase instance.
+
+### Cancellation badge in the project catalog
+
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed. `npm run test:public` passed 29 checks and
+  skipped the empty catalog check against the populated local database.
+- The task browser test verified keyboard and touch activation from the
+  cancellation badge, focus restoration, and separate board navigation at
+  mobile width. The image browser suite passed on retry after an editor
+  readiness timeout in the first run. It also checked catalog widths of
+  320, 390 and 1440 CSS pixels.

@@ -421,7 +421,9 @@ The owner requested a cozier, responsive project catalog with optional photo
 covers. The listing uses the shared palette, a shorter header and a grid that
 fits the available content width. Cards distinguish lifecycle from the owner's
 publication and hidden labels, and show up to three lines of description. The
-visitor and administrator have distinct empty states.
+visitor and administrator have distinct empty states. For projects whose
+cancellation reason the viewer can access, the cancelled status badge opens
+the reason directly from the catalog.
 
 The first image in the description supplies the cover and its alternative text.
 The current prototype uses a top-aligned 16:9 crop. A decorative palette
