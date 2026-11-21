@@ -57,7 +57,12 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const has = (selector: string) => waitFor(() => exists(selector), selector);
     const card = (id: string) => `[data-board-task="${id}"]`;
     const column = (id: string) => `[data-board-column="${id}"]`;
+    const toggle = (id: string) => `${column(id)} [data-column-toggle]`;
+    const list = (id: string) => `${column(id)} [data-column-scroll]`;
     const open = (id: string) => `[data-open-task="${id}"]`;
+    const visible = async (selector: string) => z.boolean().parse(await evaluate(
+      "function(selector) { return Boolean(document.querySelector(selector)?.getClientRects().length); }", [selector],
+    ));
     const dialog = "dialog:modal";
     const editable = `${dialog} [name=title]`;
     async function edit(id: string) {
@@ -271,19 +276,32 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
 
     await setViewport(390, 844, true);
     await send("Emulation.setTouchEmulationEnabled", { enabled: true });
-    await has("[data-new-task]:not(:disabled)");
+    await waitFor(() => visible(toggle(todo.id) + '[aria-expanded="true"]'), "the first populated column is expanded on mobile");
+    assert.equal(await visible(list(progress.id)), false);
+    await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"center",behavior:"instant"}); }', [toggle(progress.id)]);
+    const togglePoint = await point(toggle(progress.id));
+    await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [togglePoint] });
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await waitFor(() => visible(list(progress.id)), "tapping opens a second column");
+    assert.equal(await visible(list(todo.id)), true);
     const touchHandle = card(alpha) + " [data-task-drag]";
-    await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"center",inline:"nearest",behavior:"instant"}); }', [touchHandle]);
-    // Scroll the board so both the handle and a slice of the destination are in view.
-    const position = await evaluate('function(from, to) { const scroller=document.querySelector("[data-task-scroll]"); const handle=document.querySelector(from); const next=document.querySelector(to); scroller.scrollLeft+=next.getBoundingClientRect().left-innerWidth+125; return handle.getBoundingClientRect().right < innerWidth && next.getBoundingClientRect().left < innerWidth; }',
-      [touchHandle, column(progress.id)]);
-    assert.equal(position, true);
+    await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"center",behavior:"instant"}); }', [touchHandle]);
     const touchFrom = await point(touchHandle);
     assert.equal(await evaluate("function(selector, point) { return document.elementFromPoint(point.x, point.y) === document.querySelector(selector); }", [touchHandle, touchFrom]), true, "Touch drag surface is reachable");
-    const touchTo = await evaluate('function(selector) { const r=document.querySelector(selector).getBoundingClientRect(); return {x:Math.round(r.left+45),y:Math.round(r.top+50)}; }', [column(progress.id)]);
     await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [touchFrom] });
     await has("[data-dragging=true]");
-    await send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [pointSchema.parse(touchTo)] });
+    const beforeDragScroll = z.number().parse(await evaluate("window.scrollY"));
+    const viewportBottom = z.number().parse(await evaluate("window.innerHeight"));
+    await send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: touchFrom.x, y: viewportBottom - 12 }] });
+    await waitFor(async () => z.boolean().parse(await evaluate(
+      "function(selector, before) { return window.scrollY > before && document.querySelector(selector).getBoundingClientRect().top < innerHeight - 110; }",
+      [list(progress.id), beforeDragScroll],
+    )), "dragging near the edge scrolls the page to the lower column");
+    const touchTo = await point(list(progress.id), 0.25);
+    assert.equal(await evaluate(`function(selector, point) {
+      return document.elementFromPoint(point.x, point.y)?.closest('[data-column-scroll]') === document.querySelector(selector);
+    }`, [list(progress.id), touchTo]), true, `Touch destination is reachable at ${JSON.stringify(touchTo)}`);
+    await send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [touchTo] });
     await has(column(progress.id) + " [data-drop-end]");
     await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await has(column(progress.id) + " " + card(alpha));
@@ -298,6 +316,24 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await press("Escape", 27);
     await waitFor(async () => !await exists(dialog), "dismiss the detail opened with a tap");
     await send("Emulation.setTouchEmulationEnabled", { enabled: false });
+
+    await edit(alpha);
+    await click(status);
+    await has(status + ":open");
+    await press("End", 35);
+    await press("Enter", 13);
+    await waitFor(async () => !await exists(status + ":open"), "select the collapsed destination");
+    await click(confirm);
+    await has(`${toggle(done.id)}[aria-expanded="false"]:focus`);
+    assert.equal((await task(alpha)).column_id, done.id);
+    assert.equal(await visible(open(alpha)), false);
+    await press("Enter", 13);
+    await waitFor(() => visible(open(alpha)), "keyboard opens the focused destination");
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: " ", code: "Space", windowsVirtualKeyCode: 32 });
+    await waitFor(async () => !await visible(open(alpha)), "keyboard closes the focused column");
+    await press("Enter", 13);
+    await waitFor(() => visible(open(alpha)), "keyboard reopens the focused column");
 
     await edit(alpha);
     await click(calendarTrigger);
@@ -399,7 +435,6 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       assert.doesNotMatch(await response.text(), /Task Alpha|Task Beta|Task with a diagram|data-edit-task|data-open-archive/);
     }
 
-    // Only the list scrolls. A quick swipe starting on a card must scroll it without moving that task.
     const visibleTask = randomUUID();
     for (let i = 0; i < 15; i += 1) {
       assert.equal((await admin.rpc("mutate_task", { p_operation: "create", p_project: projectId,
@@ -410,16 +445,32 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await has(open(visibleTask));
     await waitFor(async () => await evaluate("document.readyState") === "complete", "owner board finishes loading");
     await evaluate("document.fonts.ready.then(() => true)");
-    for (const [width, height, mobile] of [[1920, 1080, false], [1280, 540, false], [390, 480, true], [390, 844, true]] as const) {
-      await setViewport(width, height, mobile);
-      await assertBoardFitsViewport();
-    }
-    const reviewList = column(review.id) + " [data-column-scroll]";
+    const reviewList = list(review.id);
     const addInReview = column(review.id) + " [data-new-task]";
+    for (const [width, height] of [[1920, 1080], [1440, 540]] as const) {
+      await setViewport(width, height, false);
+      await assertBoardFitsViewport();
+      assert.equal(await visible(toggle(review.id)), false);
+      assert.equal(await visible(reviewList), true);
+    }
     assert.equal(await evaluate("new Set([...document.querySelectorAll('[data-stage]')].map(column => column.getBoundingClientRect().height)).size"), 1);
     await waitFor(async () => z.boolean().parse(await evaluate(
       "function(selector) { const list = document.querySelector(selector); return list.scrollHeight > list.clientHeight; }", [reviewList],
     )), "review tasks overflow their column");
+    for (const [width, height, mobile] of [[1280, 540, false], [390, 480, true], [390, 844, true]] as const) {
+      await setViewport(width, height, mobile);
+      await waitFor(() => visible(toggle(review.id)), "compact column toggles are visible");
+      assert.deepEqual(await evaluate(`(() => {
+        const columns = [...document.querySelectorAll('[data-board-column]')].map(column => column.getBoundingClientRect());
+        return {
+          stacked: columns.every((column, index) => index === 0 || column.top >= columns[index - 1].bottom && column.left === columns[0].left),
+          noHorizontalOverflow: document.documentElement.scrollWidth === document.documentElement.clientWidth,
+        };
+      })()`), { stacked: true, noHorizontalOverflow: true });
+    }
+    assert.equal(await visible(reviewList), false);
+    await click(toggle(review.id));
+    await waitFor(() => visible(reviewList), "open the review column before scrolling");
     await send("Emulation.setTouchEmulationEnabled", { enabled: true });
     let swipeStart = { x: 0, y: 0 };
     await waitFor(async () => {
@@ -429,14 +480,14 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       return z.boolean().parse(await evaluate("function(selector, point) { return document.elementFromPoint(point.x, point.y) === document.querySelector(selector); }",
         [open(visibleTask), swipeStart]));
     }, "swipe starts on the task card");
+    const beforeSwipe = z.number().parse(await evaluate("window.scrollY"));
     await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [swipeStart] });
     for (const distance of [20, 44, 68]) {
       await send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: swipeStart.x, y: swipeStart.y - distance }] });
     }
     await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await waitFor(async () => z.boolean().parse(await evaluate("function(selector) { return document.querySelector(selector).scrollTop > 0; }", [reviewList])), "swipe scrolls the task list");
-    assert.equal(await evaluate("window.scrollY"), 0);
-    await assertBoardFitsViewport();
+    await waitFor(async () => z.number().parse(await evaluate("window.scrollY")) > beforeSwipe, "swipe scrolls the page");
+    assert.equal(await evaluate("function(selector) { const list = document.querySelector(selector); return list.scrollHeight === list.clientHeight && list.scrollTop === 0; }", [reviewList]), true);
     assert.equal(await exists(dialog + ", [data-dragging=true]"), false);
     assert.equal((await task(visibleTask)).position, 0);
     await send("Emulation.setTouchEmulationEnabled", { enabled: false });
@@ -463,7 +514,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await press("Escape", 27);
     await waitFor(async () => !await exists(dialog), "public task detail closes with Escape");
     assert.equal(await exists(open(visibleTask) + ":focus"), true);
-    await assertBoardFitsViewport();
+    assert.equal(await visible(`${toggle(review.id)}[aria-expanded="true"]`), true);
 
     const reason = "Cancelled because the fixture finished";
     const reasonTrigger = "[data-open-cancellation]";

@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { KanbanColumn } from "../../lib/columns/queries";
 import { EmptyState } from "../shared/empty-state";
 import { TaskCard, type TaskCardControl, type TaskPreview } from "./task-card";
@@ -33,31 +33,57 @@ export function BoardColumns<T extends TaskPreview>({ columns, tasks, cardContro
   dropTarget?: DropTarget | null;
 }) {
   const t = useTranslations("Board");
+  const [expandedColumns, setExpandedColumns] = useState(() => {
+    const first = columns.find(({ id }) => tasks.some(({ column_id }) => column_id === id)) ?? columns[0];
+    return new Set(first ? [first.id] : []);
+  });
+
+  function toggleColumn(id: string) {
+    setExpandedColumns((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   if (columns.length === 0) return <EmptyState title={t("emptyTitle")} description={t("emptyDescription")} />;
 
   return (
     <div data-task-scroll="" role="region" aria-label={t("region")} tabIndex={0}
-      className={`${styles.board} min-h-0 flex-1 overflow-x-auto overflow-y-hidden rounded-3xl p-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus sm:p-3`}>
-      <div className="grid h-full auto-cols-[minmax(14rem,1fr)] grid-flow-col grid-rows-[minmax(0,1fr)] gap-4">
+      className={`${styles.boardScroll} min-h-0 flex-1 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus`}>
+      <div className={`${styles.columns} grid gap-4`}>
         {columns.map((column) => {
           const columnTasks = tasks.filter((task) => task.column_id === column.id);
           const active = dropTarget?.columnId === column.id;
+          const expanded = expandedColumns.has(column.id);
+          const headingId = `column-${column.id}`;
+          const countId = `${headingId}-count`;
+          const listId = `${headingId}-tasks`;
           return (
-            <section key={column.id} data-board-column={column.id} data-stage={column.stage} aria-labelledby={`column-${column.id}`}
+            <section key={column.id} data-board-column={column.id} data-stage={column.stage} data-expanded={expanded} aria-labelledby={headingId}
               className={`${styles.column} min-w-0 rounded-3xl border`}>
-              <header className={`${styles.columnHeader} flex min-h-14 items-center gap-2 rounded-t-3xl px-3 py-2`}>
+              <header className={`${styles.columnHeader} relative flex min-h-14 items-center gap-2 rounded-t-3xl px-3 py-2`}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
                   aria-hidden="true" focusable="false" className="size-6 shrink-0">
                   {stageIcons[column.stage]}
                 </svg>
-                <h3 id={`column-${column.id}`} className="min-w-0 grow text-2xl wrap-anywhere">{t(column.stage)}</h3>
+                <h3 id={headingId} className="min-w-0 grow text-2xl wrap-anywhere">{t(column.stage)}</h3>
                 <span className={`${styles.taskCount} relative grid min-w-7 shrink-0 place-items-center rounded-full px-1.5 text-sm`}>
-                  <span className="sr-only">{t("taskCount", { count: columnTasks.length })}</span>
+                  <span id={countId} className="sr-only">{t("taskCount", { count: columnTasks.length })}</span>
                   <span aria-hidden="true">{columnTasks.length}</span>
                 </span>
+                <button type="button" data-column-toggle="" aria-labelledby={`${headingId} ${countId}`} aria-expanded={expanded}
+                  aria-controls={listId} onClick={() => toggleColumn(column.id)}
+                  className={`${styles.columnToggle} absolute inset-0 items-center justify-end rounded-3xl px-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    aria-hidden="true" focusable="false" className="size-5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
               </header>
-              <div data-column-scroll="" role="region" aria-label={t("columnTasks", { column: t(column.stage) })}
-                tabIndex={0} className={`${styles.columnScroll} min-h-0 overflow-y-auto p-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus`}>
+              <div id={listId} data-column-scroll="" role="region" aria-label={t("columnTasks", { column: t(column.stage) })}
+                tabIndex={0} className={`${styles.columnScroll} min-h-0 p-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus`}>
                 {columnTasks.length ? (
                   <ul className="space-y-2.5">
                     {columnTasks.map((task) => (
