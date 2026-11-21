@@ -949,8 +949,9 @@ localized stage names with a checklist, hourglass, document inspection or
 circled check. The project detail header keeps the board close to the title
 and retains a separate accessible board heading.
 The project detail fills the viewport and gives the board the space below
-the app navigation, project header and any board errors. Column headers and
-owner Add task footers stay visible while the task lists scroll vertically.
+the app navigation, project header and any board errors. Column headers
+stay visible while the task lists scroll vertically. The owner Add task
+action appears as a row below the tasks and scrolls with the list.
 The board scrolls horizontally on narrow viewports. The workspace keeps a
 24rem minimum height so very short windows can still reach the controls.
 The space below the board uses 1.25rem on phones and 1.5rem on wider layouts.

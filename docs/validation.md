@@ -1933,3 +1933,14 @@ The project status picker shares the task status and priority styles.
   dragging a task. The project status picker opened using the keyboard,
   Escape closed it and restored focus, and selecting Cancelled displayed
   the required cancellation reason.
+
+### Task card spacing and inline creation
+
+Task cards give the due date its own line below the badges. The owner
+creation action is a row below the task cards inside each column list.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- The task browser suite passed on the development server. It verified
+  that the inline action is reachable after scrolling a long column on
+  mobile, opens the editor for that column and restores focus on Escape.

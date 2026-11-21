@@ -27,18 +27,18 @@ export function TaskMetadata({ task, detail = false }: { task: TaskPreview; deta
   const completedOn = detail && task.completed_on ? formatDueDate(task.completed_on, locale) : null;
   if (!(priority || dueDate || completedOn || task.is_hidden)) return null;
 
-  return <dl className="mt-2 flex flex-wrap items-center gap-1.5 text-sm">
-    {priority && <div className={`rounded-full px-2 py-0.5 ${priority.color}`}><dt className="sr-only">{t("priority")}</dt><dd>{t("priorityValue", { priority: priority.label })}</dd></div>}
-    {dueDate && <div className="flex flex-wrap gap-x-1 text-foreground/85"><dt>{t("dueDate")}</dt><dd><time dateTime={task.due_date ?? undefined}>{dueDate}</time></dd></div>}
+  return <dl className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
+    {priority && <div className={`rounded-full px-2.5 py-0.5 ${priority.color}`}><dt className="sr-only">{t("priority")}</dt><dd>{t("priorityValue", { priority: priority.label })}</dd></div>}
+    {task.is_hidden && <div className="rounded-full bg-surface-warm px-2.5 py-0.5"><dt className="sr-only">{t("visibility")}</dt><dd>{t("hidden")}</dd></div>}
+    {dueDate && <div className={`flex flex-wrap gap-x-1 text-foreground/85${detail ? "" : " basis-full"}`}><dt>{t("dueDate")}</dt><dd><time dateTime={task.due_date ?? undefined}>{dueDate}</time></dd></div>}
     {completedOn && <div className="flex flex-wrap gap-x-1 text-foreground/85"><dt>{t("completedOn")}</dt><dd><time dateTime={task.completed_on ?? undefined}>{completedOn}</time></dd></div>}
-    {task.is_hidden && <div className="rounded-full bg-surface-warm px-2 py-0.5"><dt className="sr-only">{t("visibility")}</dt><dd>{t("hidden")}</dd></div>}
   </dl>;
 }
 
 export function TaskCard({ task, completed, control }: { task: TaskPreview; completed: boolean; control: TaskCardControl }) {
   const titleId = `task-${task.id}`;
   const t = useTranslations("Task");
-  return <article aria-labelledby={titleId} className={`${styles.card} relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 rounded-2xl border bg-surface p-3`}>
+  return <article aria-labelledby={titleId} className={`${styles.card} relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 rounded-2xl border bg-surface px-3.5 py-3`}>
     <span className={styles.taskMark} data-completed={completed || undefined} aria-hidden="true" />
     <div className="min-w-0">
       <h4 id={titleId} className={`font-sans text-lg font-normal leading-snug wrap-anywhere${completed ? " line-through" : ""}`}>{task.title}</h4>

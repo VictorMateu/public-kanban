@@ -48,7 +48,7 @@ The owner selected a presentation-only summary for the home page, with an introd
 - A hidden task inside a public project is visible only to the administrator.
 - Successful task changes update the board without a confirmation banner. Failures remain visible.
 
-The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action stays at the bottom of each column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit, reorder or archive from the dialog. On touch screens, swiping scrolls and holding the card initiates dragging. Visual acceptance of the implementation awaits owner review.
+The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action sits directly below the cards and scrolls with the column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit, reorder or archive from the dialog. On touch screens, swiping scrolls and holding the card initiates dragging. Visual acceptance of the implementation awaits owner review.
 
 ### Comments
 

@@ -71,8 +71,8 @@ export function BoardColumns<T extends TaskPreview>({ columns, tasks, cardContro
                   </ul>
                 ) : <p className="rounded-xl border border-dashed border-border/25 bg-surface/55 px-3 py-2 text-sm">{t("emptyColumn")}</p>}
                 {active && dropTarget.beforeId === null && <div data-drop-end="" aria-hidden="true" className="mt-1.5 h-1 rounded bg-focus" />}
+                {renderAddTask && <div className="mt-2.5">{renderAddTask(column)}</div>}
               </div>
-              {renderAddTask && <footer className={`${styles.columnFooter} rounded-b-3xl p-2.5`}>{renderAddTask(column)}</footer>}
             </section>
           );
         })}

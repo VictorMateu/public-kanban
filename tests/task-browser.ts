@@ -67,11 +67,11 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
         return {
           pageFits: root.scrollHeight === root.clientHeight,
           boardFits: boardBounds.top >= 0 && root.clientHeight - boardBounds.bottom >= 20,
-          footerFits: [...board.querySelectorAll("[data-new-task]")].every(button =>
-            button.getBoundingClientRect().bottom <= boardBounds.bottom),
+          addActionsAreInline: [...board.querySelectorAll("[data-new-task]")].every(button =>
+            button.closest("[data-column-scroll]") && button.parentElement.previousElementSibling?.matches("ul, p")),
         };
       })()`);
-      assert.deepEqual(bounds, { pageFits: true, boardFits: true, footerFits: true });
+      assert.deepEqual(bounds, { pageFits: true, boardFits: true, addActionsAreInline: true });
     }
     const pointSchema = z.object({ x: z.number(), y: z.number() });
     const point = async (selector: string, fraction = 0.5) => pointSchema.parse(await evaluate(
@@ -293,7 +293,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       await assertBoardFitsViewport();
     }
     const reviewList = column(review.id) + " [data-column-scroll]";
-    const reviewFooter = column(review.id) + " [data-new-task]";
+    const addInReview = column(review.id) + " [data-new-task]";
     assert.equal(await evaluate("new Set([...document.querySelectorAll('[data-stage]')].map(column => column.getBoundingClientRect().height)).size"), 1);
     await waitFor(async () => z.boolean().parse(await evaluate(
       "function(selector) { const list = document.querySelector(selector); return list.scrollHeight > list.clientHeight; }", [reviewList],
@@ -307,19 +307,23 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       return z.boolean().parse(await evaluate("function(selector, point) { return document.elementFromPoint(point.x, point.y) === document.querySelector(selector); }",
         [open(visibleTask), swipeStart]));
     }, "swipe starts on the task card");
-    const footer = await point(reviewFooter);
     await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [swipeStart] });
     for (const distance of [20, 44, 68]) {
       await send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: swipeStart.x, y: swipeStart.y - distance }] });
     }
     await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await waitFor(async () => z.boolean().parse(await evaluate("function(selector) { return document.querySelector(selector).scrollTop > 0; }", [reviewList])), "swipe scrolls the task list");
-    assert.deepEqual(await point(reviewFooter), footer);
     assert.equal(await evaluate("window.scrollY"), 0);
     await assertBoardFitsViewport();
     assert.equal(await exists(dialog + ", [data-dragging=true]"), false);
     assert.equal((await task(visibleTask)).position, 0);
     await send("Emulation.setTouchEmulationEnabled", { enabled: false });
+    await click(addInReview);
+    await has(editable);
+    assert.equal(await evaluate("document.querySelector('dialog:modal [name=columnId]').value"), review.id);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "dismiss the inline add-task editor");
+    assert.equal(await exists(addInReview + ":focus"), true);
 
     await send("Network.clearBrowserCookies");
     await send("Page.navigate", { url: origin.origin + pathname });
