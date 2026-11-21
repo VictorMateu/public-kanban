@@ -114,6 +114,12 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const draft = await admin.from("projects").select("*").eq("id", draftProjectId).single();
       assert.ok(draft.data); assert.equal(draft.data.is_published, false);
       assert.equal((await fetch(origin.origin + "/projects/" + draftFields.slug)).status, 404);
+      const starterTasks = () => admin.from("tasks").select("id, title, description, is_hidden")
+        .eq("project_id", draftProjectId).order("position");
+      const initialTasks = await starterTasks();
+      assert.equal(initialTasks.error, null);
+      assert.equal(initialTasks.data?.length, 5);
+      assert.ok(initialTasks.data?.every(({ description, is_hidden }) => description && is_hidden));
       const replay = await invoke("saveProjectDraft", draftFields);
       assert.ok((await replay.text()).includes('"success":true'));
       assert.equal((await admin.from("projects").select("id").eq("id", draftProjectId)).data?.length, 1);
@@ -124,6 +130,17 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       assert.ok((await draftUpdate.text()).includes('"success":true'));
       assert.ok((await (await invoke("saveProjectDraft", { ...draftFields, updated_at: draft.data.updated_at })).text()).includes('"stale"'));
       assert.ok((await (await invoke("saveProjectDraft", draftFields)).text()).includes('"stale"'), "Initial replay cannot bypass later edits");
+      assert.deepEqual(await starterTasks(), initialTasks, "Retrying and editing the draft preserves its starter tasks");
+      const currentDraft = await admin.from("projects").select("updated_at").eq("id", draftProjectId).single();
+      assert.equal(currentDraft.error, null); assert.ok(currentDraft.data);
+      const publishDraft = await invoke("saveProject", { ...draftFields, updated_at: currentDraft.data.updated_at, is_published: "true" });
+      assert.ok(publishDraft.headers.get("x-action-redirect"));
+      assert.deepEqual(await starterTasks(), initialTasks, "Publishing the draft preserves its starter tasks");
+      for (const headers of [new Headers(), new Headers({ RSC: "1" })]) {
+        const publishedDraft = await fetch(origin.origin + "/projects/" + draftFields.slug, { headers });
+        assert.equal(publishedDraft.status, 200);
+        assert.doesNotMatch(await publishedDraft.text(), /Define the architecture and its boundaries|microservices/u);
+      }
       const denied = await invoke("saveProject", fields, false);
       assert.ok((await denied.text()).includes('"unauthorized"'));
       assert.equal((await admin.from("projects").select("id").eq("slug", actionSlug)).data?.length, 0);

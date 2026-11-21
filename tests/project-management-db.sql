@@ -17,6 +17,25 @@ GRANT SELECT ON lifecycle_fixtures TO anon, authenticated;
 INSERT INTO public.projects (id, slug, name, description, is_published, is_hidden, repository_url)
 SELECT id, 'lifecycle-db-' || id::TEXT, 'Lifecycle fixture', repeat(chr(127793),240) || 'Private description tail ' || id::TEXT,
   published, hidden, 'https://example.com/private-repository' FROM lifecycle_fixtures;
+DO $$
+BEGIN
+  PERFORM pg_temp.assert_true((SELECT count(*) = 4 FROM (
+    SELECT t.project_id FROM public.tasks t
+    JOIN lifecycle_fixtures f ON f.id = t.project_id
+    JOIN public.columns c ON c.id = t.column_id
+    GROUP BY t.project_id
+    HAVING array_agg(t.position ORDER BY t.position) = ARRAY[0, 1, 2, 3, 4]
+      AND array_agg(t.title ORDER BY t.position) = ARRAY[
+        'Define the scope and first milestone', 'Define the architecture and its boundaries',
+        'Choose the technology stack', 'Set up the repository and local environment',
+        'Set up tests and continuous integration'
+      ]
+      AND bool_and(c.stage = 'todo' AND t.is_hidden AND t.completed_on IS NULL
+        AND t.archived_at IS NULL AND coalesce(t.description, '') <> '')
+      AND bool_or(t.title = 'Define the architecture and its boundaries' AND t.description LIKE '%microservices%')
+  ) AS initialized), 'Each new project receives five ordered hidden To do tasks with English descriptions');
+END;
+$$;
 INSERT INTO public.tasks (project_id, column_id, title)
 SELECT c.project_id, c.id, 'Private task' FROM public.columns c JOIN lifecycle_fixtures f ON f.id = c.project_id WHERE c.stage = 'todo';
 INSERT INTO public.project_assets (id, project_id, object_path, status, byte_size, width, height)
@@ -97,7 +116,7 @@ BEGIN
     DELETE FROM public.projects WHERE id IN (SELECT id FROM lifecycle_fixtures);
     RAISE EXCEPTION 'Owner project DELETE unexpectedly allowed';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-  PERFORM pg_temp.assert_true((SELECT count(*) = 4 FROM public.tasks WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Cancellation preserves descendants');
+  PERFORM pg_temp.assert_true((SELECT count(*) = 24 FROM public.tasks WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Cancellation preserves descendants');
 END;
 $$;
 RESET ROLE;
@@ -133,7 +152,7 @@ BEGIN
   SELECT updated_at INTO new_version FROM public.tasks WHERE id = first_id;
   PERFORM pg_temp.assert_true(public.mutate_task('edit', visible_project, first_id, new_version, todo,
     p_title => 'Reopened task', p_hidden => FALSE) = 'ok', 'Stage can change during editing');
-  PERFORM pg_temp.assert_true((SELECT completed_on IS NULL AND position = 2 FROM public.tasks WHERE id = first_id),
+  PERFORM pg_temp.assert_true((SELECT completed_on IS NULL AND position = 7 FROM public.tasks WHERE id = first_id),
     'Reopening clears completion and appends to column');
   SELECT updated_at INTO new_version FROM public.tasks WHERE id = first_id;
   PERFORM pg_temp.assert_true(public.mutate_task('archive', visible_project, first_id, new_version) = 'ok', 'Task is archived');

@@ -926,6 +926,12 @@ pgTAP suite's project-delete expectation was updated but that suite must still
 not run against a populated owner instance.
 ## Task management
 
+Project creation initializes five hidden starter tasks in the To do column in
+its database transaction. The versioned migration extends the project insert
+trigger. Later saves, draft retries and publication do not seed again. Starter
+rows use the same task fields and mutation RPC as manually created tasks. The
+plain-text descriptions load into the existing rich-text editor on edit.
+
 The shared board uses the four fixed stage keys `todo`, `in_progress`,
 `review` and `done`. A project insert initializes its columns in the same
 transaction. The migration updates recognized legacy stages in place and

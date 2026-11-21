@@ -33,6 +33,13 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     assert.deepEqual(columns.data?.map((column) => column.stage), ["todo", "in_progress", "review", "done"]);
     const [todo, progress, review, done] = columns.data ?? [];
     assert.ok(todo && progress && review && done);
+    const starters = await admin.from("tasks").select("id, title, description").eq("column_id", todo.id).order("position");
+    assert.equal(starters.error, null);
+    assert.ok(starters.data);
+    const starterCount = starters.data.length;
+    assert.equal(starterCount, 5);
+    const architecture = starters.data.find(({ title }) => title === "Define the architecture and its boundaries");
+    assert.ok(architecture?.description);
     const denied = await anon.rpc("mutate_task", { p_operation: "create", p_project: projectId, p_task: randomUUID(),
       p_column: todo.id, p_title: "Denied", p_hidden: false });
     assert.equal(denied.error?.code, "42501");
@@ -156,6 +163,11 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await evaluate("document.fonts.ready.then(() => true)");
     const initialBoardTop = await boardTop();
     const descriptionEditor = `${dialog} [contenteditable=true][role=textbox]`;
+    await edit(architecture.id);
+    await has(descriptionEditor);
+    assert.equal(await evaluate("function(selector) { return document.querySelector(selector).textContent; }", [descriptionEditor]), architecture.description);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "dismiss starter task editing");
     const descriptionImage = `${dialog} .rich-text img[alt="Task diagram"]`;
     const png = await sharp({ create: { width: 64, height: 32, channels: 3, background: "#cba56b" } }).png().toBuffer();
     let imagePath = "";
@@ -219,8 +231,9 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await waitFor(async () => !await exists(dialog), "dismiss the column task editor");
     assert.equal(await exists(addInProgress + ":focus"), true);
     await drag(card(beta) + " [data-task-drag]", card(alpha), 0.2);
-    await has(column(todo.id) + " li:first-child" + card(beta));
-    assert.deepEqual([(await task(beta)).position, (await task(alpha)).position], [0, 1]);
+    const firstAdded = `${column(todo.id)} li:nth-child(${starterCount + 1})`;
+    await has(firstAdded + card(beta));
+    assert.deepEqual([(await task(beta)).position, (await task(alpha)).position], [starterCount, starterCount + 1]);
     await has("[data-new-task]:not(:disabled)");
     assert.equal(await boardTop(), initialBoardTop);
 
@@ -236,7 +249,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     assert.equal(await evaluate("document.activeElement?.hasAttribute('data-move-down')"), true);
     await send("Input.dispatchKeyEvent", { type: "keyDown", key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " });
     await send("Input.dispatchKeyEvent", { type: "keyUp", key: " ", code: "Space", windowsVirtualKeyCode: 32 });
-    await has(column(todo.id) + " li:first-child" + card(alpha));
+    await has(firstAdded + card(alpha));
     await edit(alpha);
     const status = `${dialog} select[name=columnId]`;
     await click(status);
@@ -256,11 +269,15 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
 
     await setViewport(390, 844, true);
     await send("Emulation.setTouchEmulationEnabled", { enabled: true });
+    await has("[data-new-task]:not(:disabled)");
+    const touchHandle = card(alpha) + " [data-task-drag]";
+    await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"center",inline:"nearest",behavior:"instant"}); }', [touchHandle]);
     // Scroll the board so both the handle and a slice of the destination are in view.
     const position = await evaluate('function(from, to) { const scroller=document.querySelector("[data-task-scroll]"); const handle=document.querySelector(from); const next=document.querySelector(to); scroller.scrollLeft+=next.getBoundingClientRect().left-innerWidth+125; return handle.getBoundingClientRect().right < innerWidth && next.getBoundingClientRect().left < innerWidth; }',
-      [card(alpha) + " [data-task-drag]", column(progress.id)]);
+      [touchHandle, column(progress.id)]);
     assert.equal(position, true);
-    const touchFrom = await point(card(alpha) + " [data-task-drag]");
+    const touchFrom = await point(touchHandle);
+    assert.equal(await evaluate("function(selector, point) { return document.elementFromPoint(point.x, point.y) === document.querySelector(selector); }", [touchHandle, touchFrom]), true, "Touch drag surface is reachable");
     const touchTo = await evaluate('function(selector) { const r=document.querySelector(selector).getBoundingClientRect(); return {x:Math.round(r.left+45),y:Math.round(r.top+50)}; }', [column(progress.id)]);
     await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [touchFrom] });
     await has("[data-dragging=true]");

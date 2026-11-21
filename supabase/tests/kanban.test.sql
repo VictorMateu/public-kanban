@@ -52,7 +52,7 @@ set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-000000000001","r
 select is(public.is_admin(), true, 'Authorized UUID is administrator');
 select is((select count(*) from public.projects), 2::bigint, 'Administrator sees draft projects');
 select is((select count(*) from public.columns), 8::bigint, 'Administrator sees draft columns');
-select is((select count(*) from public.tasks), 2::bigint, 'Administrator sees draft tasks');
+select is((select count(*) from public.tasks), 12::bigint, 'Administrator sees draft and hidden starter tasks');
 select throws_ok($$select * from private.administrator$$, '42501', null, 'Even administrator cannot directly access private registry');
 select lives_ok($$insert into public.projects (id, slug, name) values ('10000000-0000-4000-8000-000000000003', 'admin-test', 'Admin test')$$, 'Administrator can insert project');
 select is((select count(*) from public.columns where project_id = '10000000-0000-4000-8000-000000000003'), 4::bigint, 'New projects receive four columns');

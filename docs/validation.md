@@ -2062,3 +2062,23 @@ columns, tasks and images. No remote database migration was applied.
   mobile width. The image browser suite passed on retry after an editor
   readiness timeout in the first run. It also checked catalog widths of
   320, 390 and 1440 CSS pixels.
+
+### Starter tasks on project creation
+
+- Migration `20261121000400` applied locally with the existing project and
+  task counts unchanged. `supabase db lint --local --fail-on warning` and
+  the populated-database-safe `tests/project-management-db.sql` suite passed.
+  The latter checks task order, descriptions and visibility for every
+  project visibility combination and rolls back its fixtures.
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed. The production HTTP suite passed 29 checks, with
+  the empty catalog check skipped against the populated instance. The
+  project actions test verifies that draft retries, edits and publication
+  preserve the same task rows and that anonymous HTML and RSC omit them.
+- The image browser suite passed all 10 checks. The task browser check
+  passed after adjusting its touch gesture to scroll the task into view
+  below the starter rows. It also verified the original English description
+  loads into the task editor.
+- The disposable `supabase test db --local` suite was left to CI because it
+  requires an empty instance and creates user fixtures. No remote migration
+  was applied.

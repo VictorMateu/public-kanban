@@ -415,6 +415,16 @@ visibility behavior within this increment. Earlier WIP commits and review notes
 remain historical. Task/column CRUD, the common column definition, file cleanup
 policy and remote deployment remain outside this acceptance.
 
+### Starter tasks for new projects
+
+New projects start with five editable English tasks in To do. Each has a title
+and a description covering the first milestone, architecture and its boundaries,
+the technology stack, repository and local setup, or tests and continuous
+integration. The architecture task includes deciding between a modular monolith
+and separate services. The owner can publish the tasks individually by turning
+off their hidden setting, and can edit, move or archive them like other tasks.
+Existing projects receive no new tasks.
+
 ### Responsive project catalog and covers
 
 The owner requested a cozier, responsive project catalog with optional photo
