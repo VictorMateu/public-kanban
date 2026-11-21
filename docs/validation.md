@@ -697,6 +697,745 @@ At the owner's request, the 13 component/CSS files were grouped into `layout`, `
 
 The owner subsequently authorized committing the pending work by responsibility: `f075749` contains component organization and import updates; `f4734ed` contains the sidebar animation, source sheets, runtime media, controls, translations and tests. The related development, product and validation documentation is recorded in a separate commit. Staged diffs were reviewed for scope, whitespace, credentials and generated/environment files; the animation CSS's redundant final blank line was removed. Ignored local source PNGs and encoding recipes remain outside Git and were preserved. No push was requested or performed. Visual acceptance remains pending owner review.
 
+## Project CRUD preparation — 2026-11-14
+
+The owner requested starting project CRUD interactively in the `feat/project-crud` worktree, raising unresolved product and security decisions before implementing them. `lib/projects/input.ts` prepares validation for the existing name, slug and description fields. It returns typed field errors, trims the name, preserves nonempty description text, represents absent/empty descriptions as null and excludes identity, publication, ordering and timestamp fields. It rejects duplicate fields, file inputs and null bytes; text lengths count Unicode code points to match PostgreSQL. Slug validation reuses the existing URL contract. Database uniqueness still needs enforcement and error handling in future mutation actions.
+
+Six new input tests passed. `npm ci --no-audit --no-fund`, `npm run lint`, `npm run typecheck`, `npm test` (40 tests) and `npm run build` passed in the worktree without Supabase configuration. Installation reported the existing ESLint support warning and three dependency lifecycle scripts lacking npm approval; no dependencies or lockfile changes were introduced. These checks do not establish successful database writes or a usable CRUD interface.
+
+No UI, authentication, query, schema or policy behavior changed. No Supabase instance was contacted, and no HTTP integration, SQL suite, browser or visual checks were run. No records, users, administrator authorization, migrations, commits, pushes or deployments were changed. The input validator is not connected to a Server Action yet. The first pending owner decision is whether this CRUD increment uses existing project fields or also models objectives and the repository link. Shared-route session handling and deletion behavior still need concrete proposals before the corresponding implementation.
+
+## Zod adoption and strict typing — 2026-11-14
+
+The owner explicitly selected Zod and prohibited `any`. `npm view zod version` returned 4.6.7; `npm install --save-exact zod@4.6.7 --no-audit --no-fund` declared that exact version as a direct runtime dependency. The existing lockfile already contained the same version transitively; no unrelated dependency upgrade was made. npm again reported three dependency lifecycle scripts without approval; no script approval or workaround was added.
+
+Project details now use a strict Zod schema and inferred input/output types, with output compatibility checked against the Supabase insert type. Existing six input tests continue to pass; a seventh rejects untrusted object shapes, type coercion and extra protected fields at the schema boundary. The schema preserves the existing validation behavior, including Unicode code-point length limits. The form adapter still does not authorize or write data.
+
+`strict` remains enabled; `noUncheckedIndexedAccess` is now enabled. Type-aware ESLint rejects explicit `any` and unsafe assignments, arguments, calls, member access and returns. In-memory negative samples passed through the real ESLint configuration triggered all six rules; no invalid fixture file was written. `npm run lint`, `npm run typecheck`, `npm test` (41 tests) and `npm run build` passed without Supabase configuration. `git diff --check` passed with line-ending conversion notices only.
+
+An exploratory `npx tsc --noEmit --noUncheckedIndexedAccess --exactOptionalPropertyTypes` failed on existing Supabase RPC/cookie and environment type contracts. `exactOptionalPropertyTypes` was not enabled in this increment to avoid unrelated authentication and SDK changes. Checked index access alone passed and is enabled; this does not weaken TypeScript strict mode or the prohibition of `any`.
+
+The typing policy and dependency decision are recorded in AGENTS.md, development/product documentation and the dated update to ADR 0001. No UI, database schema, policies, authentication behavior or existing data changed. No database, HTTP integration, browser or visual checks were run for this input/configuration change. No commits, pushes, remote connections or deployments were made. Project CRUD actions/forms and the previously raised field-scope decision remain pending.
+## Rich project content implementation — 2026-11-14
+
+The owner confirmed Tiptap, JSONB content and private Supabase Storage with controlled Next.js delivery. The decision is recorded as a dated accepted update in ADRs 0001/0002, preserving their historical scope. Tiptap React, PM and StarterKit were installed at exactly 3.34.0. The application has not adopted an image-processing dependency; Sharp 0.35.5 is proposed for the next upload increment. npm repeated the three existing unapproved lifecycle-script notices; no script approvals, unrelated upgrades, commits or pushes were made.
+
+The protected /admin working prototype supports draft creation, project selection, rich description/objectives, optional HTTPS repository, detail updates and separate publish/hide actions. All actions verify the administrator, validate allowlisted fields and rely on RLS. Updates reject stale updated_at values. Public rich text is rendered with semantic React nodes; card summaries and metadata use plain text. Image binaries are read through /project-images/:id with an explicit authorized preview mode and non-cacheable responses. Image upload and project deletion are not exposed.
+
+### Application checks
+
+- npm run lint: passed with zero warnings after the final source changes.
+- npm run typecheck: passed; the production build also completed its TypeScript check.
+- npm test: 47 tests passed. New coverage includes the actual Tiptap schema/JSON round trip, default link attributes, formatted hard breaks, nested lists, Unicode/text/byte/node/depth limits, cycles, executable links, arbitrary image sources/attributes, duplicate marks, optional content and forged/duplicate form fields.
+- npm run build: passed using public local Supabase configuration supplied only to the validation process. No environment file was created or printed. The controlled image route and existing pages were generated as dynamic routes.
+- git diff --check: passed; Git reported LF-to-CRLF conversion notices only.
+
+An initial editor round-trip test caught a missing nullable title attribute on Tiptap links; the explicit schema was corrected and the test passed. Regenerating database types correctly returned SQL TEXT CHECK priorities as string rather than a literal union; task reads now narrow them with Zod instead of asserting a narrower generated type. The temporary formatter invocation first failed due to Windows shell quoting, then ran successfully through stdin using the existing TypeScript printer; no formatter dependency was added.
+
+### Database validation and local application
+
+The running local Storage version exposes operation-aware policy helpers. Before applying the migration, a transaction applied its DDL/backfill plus access assertions and rolled everything back. A unique pre-migration legacy fixture included whitespace, a newline and supplementary Unicode; its original text, name, slug, ordering, publication and timestamps were compared with the migrated row. The owner instance had no existing project rows at this check, so migration preservation evidence is from that explicit fixture, not an assertion about a populated project collection.
+
+The focused tests/project-content-db.sql assertions passed in that transaction and again against the migrated schema. They cover anonymous/unauthorized/admin access, pending/unattached images, authorized private preview, signing/listing denial, hiding, removal of saved references and database constraints. They create no users and do not modify administrator authorization. All fixture rows and temporary functions roll back. This standalone test remains outside supabase/tests so it does not change the original pgTAP suite's disposable-database prerequisites.
+
+After those checks, npx supabase@2.122.0 migration up --local applied only 20261114000100_project_rich_text.sql. npx supabase@2.122.0 db lint --local reported no schema errors. No remote migration, reset or deletion of existing data was performed. Types were regenerated from the actual migrated public schema through the same pinned CLI, then formatted with the already installed TypeScript printer. Older migration files were not edited.
+
+### HTTP integration
+
+A temporary local production server on port 3015 ran npm run test:public: 24 tests passed with no skips, including the existing public-page and localization suites. Tests run sequentially to preserve shared population checks. The new typed HTTP test uses the existing local administrator and a short-lived, memory-only local token; no credentials are printed, persisted or sent off loopback, and no users are created.
+
+A unique 1-pixel WebP was uploaded through Storage with administrator authorization. Assertions verified real byte-for-byte downloads, private preview, denial of draft reads even with administrator cookies on the public path, semantic rich-text rendering, no signed redirects, denial of signed-URL generation for both anonymous and administrator clients, and immediate rejection of the same URL after hiding. The object was removed through Storage first, followed only by its specific fixture asset/project IDs. Data, user and administrator counts matched their initial values. The temporary production server was stopped.
+
+HTTP tests did not exercise project Server Action submissions or a browser editor session. No browser, responsive-layout, focus, keyboard interaction or visual acceptance review was performed. Provisional /admin placement, scoped system-font typography, toolbar presentation, image upload/normalization/lifecycle and final shared-route administration remain pending. Deletion still needs the owner's descendant/file behavior decision. These successful checks do not mark the CRUD phase or UI as accepted.
+
+## Shared project administration and Sharp uploads - 2026-11-14
+
+The owner confirmed that /admin is only for authentication, project creation
+opens from Projects, and project/task administration belongs in the shared
+visitor-facing views. Sharp 0.35.5 was accepted as a direct dependency.
+The project listing now includes owner-only draft access and a create-form
+button; details expose editing/publication with private previews. The
+existing session proxy covers these routes while private reads/actions
+continue independent server authorization and RLS. Task mutations are not
+implemented by this increment. No new migration was needed for these
+follow-up changes.
+
+### Final application and database results
+
+- npm run lint: passed with zero warnings.
+- npm run typecheck: passed.
+- npm test: 53 tests passed, no skips. New image cases verify real JPEG/PNG/
+  WebP processing, orientation, resize without enlargement, metadata removal,
+  invalid/signature-spoofed/truncated input, input byte/pixel limits, bounded
+  streamed multipart parsing and rejection of a real two-frame WebP.
+- npm run build: passed with public loopback Supabase configuration supplied
+  only to the child process; no environment file or credential was printed.
+- npm run test:public: 27 tests passed, no skips, against the final production
+  build on temporary loopback port 3015. The temporary server was stopped.
+- tests/project-content-db.sql through local psql with ON_ERROR_STOP=1:
+  access assertions passed and the transaction rolled back.
+- npx supabase@2.122.0 db lint --local: no schema errors.
+- npm audit --omit=dev --json: zero production vulnerabilities. Installation
+  reported seven moderate findings in the full dependency tree; this result
+  does not claim a clean development-dependency audit and no automatic audit
+  fixes or dependency upgrades were performed.
+
+HTTP coverage now exercises owner listing/detail access to a draft and its
+board content; public HTML/RSC excludes private fixture data. /admin sends
+an authorized owner to Projects. The tests submit actual Next Server Action
+requests to create, edit, publish and hide a separate fixture project,
+verify redirects to its validated slug, reject unauthorized/stale writes
+and cross-project image references, and confirm protected publication and
+position fields cannot be set by the details form. The upload Route Handler
+rejects unauthenticated/cross-origin/spoofed/nonexistent-project requests;
+a real PNG upload becomes a ready WebP asset, strips metadata, remains
+private before a saved reference, and supports authorized preview.
+Existing signed-URL denial and immediate-hide assertions also pass.
+
+Only test-specific objects and fixture IDs were removed, objects before
+asset rows. Unique fixture project descendants were removed through their
+existing parent cascade. Counts for projects, assets, columns, tasks, users
+and administrator authorization matched the starting state. No users were
+created and no administrator registry or existing user data was changed.
+The original empty-database/user-creating pgTAP suite was not run.
+
+Initial validation caught missing shared-view bindings and a TypeScript
+parameter property incompatible with Node strip-only tests; these were
+corrected. HTTP checks caught an Origin comparison using Next's internal
+hostname instead of the browser-facing Host; matching now checks the
+canonical Origin, Host and protocol and still fails closed. The test wire
+encoder was corrected to send referenced form fields before the root part,
+and assertions were aligned with Next's streamed 200 response plus
+x-action-redirect. All final checks above ran after those corrections.
+
+### Limits and acceptance
+
+The form now supplies expanded/collapsed semantics, a controlled region,
+loading/status/error messages, labels and focus on the opened heading.
+These are implementation/static and HTTP checks. No browser, responsive,
+keyboard, focus or visual interaction verification was performed; toolbar,
+inline-form presentation and scoped rich-text typography await owner review.
+Real HTTPS owner login and expired-session renewal remain deployment checks.
+
+Sharp processing runs only on the server. Upload default limits and the
+measured Windows package footprint are recorded in development.md; no
+production-artifact size or CPU/memory benchmark is claimed. Failure-path
+compensation is implemented but was not tested with injected Storage/network
+faults. Successful uploads abandoned before a document save, or removed
+from documents, retain private files; broad cleanup and project deletion
+still need an explicit lifecycle decision. Navigating away can discard
+unsaved changes. No commits, pushes, remote migrations or deployment were
+performed. Validation does not mark the CRUD phase or UI accepted.
+
+## Commit and review preparation - 2026-11-14
+
+The owner requested commits, a WIP designation for UI work, and a review
+URL. The logic/storage changes and the shared UI were committed separately;
+the UI commit retains WIP status and does not establish visual acceptance.
+
+Fresh verification before committing:
+
+- `npm run lint`: passed with no warnings.
+- `npm run typecheck`: passed.
+- `npm test`: 53 passed, zero failures or skips.
+- `npm run build`: passed with local public Supabase configuration supplied
+  through the child process environment.
+- `npm run test:public`: 27 passed, zero failures or skips, against a
+  temporary production server at 127.0.0.1:3015. The suite used the existing
+  local administrator, created no users, cleaned up its specific fixtures
+  and verified unchanged population counts. That server was stopped.
+- `git diff --check` and staged whitespace checks passed. Changed files and
+  each staged code group were inspected for credential literals, unsafe
+  typing, generated artifacts and environment files; none were found.
+
+A separate development server was then started on loopback port 3015 for
+the owner's interaction review. HTTP smoke checks returned 200 for
+/projects and /admin/login, and 307 from /admin to /admin/login without a
+session. The rendered projects response did not show unavailable-database
+feedback. The development server remains running for review. No browser,
+responsive, keyboard/focus or real HTTPS login verification is claimed.
+
+Remote publication could not be prepared against an existing environment:
+the repository and main checkout have no linked hosting project or remote
+Supabase project, available Supabase configuration is loopback-only, and
+no deployment credentials are configured. The local URL is explicitly a
+local review environment. No push, remote migration, user creation or
+remote deployment has been performed in this preparation step.
+
+## Project sign-out control correction - 2026-11-15
+
+The owner requested removing the extra sign-out button from Projects,
+because main already owns shared session controls. Only its import and
+listing markup were removed; main was inspected but not merged.
+
+- npm run lint and npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips.
+- npm run build: passed with process-local public Supabase configuration.
+- Read-only local HTTP checks: /projects and /admin/login returned 200.
+  With the existing administrator's short-lived, memory-only local test
+  session, Projects returned 200 with its creation control and without
+  the extra sign-out control. No users or fixtures were created.
+- git diff --check: passed. No browser or visual review was performed.
+
+Docker Desktop was restarted because its engine was stopped. The existing
+Supabase containers resumed without a reset or migration. The local
+development server was restarted on http://127.0.0.1:3015/projects for
+owner review. No remote deployment or merge from main was performed.
+
+## Project modal and left alignment - 2026-11-15
+
+The owner requested left alignment for the project creation button and a
+modal form. ProjectManagement now uses a native dialog for creation and
+editing; no dependency, database or authorization changes were made.
+
+- npm run lint: passed without warnings.
+- npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips.
+- npm run build: passed with local public Supabase configuration injected
+  through the process environment.
+- git diff --check: passed.
+
+An ad hoc browser integration check ran with the installed Edge in headless
+mode, through Node's built-in WebSocket/CDP support, without installing a
+browser-testing dependency. The command was
+`node "$env:TEMP/project-garden-modal-check.cjs"`. It used a temporary,
+isolated browser context and the existing local administrator. The context
+and browser were closed, and the temporary profile was removed.
+
+The final browser assertions passed for keyboard opening, the accessible
+heading reference, initial heading focus, Tab/Shift+Tab containment, Escape
+and button dismissal, opener focus restoration, and body-scroll restoration.
+At 1440x1000, 390x844 and 320x640, the dialog fitted the viewport without
+horizontal overflow, scrolled internally, and kept its close control visible.
+The creation button matched the main content's left edge.
+
+An intercepted save request verified that the close control was disabled
+and Escape could not dismiss the busy dialog. Before forwarding it, the
+test removed the required name so server validation rejected the request
+without creating a project. The dialog remained usable after the validation
+response and could close again. A read-only database check found zero rows
+with the test slug. No users, project fixtures, schema changes or migrations
+were created by these checks. Publication/upload pending guards were not
+individually exercised in this browser check.
+
+Early browser checks exposed native focus navigation reaching browser chrome
+and a non-cancelable native close request; explicit focus cycling and busy
+Escape/closedby guards resolved those assertions. The keyboard test driver
+was also corrected to send Enter's text event and wait for hydration.
+These automated layout/input assertions are not manual visual review,
+screen-reader testing, physical-device testing or cross-browser validation.
+Owner visual acceptance remains pending. The local review server remains
+available at http://127.0.0.1:3015/projects.
+
+## Cozy modal and rich-text refinement - 2026-11-15
+
+The owner requested right-aligned actions, a gentle modal entrance, a header
+X, bottom Close action and a visual review of the rich-text fields. The
+prototype now has a fixed action footer, CSS-only entry/backdrop animation,
+grouped icon controls, a warm field shell and localized empty-writing hints.
+No dependency, schema or authorization change was introduced.
+
+- npm run lint: passed without warnings.
+- npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips.
+- npm run build: passed with process-local public Supabase configuration.
+- git diff --check: passed.
+
+The ad hoc headless Edge/CDP check ran as
+`node "$env:TEMP/project-garden-cozy-modal-check.cjs"`. It used an isolated
+temporary context and the existing local administrator, then closed the
+browser and removed its profile. At 1440x1000, 390x844 and 320x640 it verified
+right alignment, viewport fit, no horizontal overflow, a scrolling form
+body, and a visible right-aligned footer. Desktop and 390px screenshots
+were also inspected for the warm surfaces, spacing and grouped controls.
+
+Browser assertions verified the configured entrance animation, disabled
+dialog/backdrop animations under prefers-reduced-motion, translated names
+and titles on icon controls, 44px targets, and actual bold text editing.
+Keyboard opening, initial heading focus, Tab/Shift+Tab cycling, Escape
+from within the editor, bottom-button dismissal and focus/scroll restoration
+passed. Escape capture was adjusted after the editor-focused dismissal
+check exposed reliance on native close-request behavior.
+
+The footer submit button was exercised through its native form association.
+An intercepted pending request verified disabled close controls and blocked
+Escape. The required name was removed before forwarding, so server
+validation rejected it without creating a project; closing worked again
+after the response. A read-only database check found zero rows for the
+test slug. No users, project fixtures or migrations were created. The full
+database/HTTP fixture suites were not rerun for this presentation change.
+
+These checks are not physical-device, screen-reader or cross-browser
+validation. Exact styling remains WIP pending owner visual review. The
+local review URL remains http://127.0.0.1:3015/projects.
+
+
+## Responsive project creation action - 2026-11-15
+
+The owner requested the creation button beside the introduction on large
+screens and at full content width below it on small screens.
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips.
+- npm run build: passed with process-local public local Supabase configuration.
+
+The focused ad hoc check ran as
+`node "$env:TEMP/project-garden-responsive-header-check.cjs"` in
+headless Edge with an isolated context and the existing local administrator.
+Assertions passed at widths 1,440, 1,024, 900, 768, 640, 390 and 320px:
+the action aligns beside the description from 1,024px, fills the content
+width below that breakpoint, and causes no horizontal page overflow.
+Screenshots at 1,440px and 390px were inspected. Keyboard modal opening,
+initial heading focus, Escape dismissal and opener focus restoration passed.
+The anonymous header was checked at 1,440px and 390px without management
+controls or overflow. No users, records or migrations were created.
+
+This focused review does not repeat the full editor/save integration suite
+or constitute cross-browser, physical-device or screen-reader validation.
+The layout remains WIP pending owner visual review.
+
+## Project schema and form adapter separation - 2026-11-15
+
+Moved the existing Zod project detail/content/identity schemas and inferred
+payload types to lib/projects/schemas.ts. FormData parsing, field error
+mapping and action response types remain in lib/projects/input.ts. Updated
+action, form and test imports without changing validation or visibility.
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 53 passed, no failures or skips, including existing input and
+  rich-content validation coverage.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+Visibility was inspected in the creation/publication actions, schema default,
+public/administrator queries, project page and RLS policies. New projects
+default to unpublished; saving content preserves visibility and the separate
+publication action changes it. This was a source inspection, not a new
+database/HTTP integration run. No database operations or browser UI review
+were required for this module-only refactor.
+
+## Visibility switch and board-focused detail - 2026-11-15
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 54 passed, no failures or skips. Added coverage for explicit
+  true/false publication, missing/duplicate/file values, rejected coercions
+  and combined content/publication errors.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+A temporary local production server at 127.0.0.1:3016 ran the equivalent of
+node --test --test-concurrency=1 tests/project-content-http.ts
+tests/public-http.test.mjs with explicit local public Supabase configuration.
+Result: 18 passed, 2 skipped, no failures. The skipped post-cleanup empty
+states require an empty owner database; existing projects were preserved.
+The suites verified authenticated publication on creation, redirect without
+edit=1, content/visibility updates, stale-write rejection, unauthorized
+writes, public/draft access, board data, image-route access/normalization
+and the absence of former rich-content detail sections. Only identifiable
+fixtures created by those tests were removed. User/admin and table counts
+were checked before/after; no users, migrations or remote operations ran.
+The temporary production server was stopped after the suites.
+
+The ad hoc headless Edge/CDP check ran as
+`node "$env:TEMP/project-garden-visibility-browser-check.cjs"` against the
+local review server. At 1440x1000, 390x844 and 320x640 it checked modal/page
+overflow, a labelled 44px switch, keyboard switching, reduced motion,
+creation defaulting to private, public creation without modal reopening,
+a compact board-focused detail, saved name/publication initial values in
+editing, cancellation without a visibility write and hiding on save.
+Desktop/mobile board screenshots were visually inspected. Its exact
+created project was removed and before/after population counts matched.
+The isolated browser context/profile was closed and removed.
+
+Creation image staging remains a proposal awaiting owner confirmation;
+it was not implemented or tested. No new dependency or schema/policy
+change is included. Full screen-reader, physical-device and cross-browser
+review remain unperformed; UI acceptance remains pending.
+
+## Project information modal and visible title - 2026-11-15
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 54 passed, no failures or skips.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+Local production HTTP checks ran with node --test --test-concurrency=1
+tests/project-content-http.ts tests/public-http.test.mjs against a temporary
+127.0.0.1:3016 server. Final result: 18 passed, 2 skipped, no failures.
+The first run exposed an obsolete public-board assertion requiring the
+Read only badge; it was updated to assert the requested removal. The
+skipped empty-after-cleanup checks require an empty database. Authorization,
+draft HTML/RSC privacy, board data, image access and fixture population
+preservation passed. Only this run's fixtures were removed; the temporary
+production process was stopped. No users or migrations were created.
+
+The ad hoc headless Edge check ran as
+`node "$env:TEMP/project-garden-information-browser-check.cjs"`. At
+1440x1000, 390x844 and 320x640 it verified a visible title, adjacent labelled
+44px information icon, no Read only badge, rich description/objectives and
+repository inside the modal, viewport fit, internal scrolling, heading
+focus, Tab/Shift+Tab cycling, Escape/footer closure and opener restoration.
+Visitors had no edit action; the existing administrator could view an
+empty private information state and open editing. Anonymous access to
+the same private project returned 404. Desktop/mobile modal screenshots
+were inspected. Two exact temporary project fixtures were removed and
+before/after project/asset/column/task/user/administrator counts matched.
+
+The existing project-garden-cozy-modal-check.cjs browser regression also
+passed after sharing ProjectDialog: keyboard opening, editor-focused
+Escape, focus/scroll restoration, responsive footer, animation/reduced
+motion, bold editing and dismissal blocked during an intercepted save.
+The request was made invalid before forwarding, so it created no project.
+No cross-browser, physical-device or full screen-reader review is claimed.
+
+The status/is_hidden migration and access semantics are still proposals
+in ADR 0001, not implementation or applied migration. Visual acceptance
+remains pending. The local review server remains at 127.0.0.1:3015.
+
+## Edit inside information and undecorated trigger - 2026-11-15
+
+- npm run lint: passed, no warnings.
+- npm run typecheck: passed.
+- npm test: 54 passed, no failures or skips.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+The ad hoc isolated headless Edge check ran with
+`node "$env:TEMP/project-garden-information-edit-check.cjs"`. It passed
+at 1440x1000, 390x844 and 320x640: the information trigger has zero border
+and transparent background with a 44px target; visitors have no edit
+control; the administrator sees Edit project only in the information
+footer. Editing keeps the same native dialog, focuses its new heading,
+loads the existing shared form with initial values and keeps keyboard
+focus contained. Escape from the editor restores focus and body scroll.
+Closing and reopening returns to information. Explicit edit=1 opens the
+editor; saved=1 keeps it closed. The mobile footer screenshot was inspected.
+
+The first temporary-script run matched the sidebar illustration instead
+of the information icon; the selector was scoped to main. The subsequent
+browser run detected that reopening could retain editor mode while the
+native close event was pending. Resetting mode synchronously on dismissal
+fixed the issue; the final complete browser run passed. Two exact temporary
+project fixtures were cleaned and before/after project, asset, column,
+task, user and administrator counts matched. No users or migrations were
+created. Anonymous private-project access still returned 404.
+
+This adjustment did not rerun the full HTTP integration suite. No full
+screen-reader, physical-device or cross-browser review is claimed. The
+working appearance remains pending owner acceptance, and status/hidden
+semantics remain proposals. Local review stays at 127.0.0.1:3015.
+
+## Larger information section headings - 2026-11-15
+
+Description and Objectives headings changed from 20px to 24px. npm run
+lint, npm run typecheck, npm test (54 passed), npm run build and git diff
+--check passed. The build used process-local public local Supabase values.
+The targeted headless Edge check, project-garden-information-headings-check.cjs,
+verified both computed heading sizes at 1440x1000, 390x844 and 320x640,
+modal fit/scrolling and keyboard/focus behavior. The desktop screenshot
+was inspected. Exact temporary fixtures were cleaned and population counts
+were preserved. Full HTTP integration was not rerun for this typography
+change; owner visual acceptance remains pending.
+
+## Creation images, private draft retries and browser multipart - 2026-11-15
+
+- npm run lint: passed with no warnings.
+- npm run typecheck: passed.
+- npm test: 60 passed, no failures or skips.
+- npm run build: passed with process-local public local Supabase configuration.
+- git diff --check: passed.
+
+Unit checks cover the shared 32 MiB file budget, invalid/oversized files,
+preview URL revocation, preserving rich content while resolving local
+references, sequential uploads, partial failure/retry, reusing successful
+IDs, stable creation identity after a lost initial response and validation
+before writes. A regression test uses a mixed-case WebKit multipart
+boundary and verifies exact file bytes survive parsing.
+
+The local production HTTP run used node --test --test-concurrency=1
+against tests/project-content-http.ts and tests/public-http.test.mjs at
+127.0.0.1:3016. Result: 18 passed, 2 skipped, no failures. The skipped
+empty-state assertions require an empty database. New Server Action
+assertions cover unauthorized draft saves, forbidden publication through
+the draft action, draft 404, idempotent initial retry without a second row
+or timestamp change, foreign assets, stale writes and refusal to turn a
+published project into a draft. Existing project CRUD, HTML/RSC privacy,
+image processing/access and population preservation checks also passed.
+
+The ad hoc isolated headless Edge test ran via
+project-garden-local-integration.cjs and project-garden-creation-images-check.cjs.
+At 1440x1000, 390x844 and 320x640 it checked previews in both fields, modal
+fit and Tab containment. Cancelling before Save created no database data
+and revoked the preview URL. Real image requests were paused to assert
+private project/image access during upload and pending Escape protection.
+After both uploads the selected publication applied, saved images became
+public and the detail stayed closed. Injecting a 503 on the second upload
+kept a private draft with the first image saved, preserved name/slug and
+showed the retry explanation. Retry used that same project and uploaded
+only the remaining image. The mobile preview screenshot was inspected.
+
+Early browser runs exposed invalidImage responses, also reproduced without
+network interception. Blob.type was lowercasing the browser's case-sensitive
+boundary. Preserving Content-Type on Response fixed the real browser
+multipart regression. The final full browser run passed after the fix.
+Temporary diagnostics were removed. Exact project/asset/object fixtures
+were removed and population counts preserved. No users, schema changes,
+remote operations or automatic cleanup were introduced. Temporary
+production servers were stopped; the existing local review server remains.
+
+Visual acceptance remains pending. Full screen-reader, physical-device
+and cross-browser review were not performed. Lost upload responses may
+leave private unreferenced assets; general cleanup remains a separate
+pending decision. Browser decoding memory can exceed the 32 MiB file budget.
+
+
+## Image persistence and file-picker cancellation regression - 2026-11-15
+
+The reported image-saving problem prompted real browser creation, reload,
+information-modal and edit checks. Inserted images persisted and decoded
+correctly in both rich-text fields, including a further upload during edit.
+A separate reproducible loss was found: reselecting an unchanged file emits
+an actual trusted, bubbling input `cancel` event. ProjectDialog interpreted
+it as dialog cancellation, closed the form and discarded staged content.
+The regression assertion failed before the fix with "File chooser
+cancellation must not dismiss the project form". The handler now ignores
+cancellation events originating at descendants.
+
+Added `npm run test:images`, backed by tracked TypeScript browser tests and
+Zod-validated Chromium protocol helpers, without new dependencies. The test
+asserts the native input event occurred, the modal and staged image survive,
+and explicit Escape still closes the form and releases the blob URL. It also
+checks both-field creation, private state while requests are paused, 1440px,
+390px and 320px modal fit, Tab containment, reload/decoded image dimensions,
+reopening the editor, text edits and an additional uploaded image, anonymous
+published reads, private/public access after saving visibility, and partial
+upload failure/retry with the same draft and previously uploaded asset.
+
+Checks on the corrected production build using local Supabase:
+
+- `npm run lint`: passed, no warnings.
+- `npm run typecheck`: passed.
+- `npm test`: 60 passed.
+- `npm run build`: passed with local public Supabase configuration.
+- `node --test tests/project-images-browser.ts`: 6 passed (parent plus five
+  browser scenarios), in isolated headless Edge through the temporary local
+  integration runner on port 3016 (Edge 157.0.4341.46).
+- `npm run test:images`: the same 6 assertions also passed against the
+  existing development/review server on port 3015 after the fix.
+- Existing HTTP suites: 18 passed, 2 skipped because their empty-database
+  preconditions do not hold on this populated instance.
+
+All temporary fixture objects/rows were removed; existing population counts
+were preserved. No users, schema changes, remote operations or dependencies
+were introduced. These are automated browser/HTTP checks; manual visual,
+physical-device and cross-browser acceptance remain pending. A selected file
+still requires Insert image before Save; selection alone is not a persisted
+rich-text node. This check establishes the confirmed cancellation regression,
+not that every possible image failure has been reproduced.
+
+
+## Direct upload execution and stronger regression assertions - 2026-11-15
+
+A fresh tab in the shared review browser was used on port 3015 with the
+existing administrator session. A generated 1200x630 PNG was selected through
+the file input, given alternative text and inserted using the UI. Creation
+rendered its local preview, then saved the private project and a ready WebP
+asset. Opening information decoded it at 1200x630. During editing, clicking
+Insert with empty alt produced invalidAlt and zero POST requests. Supplying
+alt and clicking again produced POST /project-images HTTP 201 and a second
+image node. Saving, navigating afresh and opening information decoded both
+images. Database inspection confirmed two owned ready assets, each 1446
+bytes at 1200x630, referenced by the saved description document. Only that
+UUID-named temporary project's Storage objects/rows and generated file were
+removed; the original project and administrator remained. The test tab closed.
+
+This does not reproduce the owner's remaining insertion failure. The prior
+file-picker cancellation fix addresses a separate confirmed regression.
+No additional production behavior has been changed speculatively.
+
+The tracked browser suite now dispatches actual pointer clicks after checking
+hit testing instead of invoking DOM click(), and observes upload POST/status
+events. Added checks cover invalid alt without a POST, a real 400 response
+for corrupt PNG bytes without a new asset or document node, preserved file
+and alt after rejection, and correction followed by exactly one successful
+201 upload and visible/saved image. Creation asserts both upload responses
+are 201. Partial retry asserts the sequence 201,503,201. Three new isolated
+client-transport tests use mocked fetch; they do not claim Storage coverage.
+
+Checks:
+
+- `npm run lint`, `npm run typecheck`, `npm run build`: passed.
+- `npm test`: 63 passed.
+- `npm run test:images` on the development review server: 7 passed (parent
+  and six browser scenarios).
+- On the local production build on port 3016, the browser suite and both
+  existing HTTP suites ran sequentially: 25 passed, 2 skipped (empty-database
+  requirements). Command: `node --test --test-concurrency=1
+  tests/project-content-http.ts tests/public-http.test.mjs
+  tests/project-images-browser.ts` through the temporary local server runner.
+
+Initial runs of the new test failed because its expected English message
+contained a misencoded dash. The assertion now reads the source message
+catalog; those failures were in the test expectation, not the application.
+All final assertions above passed and fixture population checks passed.
+The browser remains Edge/Chromium; other engines and the owner's exact
+failing file/interaction have not been verified. Debug boundaries are
+recorded in docs/development.md. No dependencies, schema/security changes,
+users or remote operations were introduced.
+
+
+## Image Enter-key submission and pending selection fix - 2026-11-20
+
+Read-only inspection initially found the original test project with zero image
+references and no project_assets rows. In the shared browser, a unique private
+fixture was created using the existing public 224x224 WebP illustration as an
+upload source. Selecting it, entering alternative text and pressing Enter
+submitted the entire project, redirected and created no asset/image reference.
+The enclosing form's implicit submit caused the omission. A new tracked
+regression failed before the fix: "Enter inserts into the editor without
+submitting the project" timed out while the other six browser scenarios passed.
+
+The alternative-text input now handles Enter as image insertion; project submit
+capture rejects pending file selections in either editor. Explicit feedback
+and a local Discard selection button distinguish pending selection, creation's
+local preview and editing's completed upload. Required-alt labels/help/errors
+are translated in English, Spanish and Catalan. No server, schema, dependency
+or Storage policy changes were required; visual feedback remains provisional.
+
+After the fix, the shared browser's editing Enter path returned POST
+/project-images 201, followed by a preview GET 200 and a decoded 224x224 image
+in the editor. The completed upload message appeared. Saving the project
+persisted its reference; read-only database/Storage inspection confirmed the
+owned ready asset and decoded WebP bytes. The manual fixture and its exact
+object/asset were removed, preserving the original project/user/administrator.
+All agent-opened review tabs were closed. Some subsequent preview automation
+clicks/snapshots timed out; manual post-navigation visual confirmation through
+that tool was inconclusive. Independent headless browser tests verified decoded
+images after saving/reloading and information-modal opening.
+
+The expanded browser suite checks real Enter events in creation and editing,
+blank alternative-text focus/aria-invalid, no implicit project mutation, blocked
+Save while either field has a pending selection, focus on that selection,
+explicit discard, staging/upload messages and saved image decoding. Existing
+actual-upload/rejection/retry and anonymous/private-access checks remain.
+
+Validation:
+
+- npm run lint and npm run typecheck: passed.
+- npm test: 63 passed.
+- npm run test:images on development port 3015: 8 passed (parent plus seven
+  browser scenarios); the pre-fix keyboard regression failed as described.
+- Local production HTTP and browser suites, run sequentially on port 3016:
+  26 passed, 2 empty-database checks skipped. Fixture population checks passed.
+- npm run build: the first attempt compiled and typechecked but exited with
+  SecurityFatalError for the installed Next.js 16.4.3 security advisory.
+  Repeating the command completed with exit 0 and retained the upgrade warning.
+  Dependency upgrades were not performed and need owner review/confirmation.
+
+No existing data was deleted or repaired. Earlier selections that never reached
+insertion/upload cannot be recovered from Storage and need selecting again.
+The confirmed Enter/unsaved-selection omission is fixed; visual acceptance and
+the separate Next.js security-version review remain pending.
+
+## Image acceptance and project scope clarification - 2026-11-20
+
+The owner reported that the corrected image flow works correctly. This records
+acceptance of the reported insertion/upload behavior and supersedes its pending
+owner check in the preceding entry; it does not imply acceptance of all UI or
+completion of project management.
+
+Documentation now records no project deletion, mandatory cancellation reasons,
+Active / in development as the new/existing default, hidden cards that remain
+listed while visitor detail access is blocked, and deferral of the common column
+set to task CRUD without column CRUD. Four columns remains provisional because
+the final count/labels were explicitly left open.
+
+Read-only review found only is_published in the current project schema and no
+project-deletion action. Current public full-row queries and publication-only
+RLS do not yet enforce the newly requested hidden boundary. ADRs 0001/0002
+contain the concrete schema/security proposals awaiting confirmation. No
+application code, database permissions/data, migrations, dependencies, services
+or browser state changed. Documentation checks: git diff --check passed. The
+application suites were not rerun for this documentation-only update; the prior
+entry contains the last actual application/browser results.
+
+## Lifecycle, cancellation and listed hidden projects - 2026-11-20
+
+The owner confirmed the concrete schema/security/reason plan and requested its
+implementation. Local migrations 20261120000100 and 20261120000200 are applied;
+the generated Supabase types were refreshed from that local schema. Existing
+migrations remain unchanged. The first new migration initially failed to parse
+because position needed quoting in the RPC RETURNS TABLE declaration; its
+transaction rolled back, the unapplied file was corrected and application then
+succeeded. No existing data was removed.
+
+Implemented:
+
+- Four lifecycle states with Active / in development as the new/existing default.
+- Cancelled requires a nonblank plain-text reason up to 2,000 Unicode code points.
+  The shared form retains it on reopening; information shows it only if cancelled.
+- Published hidden cards stay listed without visitor navigation or description.
+  A fixed public RPC projection prevents private content from entering listing
+  HTML/RSC. Full project, descendant and asset RLS block hidden public access;
+  existing controlled image delivery/Storage permissions follow that boundary.
+- Owner access and previews remain separately authorized. Authenticated project
+  DELETE is denied; no deletion UI, task CRUD or column CRUD was added.
+- English, Spanish and Catalan controls/help/status labels are present. The common
+  column set remains deferred to task CRUD; count and values are still undecided.
+
+A real database regression rejected the first POSIX whitespace implementation:
+a BOM-only reason was accepted by SQL while JavaScript trim rejected it. The
+already-applied migration was preserved. A second migration adds an explicit
+JavaScript whitespace set to the CHECK, and the failing regression now passes.
+
+Actual checks:
+
+- npm run lint: passed without warnings.
+- npm run typecheck: passed.
+- npm test: 67 passed, zero failed/skipped.
+- npm run build: initial attempts compiled/typechecked but exited with the known
+  Next.js 16.4.3 SecurityFatalError. Repeating the same command passed with the
+  advisory warning retained. No dependencies, upgrade agents or guard changes
+  were introduced; the Next.js security update remains a separate pending task.
+- tests/project-management-db.sql through local docker/psql with ON_ERROR_STOP:
+  passed after the regression fix. Tests use unique fixtures in a rolled-back
+  transaction and the existing administrator, never create users, and verify
+  status/defaults/reason limits/whitespace, projection, descendants, direct
+  Storage access, owner management and project DELETE denial.
+- tests/project-content-db.sql through local docker/psql: passed and rolled back.
+- Final production HTTP/browser run on temporary loopback port 3016:
+  node --test --test-concurrency=1 tests/project-content-http.ts
+  tests/public-http.test.mjs tests/project-images-browser.ts: 28 passed,
+  zero failed, two existing empty-database checks skipped. A local temporary
+  runner supplied only the public local config and stopped its own server.
+  Tests exercise actual Server Actions, every publication/hidden combination,
+  API/HTML/RSC/image/Storage denial, owner previews, form cancellation/reopening,
+  no hidden-card navigation and visibility restoration.
+- Isolated Edge checks covered the shared modal at 320/390/1440px, keyboard focus
+  containment and image behavior; the new hidden cards were checked at 390/1440px.
+  These are automated DOM/interaction assertions, not owner visual acceptance.
+- Exact fixture cleanup preserved the before/after population:
+  [1,2,0,0,1,1] for projects/assets/columns/tasks/users/administrator registry.
+  The original project and two assets remain, and the project is active.
+
+The empty-database pgTAP suite was not run; its DELETE expectation was updated
+for disposable-database use. No remote migration, deployment, new user or broad
+file cleanup occurred. The new form/card presentation remains pending owner
+review. The existing project-404 initial-HTML limitation remains outside this
+increment.
+
+Final review checks: git diff --check passed. Public-schema types were generated
+with --schema public and formatted with the existing TypeScript printer, keeping
+the generated diff focused; lint and typecheck passed again afterward. The local
+development review server was restarted at http://127.0.0.1:3015/projects and
+returned HTTP 200. Its initial launch also stopped for the existing Next.js
+security advisory; repeating the same command started the server with the warning
+retained. The generated AGENTS.md block was preserved.
+
 ## Strict CI and security pipeline — 2026-11-14
 
 The owner approved GitHub Actions validation, low-severity vulnerability blocking, CodeQL, Gitleaks, Dependency Review, weekly Dependabot proposals and documentation, with deployment explicitly deferred. The SQL suite's two fixture users and temporary administrator authorization were approved only on a fresh disposable CI database. [ADR 0004](adr/0004-strict-ci-and-security.md) records this accepted policy; the [development guide](development.md#continuous-integration-and-security) describes operation and the still-pending GitHub activation.
@@ -929,3 +1668,137 @@ Hidden-tab behavior was not rerun in this adjustment. Other browsers, mobile har
 The owner subsequently requested commits and a pull request. The animation change was rebased onto `main` at `72a7ccd`, preserving its newer navigation, account controls, language form and viewport-based illustration mounting. Conflicting HTTP assertions were resolved in favor of the existing main-branch contract: initial server HTML must not contain decorative media. The new WebM/range-request case was retained. The development and product documentation preserve the newer sidebar and authentication decisions alongside this media adjustment.
 
 After integration, `npm run lint`, `npm run typecheck`, `npm test` (41 passing tests), `npm run build` and `git diff origin/main...HEAD --check` passed. Against a fresh local production server, `KANBAN_TEST_URL=http://127.0.0.1:3005 node --test tests/i18n-http.test.mjs` passed eight cases and skipped one sign-in-feedback case because Supabase is not configured. Main's existing unavailable-sign-in handling and test prerequisite checks account for the difference from the earlier pre-integration HTTP failures; no authentication changes were added by this branch. The browser checks above were performed before this rebase and were not repeated during the commit/PR handoff. Visual acceptance and real CPU/battery measurements remain outstanding.
+
+
+## Project branch integration with main - 2026-11-20
+
+The owner requested commits and updating the feature branch with main. Project
+lifecycle/security, WIP interface and decision documentation were committed
+separately. The feature branch integrates origin/main at
+fbded6468d9726b770c8499136751d76bb631f8f using a merge, preserving its session
+controls, Overview navigation, responsive shell, HTML parser and CI policy.
+Project controls, editor dependencies, management tests and migration history
+are retained. No push, hosted CI run, remote migration or deployment was made.
+
+Conflicts in auth navigation preserve main: successful login/logout and the
+authorized /admin entry return to Overview. Public-board tests retain the
+approved HTML parser and the removed Read only tag. The merged lockfile retains
+the approved editor/image packages alongside main dependency updates and the
+parser-scoped minimatch override. No new direct library was selected. The
+Node type update exposed an untyped compileFunction invocation in main
+auth-action tests; its known harness arguments now have an explicit signature,
+without suppressions or any.
+
+The rich-project HTTP suite now explicitly skips when the local database has
+no registered administrator, as in disposable CI. This preserves the ban on
+automatic user creation. Its full owner/upload paths ran locally with the
+existing administrator; the absent-administrator skip branch was reviewed but
+was not exercised by modifying the populated instance.
+
+Actual integrated-branch checks:
+
+- npm install --package-lock-only --ignore-scripts and
+  npm ci --ignore-scripts --no-audit --no-fund: passed.
+- npm run lint and npm run typecheck: passed. The first lint run exposed the
+  compileFunction typing issue above; the corrected run passed.
+- npm test: 88 passed, zero failed or skipped.
+- npm run build: passed on the first run with Next.js 16.4.6, without the
+  earlier 16.4.3 SecurityFatalError or advisory warning.
+- npm audit --audit-level=low: zero reported vulnerabilities.
+- npx supabase@2.122.0 db lint --local --fail-on warning: passed.
+- tests/project-management-db.sql and tests/project-content-db.sql through
+  Docker psql with ON_ERROR_STOP: passed in rolled-back transactions.
+- Production HTTP/browser checks using the local temporary runner on port 3016:
+  tests/project-content-http.ts, tests/public-http.test.mjs,
+  tests/i18n-http.test.mjs and tests/project-images-browser.ts: 38 passed, zero
+  failed, one empty-project-list assertion skipped because existing data remains.
+  This includes all three locales, auth routing, images, cancellation and hidden
+  visitor access. These are automated assertions, not owner visual acceptance.
+- Fixture cleanup retained population [1,2,0,0,1,1] for projects/assets/columns/
+  tasks/users/administrator registry.
+
+The empty-database pgTAP suite was not run on the populated owner instance.
+Hosted checks and the remaining owner visual review are pending.
+
+
+## Local acceptance and publication preparation - 2026-11-20
+
+The owner accepted the local project-management increment and requested pushing
+the branch and creating a PR to main, then requested an architecture/structure
+summary in README before publication. README now describes the implemented
+routes, rendering boundaries, Server Actions, Zod validation, domain queries,
+Supabase authorization/RLS, image lifecycle, localization and directory roles.
+This documents the current design without changing its architecture or adopting
+a dependency. The acceptance scope is recorded in product.md.
+
+The local sign-in issue was configuration: main had an ignored .env.local but
+this worktree did not. The worktree now has only the two validated public values
+for the same existing loopback Supabase instance. Next was restarted, the
+unauthenticated login response contained its email/password form instead of the
+unavailable state, and Projects returned HTTP 200 without a data-unavailable
+state. No password was requested or automated successful password sign-in
+claimed. The environment file remains ignored and is excluded from commits.
+
+Documentation-only handoff checks: git diff --check and README local path/link
+checks passed. Application, database and browser checks were not repeated for
+these prose changes; the preceding integration entry records their actual
+results. Hosted validation of the feature branch remains pending.
+
+
+## PR 11 CodeQL browser-helper findings - 2026-11-21
+
+Security run 44893871529 at feature head 1ce1854 completed its analyses but
+blocked publication with two JavaScript/TypeScript findings:
+
+- js/bad-code-sanitization in tests/project-images-browser.ts: JSON.stringify
+  values were interpolated into JavaScript sent to the test browser.
+- js/file-access-to-http in tests/support/image-browser.ts: data read from
+  DevToolsActivePort contributed to an outbound WebSocket URL.
+
+Both locations are test infrastructure. The run's dependency audit, dependency
+review, secret scan and Actions CodeQL checks passed; the aggregate security
+gate failed because the JavaScript/TypeScript findings were nonzero. No result
+was dismissed, excluded or downgraded, and the blocking policy is unchanged.
+
+The browser helper now communicates over inherited CDP pipes rather than a
+TCP debugging listener, removing the file-to-network construction. Static
+expressions retain Runtime.evaluate; parameterized functions use
+Runtime.callFunctionOn with separately serialized arguments and released remote
+object handles. All dynamic selectors/messages/statuses/URLs in the browser
+suite use those arguments, preserving unknown/Zod result boundaries. A new
+isolated-browser regression round-trips quotes, closing script tags, backslashes,
+line/Unicode separators, false and null without executing the supplied text.
+No library, application code, schema, permission or migration changed.
+
+Actual checks:
+
+- npm run lint and npm run typecheck: passed after explicit typed pipe handles
+  fixed the initial TypeScript closure-narrowing errors.
+- npm test: 88 passed, zero failed or skipped.
+- npm run build: passed with Next.js 16.4.6.
+- A direct browser smoke check returned 42 and a parameterized string over CDP
+  pipes. The hostile-argument regression also passed independently with
+  node --test --test-name-pattern='browser commands keep hostile text'
+  tests/project-images-browser.ts.
+- The first full HTTP/browser run had two timeout failures in image insertion
+  and pending-selection assertions; its parent suite also failed. An isolated
+  browser rerun passed all 10 checks. The pointer helper was then hardened to
+  wait for enabled, stable, reachable targets across animation frames, without
+  increasing assertion timeouts or adding blanket sleeps. Timeout diagnostics
+  retain only image readiness, selection flags and interface-error text.
+- The final production HTTP/browser run through the temporary local runner on
+  port 3016 passed 39 checks with zero failures and one existing empty-list
+  assertion skipped. Files: tests/project-content-http.ts,
+  tests/public-http.test.mjs, tests/i18n-http.test.mjs and
+  tests/project-images-browser.ts. Actual image upload/retry/persistence,
+  lifecycle, visibility and locale assertions all passed. Exact fixture cleanup
+  verified that the existing population and users were preserved.
+- Docker Desktop was initially stopped after the environment restart. Starting
+  it restored the existing local Supabase containers; local CLI startup output
+  was captured without logging credentials. No reset or user creation occurred.
+- git diff --check passed. No dependencies or scanner configuration changed.
+
+CodeQL was not run locally; a fresh hosted analysis after pushing this correction
+is required to confirm both findings are resolved. The empty-database SQL suite
+was not run on the populated owner instance. Browser checks are automated
+assertions, not a new owner visual review or cross-platform certification.

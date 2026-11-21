@@ -1,14 +1,14 @@
 import { getTranslations } from "next-intl/server";
-import { listPublishedColumns } from "../../lib/columns/queries";
-import { listPublishedTasks } from "../../lib/tasks/queries";
+import { listManagedColumns, listPublishedColumns } from "../../lib/columns/queries";
+import { listManagedTasks, listPublishedTasks } from "../../lib/tasks/queries";
 import { EmptyState } from "../shared/empty-state";
 import { TaskCard } from "../tasks/task-card";
 
-export async function ProjectBoard({ projectId }: { projectId: string }) {
+export async function ProjectBoard({ projectId, administrator = false }: { projectId: string; administrator?: boolean }) {
   const t = await getTranslations("Board");
   const [columns, tasks] = await Promise.all([
-    listPublishedColumns(projectId),
-    listPublishedTasks(projectId),
+    administrator ? listManagedColumns(projectId) : listPublishedColumns(projectId),
+    administrator ? listManagedTasks(projectId) : listPublishedTasks(projectId),
   ]);
 
   if (!columns.length) {

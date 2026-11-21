@@ -19,6 +19,7 @@
 | @supabase/ssr | 0.12.7 |
 | server-only | 0.0.1 |
 | next-intl | 4.14.9 |
+| Zod | 4.6.7 |
 
 Type packages and transitive dependencies are also pinned in `package.json` and `package-lock.json`. Install with `npm ci`; use `npm install` only for intentional, confirmed dependency changes.
 
@@ -293,7 +294,7 @@ npm run test:public
 
 The command requires Docker and the `supabase_db_portfolio-kanban` container. It accepts only an HTTP server on `localhost` or `127.0.0.1`, defaulting to port 3000. Set `KANBAN_TEST_URL` to use a different local HTTP origin.
 
-The command runs both `tests/public-http.test.mjs` and `tests/i18n-http.test.mjs`. The tests create only temporary projects, columns and tasks in the local database and delete their own specific UUIDs during cleanup. They do not create users or change administrator authorization. They check ordering, drafts, 404 responses, empty states, text escaping, dates, priorities, unpublishing, all three locales, invalid-sign-in feedback and the shared language selector. Cookie-based locale rendering and native language-form submission are tested. They preserve the owner's existing local account. The phase 2 SQL suite instead requires an empty test instance.
+The command runs `tests/public-http.test.mjs`, `tests/i18n-http.test.mjs` and `tests/project-content-http.ts`. The project-content suite additionally requires the existing local administrator and explicitly skips when none is registered, including the disposable CI database. It never creates users; a populated local run is required to exercise owner actions and image upload. The tests create only temporary projects, columns and tasks in the local database and delete their own specific UUIDs during cleanup. They do not create users or change administrator authorization. They check ordering, drafts, 404 responses, empty states, text escaping, dates, priorities, unpublishing, all three locales, invalid-sign-in feedback and the shared language selector. Cookie-based locale rendering and native language-form submission are tested. They preserve the owner's existing local account. The phase 2 SQL suite instead requires an empty test instance.
 
 ## Environment variables
 
@@ -444,7 +445,7 @@ The owner approved the transport-hardening proposals on 2026-11-08:
 
 The following findings remain outside the current implementation:
 
-- **Future inline administration:** session refresh currently matches `/admin/:path*`. Public data reads remain independent of that session. Before introducing owner-only data/actions in home or projects, confirm refresh coverage and server authorization requirements; public KPIs must not contain private counts.
+- **Inline administration follow-up:** the confirmed project increment extends session refresh to `/admin/:path*`, `/projects/:path*` and `/project-images/:path*`, with separate authorization for owner queries/actions and session-independent public reads. Future Overview data integration must not contain private counts.
 - **Response limits:** local Data API responses are capped at 1,000 rows, and the retained list queries do not paginate. A board exceeding that number of tasks can be incomplete. Propose pagination or an explicit product limit before that scale; use exact server counts for KPIs.
 - **Project 404:** the localized heading is still absent from initial HTML, although the response is HTTP 404 and contains the heading in RSC. Current HTTP checks do not prove visual hydration or no-JavaScript behavior. Do not claim that styling closes this limitation.
 
@@ -459,3 +460,464 @@ The owner makes project decisions. ADRs, documentation and comments should descr
 Keep the README concise. Use [Product requirements](product.md) for defined requirements and open choices, [Future ideas](ideas.md) for possibilities and [Validation](validation.md) for dated evidence. Propose ADRs for important architecture, security, dependency, functional or UX decisions. Keep proposals and accepted decisions distinguishable.
 
 References: [Next.js](https://nextjs.org/docs/app/getting-started/installation), [Tailwind with Next.js](https://tailwindcss.com/docs/installation/framework-guides/nextjs), [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client) and [local CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
+
+## Project input validation
+
+`lib/projects/schemas.ts` defines the Zod schemas for project details, rich
+content and edit identity, together with their inferred types. Schema rules
+do not depend on FormData or action state. `satisfies` checks the details
+output against the Supabase insert contract without widening its type.
+
+`lib/projects/input.ts` reads FormData, validates it through those schemas
+and maps issues to stable field error codes. It owns the parser results
+and ProjectFormState response contract. Schemas reject unknown keys and
+avoid coercion; adapters allowlist editable fields and reject duplicates,
+files and null bytes. Text limits count Unicode code points. ProjectForm
+uses the response contract; saveProject uses parseProjectSubmission and
+validates identity separately. Authorization, slug uniqueness and writes
+remain in Server Actions and database policies/constraints. The current
+submission adapter additionally validates an explicit
+is_published string enum and converts it to a boolean. The content-only
+adapter still excludes publication. saveProject applies the content and
+publication together after authorization and an optimistic concurrency
+check; missing/duplicate/invalid publication values fail closed. The UI
+defaults new projects to private. The earlier separate publication action
+has been superseded.
+
+## Strict typing and runtime validation
+
+The owner selected Zod for new runtime input validation. Pin it as a direct runtime dependency and infer input/output types from schemas rather than maintaining duplicate form contracts. Treat external input as `unknown` until validated or narrowed. Do not use `any`, `as any`, `z.any()` or error suppressions to bypass the typing policy. Existing authentication validation is unchanged by the project-input work.
+
+TypeScript enables `strict` and `noUncheckedIndexedAccess`. ESLint uses TypeScript project information for `.ts`/`.tsx` files and rejects explicit `any` plus unsafe assignments, arguments, calls, property access and returns. Type-aware linting adds a TypeScript analysis step; run `npm run lint` as well as `npm run typecheck`, since they check different properties. Generated files and third-party dependency declarations remain outside the application lint scope. The dependency decision is recorded in ADR 0001.
+## Project rich-text prototype
+
+Tiptap React, PM and StarterKit are direct dependencies pinned to 3.34.0. No Tiptap hosted service, collaboration package, shadcn/ui adoption or separate backend is introduced. The custom image node stores only an asset UUID and required alternative text; external HTML image sources are not imported. The editor extension schema and the Zod persistence schema are tested together. Recursive list types are explicit only at the recursive boundary; document, leaf, mark and form types are inferred from Zod.
+
+Project controls use the shared listing/detail views, with session refresh covering those routes and private queries authorized separately. /admin only verifies authentication and redirects to Overview (`/`), preserving the session navigation integrated from main. Each Server Action verifies the current Auth user and is_admin with its own writable server client, allowlists/validates inputs and lets RLS enforce writes. Draft creation does not accept publication, identity, ordering or timestamps from the editable payload. Updates/publication compare the submitted updated_at value to reject stale writes. Publication is a separate saved-state operation; users should save edits before changing visibility. The form is not an autosave editor and does not yet intercept navigation with unsaved changes.
+
+Migration 20261114000100 adds JSONB fields, repository_url, project_assets and the private project-images bucket. Its backfill preserves original descriptions and timestamps; the legacy description remains the plain-text summary used by cards and metadata. Original migration files are unchanged. project_assets uses ON DELETE RESTRICT to avoid losing the asset inventory when a parent is removed; project deletion is not offered until file/descendant deletion semantics are confirmed.
+
+Image delivery uses GET /project-images/:id and private, no-store responses. Normal requests use an anonymous client even when administrator cookies are present. Explicit preview=1 requests verify the administrator with a writable server client. Storage RLS independently checks publication, ready state and saved document references. Its SELECT policies allow download operations and administrator removal only, denying listing, signed URLs and transformation paths. A compatible storage.allow_only_operation helper is required; the migration fails closed when it is missing. The bucket permits WebP only, with a 2 MiB limit. The editor exposes image upload after the draft has been saved; the accepted Sharp implementation and limits are described below.
+
+### Focused database and HTTP checks
+
+The original pgTAP suite still requires its own empty disposable database and user-creation authorization. Do not run it against the populated owner instance. The new standalone rollback-only test in tests/project-content-db.sql uses unique fixture UUIDs and the existing administrator, without creating users or changing administrator permissions. It does not upload binary data. On this local instance it can be run with:
+
+```powershell
+Get-Content -Raw tests/project-content-db.sql | docker exec -i supabase_db_portfolio-kanban psql -U postgres -d postgres -v ON_ERROR_STOP=1
+```
+
+npm run test:public now includes the typed tests/project-content-http.ts test, sequentially with the existing HTTP tests because they share fixture population checks. It requires a local Next.js server, local Supabase, an existing administrator and the public URL/publishable key in the environment or ignored .env.local. KANBAN_TEST_URL defaults to http://127.0.0.1:3000. The new test rejects non-loopback targets. It uses a short-lived token for the existing local administrator signed with the local Auth container's key, held only in process memory. It never logs/persists the token or key, creates users or changes administrator authorization. It uploads unique WebP/PNG fixtures, exercises the real upload route and project Server Actions, and removes only that run's objects, assets and projects in order. The typed integration suite requires a production build for its Server Action manifest. Public/private delivery, signed-URL denial, hiding and preservation of user/data counts are asserted. This is HTTP verification, not browser interaction or visual acceptance.
+
+## Image-processing dependency proposal - 2026-11-14
+
+Historical proposal, subsequently accepted by the owner on the same date;
+see the implementation section below. This assessment records purpose,
+alternatives, trade-offs and measured weight as required by AGENTS.md.
+
+Sharp 0.35.5 would run only in server upload processing to decode JPEG, PNG
+and WebP input, enforce dimensions, resize, encode WebP and omit metadata
+before sending output to private Storage. It provides native image
+processing through libvips. The trade-offs are platform-specific binaries,
+CPU/memory use while decoding and an additional directly maintained
+dependency. Byte/pixel limits and upload tests remain necessary.
+
+Alternatives include browser Canvas preprocessing (no additional package,
+but browser-dependent output and no authoritative server input validation)
+and Supabase delivery transformations (managed resizing, but a paid feature
+that does not replace validating and normalizing incoming uploads and
+would change the selected controlled-delivery design). No alternative has
+been adopted.
+
+Local measurements in the Windows x64 worktree: npm ls resolves Sharp
+0.35.5 through Next.js 16.4.3. The installed sharp folder contains
+1,064,752 bytes and @img/sharp-win32-x64 contains 19,812,379 bytes, totaling
+20,877,131 bytes (about 19.9 MiB). This is an uncompressed disk measurement
+of those two folders, not the full dependency closure, a browser bundle
+size or a deployment artifact measurement. npm registry unpacked sizes
+are 962,168 and 19,812,379 bytes respectively; local generated files can
+explain a difference from registry sizes.
+
+The proposed server-only import would add no Sharp code to the browser
+bundle. Matching the existing version may reuse this local installation;
+that does not guarantee an unchanged production artifact. Deployment OS,
+architecture and Next.js file tracing must be measured once the actual
+upload implementation and deployment target exist. CPU/memory use has
+not been benchmarked.
+
+References: [Sharp](https://sharp.pixelplumbing.com/),
+[output and metadata](https://sharp.pixelplumbing.com/api-output/),
+[platform installation](https://sharp.pixelplumbing.com/install/),
+[Canvas output](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)
+and [Supabase transformations](https://supabase.com/docs/guides/storage/serving/image-transformations).
+
+## Shared project controls and image upload implementation - 2026-11-14
+
+Sharp 0.35.5 is now accepted as a direct dependency; the earlier assessment
+above remains the proposal and measurement history. ProjectManagement
+lazily loads the rich form after opening its button. Creation is in
+/projects; editing and publication are in /projects/[slug]. /admin now
+verifies authentication and redirects to /projects. Sign-in redirects
+there, and sign-in/out invalidate the shared root layout. The proxy now
+renews sessions on /admin, /projects and /project-images. Public queries
+and metadata continue using anonymous clients; separately authorized
+managed queries can return drafts and private board content to the owner.
+
+Project actions live in app/projects/actions.ts, not under /admin. They
+continue independent server authorization, strict Zod validation, RLS,
+asset ownership checks and optimistic updated_at matching. Successful
+saves redirect to the server-validated slug in the shared project view.
+
+POST /project-images runs in Node, requires a same-origin Origin header
+and administrator session, bounds actual streamed body bytes to 8 MiB plus
+64 KiB multipart overhead, and validates a single file and project UUID.
+Input images are JPEG/PNG/WebP up to 8 MiB and 25 million pixels. Signature,
+declared MIME and decoded format must agree; animation is rejected. Sharp
+applies orientation, resizes without enlargement to fit 4,096 by 4,096,
+encodes WebP at quality 82/effort 4 with a ten-second processing timeout,
+and strips metadata. Output is capped at 2 MiB. These conservative upload
+parameters are implementation defaults within the approved image scope.
+
+The pending asset belongs to an existing project; only after successful
+Storage upload is it marked ready. Compensation removes only the exact
+asset created by that request, object first. Failed cleanup preserves the
+pending row. Successful unsaved uploads and removed document nodes retain
+private stored files. There is no automatic orphan cleanup or existing-file
+delete UI. This avoids assuming a deletion policy; file lifecycle and
+project deletion remain explicit follow-up decisions. Save the initial
+draft before attaching images. Saving and closing the form are disabled
+while its upload is pending. No autosave or navigation-discard guard is
+implemented.
+
+## Current review environment - 2026-11-14
+
+The project CRUD working prototype is available locally at
+http://127.0.0.1:3015/projects, with authentication at
+http://127.0.0.1:3015/admin/login. It runs this worktree with
+`npm run dev -- -p 3015 -H 127.0.0.1` and the existing local Supabase
+instance. Public Supabase configuration is injected only into the server
+process; no environment or credential file is committed. The listener is
+restricted to loopback. Development mode allows local HTTP authentication;
+production authentication still requires HTTPS.
+
+This is a temporary local review session. It depends on this computer and
+the local Supabase containers remaining available. It is not a remote
+deployment or a publicly shareable URL. No hosting account is connected,
+no remote Supabase project is linked, and the deployment provider remains
+unselected. A remote review environment needs the owner's hosting and
+Supabase environment choice, credentials, a migration/configuration plan,
+and an existing authorized administrator. Do not publish the loopback
+Supabase URL or automatically create remote users. UI acceptance remains
+pending; the UI implementation commit is explicitly marked WIP.
+
+## Native project form modal - 2026-11-15
+
+ProjectManagement now opens the lazily loaded project form inside a native
+HTML dialog with showModal(), replacing the provisional inline section.
+This uses the existing React client boundary and adds no dependencies.
+The modal has a labelled heading, internal vertical scrolling and an
+explicitly aligned opening button. The later cozy styling update below
+supersedes the first left-aligned/sticky-close presentation.
+
+The browser supplies the top layer and inert background. A keyboard handler
+cycles focus at the first/last enabled visible controls and blocks Escape
+while busy. Native closedby switches between closerequest and none; the
+cancel handler also prevents idle/native close requests from bypassing
+React state. Body overflow is restored on close/unmount, and focus returns
+to the opener. Project save/upload and publication report pending state
+separately, so modal dismissal is blocked throughout either operation and
+the form cannot save concurrently with publication. The existing translated
+closeForm message is reused. Backend authorization and data rules are not
+changed by this presentation update.
+
+## Cozy modal and rich-text presentation - 2026-11-15
+
+ProjectManagement now uses a flex dialog with a fixed header and footer;
+only project-dialog-body scrolls. The opening action and footer actions
+align right. In the Projects listing, the introduction and creation action
+share a flex row from the lg breakpoint (1,024px); smaller viewports stack
+them with a full-width trigger. ProjectManagement accepts optional wrapper
+and trigger classes, preserving the detail view's existing spacing.
+The X and bottom Close action share pending-operation guards.
+The footer submit button targets ProjectForm by its native form attribute.
+ProjectForm reports a strictly typed busy/pending/canSubmit status, keeping
+editor validity and upload/save guards intact without moving domain logic
+into the modal. Status resets on close. Escape is handled in capture phase
+so dismissal also works when the rich-text editor owns focus.
+
+globals.css defines a 420ms opacity/14px-rise/slight-scale entrance and a
+320ms backdrop fade with gentle blur. prefers-reduced-motion disables
+these animations and the related color/shadow transitions. No animation
+dependency or JavaScript animation timer is used.
+
+RichTextEditor retains its existing commands and schema. EditorToolButton
+renders local SVG/typographic symbols with translated accessible names and
+native hover titles. The toolbar groups text, headings, lists, blocks,
+links and history, wrapping on narrow screens. Controls retain 44px
+targets, pressed states and visible focus. The field shell integrates the
+image-upload footer and uses palette-based surfaces/focus treatment. An
+empty paragraph is detected with CSS :has to display the translated
+data-placeholder hint; that hint is not persisted as project content.
+
+## Board-focused detail and visibility form - 2026-11-15
+
+ProjectForm renders the same controlled native button switch in both
+creation and editing, initialized from is_published or false. A hidden
+field sends true/false explicitly; changing the switch has no write side
+effect until save. The switch supports keyboard activation, a linked
+label/help, aria-checked, disabled states and reduced-motion styling.
+The existing save/upload busy guards also cover visibility. Creation
+uses the generic Create project label and saves to ?saved=1 without
+edit=1. ProjectManagement retains optional explicit editor entry.
+
+The detail keeps a screen-reader project heading and compact back/edit
+controls above the board. Supporting rich content remains editable and
+stored; its former visible detail sections are removed. Public metadata
+continues to use the existing session-independent published query.
+Creation image staging is a proposal in ADR 0002, not implemented.
+
+
+## Project information dialog - 2026-11-15
+
+The detail shows the project title and ProjectInformation icon, with
+administrator-only edit controls in the same header. ProjectInformation
+is a client trigger/dialog shell receiving server-rendered RichTextContent
+as children. Description, objectives, repository and the empty-information
+message use existing authorization and next-intl catalogs. Public drafts
+remain inaccessible before any information component is constructed.
+
+ProjectDialog is shared by information and ProjectManagement. It owns
+native dialog synchronization, initial heading focus, Tab cycling, Escape,
+focus/scroll restoration, header X and footer Close. Editing supplies
+save actions and busy guards; information has only dismissal controls.
+The existing CSS animation and reduced-motion treatment apply to both.
+The Read only badge is no longer rendered. No dependency or database
+change is introduced. Requested status/is_hidden fields remain a proposal
+in ADR 0001 until the owner confirms their data/access semantics.
+
+## Information modal editing refinement - 2026-11-15
+
+ProjectInformation receives editable project values only for the verified
+administrator. Its footer switches the existing ProjectDialog from
+server-rendered information to the lazily loaded shared ProjectForm.
+Submission/busy status uses ProjectFormStatus and the same server action,
+validation and authorization as creation/editing elsewhere. Title changes
+refocus the dialog heading; closing resets the editor mode/status and
+restores focus to the information icon. There is no nested dialog. The
+icon uses an undecorated 44px button with an accessible name/focus ring.
+
+## Creation image staging and draft saves - 2026-11-15
+
+ProjectForm owns one ProjectImageStaging store for both rich-text fields.
+The store holds original File values, UUIDs, blob previews and known
+uploaded IDs, capped at 32 MiB of file bytes (8 MiB each). Preview URLs
+are revoked when insertion fails or the form unmounts. Undo retains files
+within that budget. The editor extension only resolves local URLs while
+rendering; documents serialize UUID references, never blob URLs.
+
+prepareCreationImages validates the complete submission before writing,
+removes unresolved local image nodes from draft snapshots and uploads
+active files sequentially through the shared uploadProjectImage client.
+saveProjectDraft authorizes/validates every call, forces private state,
+checks owned ready assets and returns a Zod-validated identity. Initial
+creation uses the form's stable UUID; a repeated insert only returns an
+untouched private draft, never bypassing subsequent edits. Later writes
+use updated_at and cannot change a published project through this action.
+Successful references are saved privately before normal saveProject
+applies requested visibility and redirects. Failed uploads attempt to
+persist successful references; retry reuses known asset IDs. A transport
+failure can leave an unreferenced private upload; cleanup remains pending.
+
+Form details are controlled so failed actions retain name, slug and
+repository alongside editor content. The retained-draft message explains
+what survives closing. Save/upload pending state blocks dismissal. No
+new schema, dependency or Storage permission is introduced.
+
+readImageForm sets the original multipart Content-Type on Response,
+rather than Blob.type: Blob lowercasing otherwise corrupts case-sensitive
+WebKit boundaries. Existing byte, pixel and normalization limits remain.
+
+
+## Image persistence browser tests - 2026-11-15
+
+Run `npm run test:images` against a running local production build and the
+existing local Supabase instance, configured as for `test:public` with
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and
+`KANBAN_TEST_URL` (default `http://127.0.0.1:3000`). Both origins must be
+HTTP loopback URLs. Docker and the existing authorized administrator are
+required. No users are created. Run integration suites sequentially and
+avoid editing application data while their preservation checks run.
+
+The suite uses an installed Chromium browser through inherited CDP pipes,
+with an isolated temporary profile and generated PNG fixture. It opens no
+remote-debugging TCP port and does not read DevToolsActivePort to construct a
+network destination. Static assertion expressions use Runtime.evaluate;
+parameterized functions use Runtime.callFunctionOn with arguments transmitted
+separately from function source. Selectors, interface messages, URLs and other
+test values must never be interpolated into executable JavaScript. Pointer
+helpers wait until their target is enabled, stable across animation frames and
+reachable before dispatching trusted input events. On Windows it
+defaults to Edge at `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe`.
+For another installation, set `KANBAN_TEST_BROWSER` to the absolute executable
+path. It does not download a browser or add a dependency. Browser protocol
+responses are validated with Zod. Shared local authentication/environment
+helpers also serve the existing project HTTP suite.
+
+The tests drive actual file inputs, Server Actions, image HTTP routes and
+Supabase Storage. They verify native file-picker cancellation, resource
+release on explicit dismissal, staged creation in both fields, private
+upload progress, persisted image decoding after reload, editing with a new
+image, anonymous published viewing, returning to private visibility, and a
+failed-upload retry without duplicate assets. The tests remove only their
+UUID-named project/asset/Storage fixtures, stop their own browser, and check
+that existing project/asset/column/task/user/administrator counts match.
+
+ProjectDialog ignores bubbling file-input `cancel` events. Only a cancel
+originating at the dialog is treated as dialog dismissal; explicit Close/X
+and Escape keep their existing busy guards. Selecting an unchanged file or
+cancelling its picker must preserve the open form and staged images.
+
+
+### Following an image upload through the form
+
+`ProjectForm` is shared between creation and editing. Its `useActionState`
+callback receives the outer form's FormData; rich-text JSON lives in the
+`description_content` and `objectives_content` hidden fields. File pickers
+have no form field name: images travel separately, never in the Server
+Action request carrying project details.
+
+1. `EditorImageUpload.upload()` validates the trimmed alternative text
+   (1-300 characters), selection and source size before attempting any upload.
+   An `invalidAlt` error returns immediately; it produces no network request.
+2. Creation stages the File under a local UUID in `ProjectImageStaging`,
+   creates a blob preview and calls the editor's `onInsert`. Storage is
+   untouched at this point. Editing instead calls `uploadProjectImage`
+   immediately with the existing project ID.
+3. `uploadProjectImage` posts multipart `project_id` and `file` to
+   `/project-images`. The browser sets Content-Type/boundary. Its JSON
+   result is validated with `imageUploadResultSchema`.
+4. The POST handler checks same-origin, administrator authorization,
+   multipart fields, source size and project existence. `readImageForm`
+   bounds streamed bytes; `normalizeProjectImage` validates the raster,
+   bounds pixels, strips metadata and produces WebP. The handler inserts
+   a pending `project_assets` row, uploads the object into private Storage
+   and marks the asset ready. Success is HTTP 201 with its UUID; failures
+   use 400/401/403/413/503 and a stable error code. Request-local cleanup
+   compensates failed persistence.
+5. `RichTextEditor.onInsert` validates the candidate document and appends
+   an image root block `{ type: "image", attrs: { assetId, alt } }`.
+   `onUpdate` serializes the editor JSON back into ProjectForm's hidden
+   field. In creation the ID is initially local; in editing it is the
+   uploaded asset UUID. No inserted node means the image is absent from
+   the next project save, even if an upload already succeeded.
+6. On creation save, `prepareCreationImages` validates all fields, creates
+   a private draft and uploads referenced staged files sequentially. It
+   replaces local IDs with returned asset IDs and saves private progress
+   before normal `saveProject` applies the selected publication. Editing
+   calls `saveProject` directly with the JSON's existing asset references.
+7. `persistProject` authorizes again, validates input, verifies every image
+   is ready and belongs to this project, then applies the optimistic
+   timestamp update. Successful save revalidates project pages and redirects.
+8. `RichTextContent` renders image references through `/project-images/:id`.
+   Administrator previews use `?preview=1`; public requests use a separate
+   anonymous client. Storage/database policies check access on delivery.
+
+Debug the first boundary whose expected evidence is missing:
+
+| Observation | Check |
+| --- | --- |
+| No POST after Insert while editing | Alternative text/file errors and whether the button/editor is enabled |
+| No POST after Insert while creating | Expected: staging is local until Create project |
+| POST fails | Response error code, authentication/origin, decoding/size limits or Storage failure |
+| POST returns 201 but no image node | `RichTextEditor.onInsert`, candidate document limits and command result |
+| Node exists but save fails | Server Action errors, ready/ownership validation, updated_at or slug conflict |
+| Saved node exists but image does not decode | GET response for its asset UUID and publication/preview authorization |
+
+`test:images` uses trusted pointer clicks and records only upload request IDs
+and HTTP status codes. It checks that invalid alt sends no POST, corrupt
+bytes return 400 without an inserted node/asset, and correction uploads and
+inserts on the next click. `tests/image-upload.test.ts` isolates the client
+transport with mocked fetch: multipart fields/bytes, browser-owned boundary,
+server error mapping and malformed/network responses. Actual persistence
+and rendering are covered by the HTTP/browser suites, not those mocks.
+
+
+### Preventing selected images from being lost on submit
+
+EditorImageUpload intercepts Enter in its alternative-text field to run the
+same insertion handler as its button, preventing the enclosing form's implicit
+submit. Composition commits and repeated keydown events do not start another
+upload. Blank/invalid alternative text keeps focus and reports aria-invalid
+with an associated error. The visible required label and aria-required apply
+to image insertion; native required is deliberately absent because the empty
+upload controls must not block saving a project after successful insertion.
+
+ProjectForm's submit capture checks both file inputs before dispatching its
+Server Action. A nonempty selection cancels submission, preserves form/file
+values, announces pendingImages and focuses that file. Discard selection clears
+only the local picker; it does not delete stored assets. Input changes,
+insertion updates and form button interactions clear a previous pending-image
+notice. A subsequent explicit save rechecks the actual file inputs.
+
+The uploader reports the selected filename, local insertion or completed
+upload separately. In creation the preview remains local until Create project;
+in editing upload precedes insertion and the project still needs saving.
+These controls change neither server authorization/validation nor Storage
+permissions. They prevent accidental data omission at the browser boundary.
+
+## Confirmed project follow-up boundary - 2026-11-20
+
+The owner verified the fixed image flow. This project increment implements
+lifecycle, mandatory cancellation reasons and a listed-but-inaccessible hidden
+flag. New and existing projects start in Active / in development. Projects cannot
+be deleted; cancellation preserves their data. Earlier deletion discussions in
+this document are historical and do not authorize a deletion action or cleanup.
+Column CRUD is excluded from the initial scope. The common predefined column set
+belongs to task CRUD; four columns is provisional and the final count/labels
+remain undecided.
+
+The owner confirmed the plan and instructed implementation. The local migrated
+schema now contains status/is_hidden/cancellation_reason; ADRs 0001/0002 record
+the schema, reason behavior and safe listing/detail split. Remote migrations,
+broad file cleanup and deployment remain outside this increment. No dependency
+or new Markdown file was added.
+
+### Lifecycle and hidden-project implementation
+
+ProjectForm submits explicit status, is_hidden and cancellation_reason values.
+parseProjectSubmission validates them with Zod before existing Server Actions
+persist changes with authorization and optimistic updated_at matching. Cancelled
+requires a trimmed, nonblank plain-text reason up to 2,000 Unicode code points.
+The shared form retains the reason in other states; the information modal shows
+it only for Cancelled. Publication, hiding and lifecycle remain independent.
+
+Anonymous listing queries call list_project_summaries and validate a fixed
+summary type. Hidden cards have name/status only and no link; unpublished rows
+never appear. Full project queries and descendant/asset RLS exclude hidden rows.
+Owner listing/detail queries remain separately authorized and permit management
+of every visibility combination. Metadata and ordinary image requests stay
+anonymous even when a request includes administrator cookies.
+
+Local migrations:
+
+- 20261120000100_project_lifecycle_and_hidden.sql adds fields, checks, listing RPC,
+  access policies and authenticated project DELETE denial.
+- 20261120000200_cancellation_reason_whitespace.sql aligns database whitespace
+  validation with JavaScript trim after its BOM-only regression failed.
+
+New management tests are tests/project-management.test.ts and
+tests/project-management-db.sql. The SQL suite runs in one rolled-back transaction
+with unique fixtures and the existing local administrator; it creates no users
+and is safe for the populated local instance. Run it with:
+
+~~~powershell
+Get-Content -Raw -Encoding UTF8 tests/project-management-db.sql | docker exec -i supabase_db_portfolio-kanban psql -U postgres -d postgres -X -v ON_ERROR_STOP=1
+~~~
+
+The existing HTTP and browser suites also exercise lifecycle, visibility and
+reason controls. Their local-only fixture cleanup requires the existing Docker
+PostgreSQL container because the application is no longer allowed to delete
+projects. Cleanup validates exact fixture UUIDs/slugs and removes only those
+projects after their exact test image objects are removed. The empty-database
+pgTAP suite's project-delete expectation was updated but that suite must still
+not run against a populated owner instance.

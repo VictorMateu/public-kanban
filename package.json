@@ -16,21 +16,22 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --test tests/*.test.ts",
-    "test:public": "node --test tests/*-http.test.mjs"
+    "test:public": "node --test --test-concurrency=1 tests/*-http.test.mjs tests/*-http.ts",
+    "test:images": "node --test --test-concurrency=1 tests/project-images-browser.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.119.0",
+    "@tiptap/pm": "3.34.0",
+    "@tiptap/react": "3.34.0",
+    "@tiptap/starter-kit": "3.34.0",
     "next": "16.4.6",
     "next-intl": "4.14.9",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "server-only": "0.0.1"
-  },
-  "overrides": {
-    "@typescript-eslint/typescript-estree": {
-      "minimatch": "11.0.1"
-    }
+    "server-only": "0.0.1",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
@@ -39,9 +40,14 @@
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.3",
-    "parse5": "8.1.1",
     "postcss": "8.5.32",
     "tailwindcss": "4.3.5",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "parse5": "8.1.1"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.1"
+    }
   }
 }

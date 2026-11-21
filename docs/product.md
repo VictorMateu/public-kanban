@@ -19,8 +19,9 @@ Language preference is stored in a cookie while URLs remain unchanged. Without a
 - Provide a project listing; more than one project may be active at a time.
 - Each project has its own independent board and tasks.
 - Initial supporting information includes a description, objectives and a repository link.
-- The owner can create, read, update, delete, publish and hide projects.
-- Visitors can access only published content. Unpublished projects remain private.
+- The owner can create, read, update, publish, unpublish and hide projects. Projects cannot be deleted; cancellation preserves the project and requires a reason.
+- Lifecycle states are Active / in development, Maintenance, Completed and Cancelled. New and existing projects start as Active / in development when the status field is introduced.
+- Visitors can see published projects in the listing. A published hidden project remains listed but its card does not open, and its detail URL and underlying content are unavailable to visitors. The administrator retains access. Unpublished projects remain private regardless of the hidden flag.
 
 The owner selected a presentation-only summary for the home page, with an introduction, project/task metrics and an activity area. The separate Projects route remains the project listing entry point. Navigation between project information and board views remains open.
 
@@ -34,12 +35,11 @@ The owner selected a presentation-only summary for the home page, with an introd
 
 ### Columns
 
-- Support creating, reading, updating, deleting and ordering columns.
-- Projects choose which columns they use; column definitions may be reused across projects.
-- When changing a definition used by multiple projects, offer a choice between applying the change only to the current project or propagating it to other projects using that definition.
-- No fixed set of default columns has been selected.
+- Column CRUD is excluded from the initial product scope. This supersedes the earlier reusable-definition and propagation requirements.
+- Projects will use the same predefined set of columns. Define and implement that set during the task CRUD increment, not during project management.
+- Four columns were mentioned as a provisional starting point; the owner explicitly left the final count, names and meanings undecided.
 
-Storage, propagation details and the behavior of deleting a populated or reused column need a proposal before implementation. Reusable definitions are not present in the existing schema.
+The existing database stores columns per project. No schema conversion, column creation, rename, deletion or task movement is authorized by this deferral. The task increment must propose how to populate the selected set for new and existing projects while preserving current data.
 
 ### Tasks
 
@@ -139,7 +139,8 @@ A future Settings entry has no current feature scope. Mobile settings access was
 
 ### Existing boundaries
 
-- Keep Next.js App Router, strict TypeScript, Supabase PostgreSQL/Auth and one authorized administrator.
+- Keep Next.js App Router, strict TypeScript without `any`, Supabase PostgreSQL/Auth and one authorized administrator.
+- Use Zod for new runtime input validation and infer types from its schemas.
 - Use Tailwind CSS; shadcn/ui is the preferred candidate for component tooling, with adoption and configuration still requiring confirmation.
 - Keep a single application without an independent backend or additional ORM.
 - Do not add public registration, multiuser collaboration, payments or microservices.
@@ -154,9 +155,9 @@ A future Settings entry has no current feature scope. Mobile settings access was
 | Project foundation | Phase 1 complete |
 | Supabase integration, Auth and initial RLS | Phase 2 validated locally; owner account manually authorized locally |
 | Public project listing and read-only boards | Listing available at `/projects`; existing board routes preserved; Overview has a responsive presentation-only summary; metrics and activity remain pending |
-| Administration | Sign-in, authorization and sign-out exist; administration CRUD is not implemented |
-| Project information | Existing schema has name, slug, description, publication, ordering and timestamps; objectives and repository link are not implemented |
-| Columns | Currently stored per project; reusable definitions and propagation choices are not implemented |
+| Administration | Shared views implement creation, reading, editing, publication, lifecycle, required cancellation reasons and listed-but-inaccessible hidden cards. Project DELETE is denied. Local validation passes; visual review of the new controls remains pending |
+| Project information | Description and objectives use optional rich-text JSONB; repository is optional HTTPS; editor, public rendering and private image upload/processing are implemented |
+| Columns | Stored per project today; column CRUD is excluded from the initial scope. A common predefined set is deferred to task CRUD; count, labels and meanings remain undecided |
 | Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
 | New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
 | Language | English instructions and documentation; existing interface localized in English, Spanish and Catalan, with cookie selection and English fallback |
@@ -172,16 +173,249 @@ Project 404 responses currently deliver localized content through the React payl
 1. Home-page content, navigation and project information/board entry points.
 2. Screen-level visual design beyond the selected cozy direction and palette, component-library adoption and the review method for each UI change.
 3. Code-structure adjustments justified by the selected screens and interactions.
-4. Reusable column modeling, propagation choices and deletion behavior.
+4. The common predefined column set (final count, labels and meanings), its initial population and data-preserving migration during task CRUD; column CRUD is excluded.
 5. Task completion semantics, automatic date behavior and reopening rules.
 6. Task ordering/movement interactions and deletion or archival behavior.
 7. Comment visibility options, editing and deletion.
 8. Presentation of project evolution, if brought into a later task's scope.
 
-## Current work boundary
+## Earlier work boundary - superseded by the project increments below
 
 Interface internationalization is implemented. The owner subsequently approved removing the `(public)` route group and sharing the root layout with the sign-in page, keeping existing URLs and authentication behavior. This structure decision does not accept the remaining phase 3 navigation or visual design. The language selector is a provisional native form; shadcn/ui adoption, administration CRUD, role-aware board queries and database changes remain outside this adjustment. The legacy `/admin` route now checks authorization and redirects an authorized owner to Overview; inline administration remains unimplemented. Further UI work requires its own confirmed scope.
 
 The name, base layout and typography are committed. Earlier iterations reviewed code structure and security, implemented the owner-selected sidebar and Projects page, enlarged the sidebar elements, adapted login/404/error presentation and removed the visible language selector. The owner authorized committing that work by responsibility and approved production-secure Auth cookies plus HTTPS Supabase origins with explicit local HTTP exceptions. The current 2026-11-14 scope restores the sidebar language selector, adds the verified administrator icon described above and adapts the mobile navigation to the owner-requested disclosure. Decorative media mounts only after the browser confirms a desktop viewport at least 64rem wide and 42rem high. No schema, dependency or administration-CRUD change is included. The owner subsequently approved implementing the responsive Overview presentation without data logic. The owner accepted this first responsive Overview presentation. Database definitions and query integration remain pending. The current account-control follow-up returns successful sign-in/sign-out to Overview and adds the administrator-only sign-out disclosure; its visual acceptance remains pending.
 
 Successful tests do not imply acceptance of provisional product or design decisions. Phase 3 remains pending acceptance until the owner reviews those decisions. Future phases, deployments and remote operations require explicit confirmation.
+
+### Project CRUD increment — scope confirmed on 2026-11-14
+
+The owner requested starting project CRUD interactively and confirmed that objectives and a repository link are included in this increment. Zod and strict typing without `any` have also been selected. The owner subsequently confirmed optional supporting fields, HTTPS repository URLs, Tiptap, JSONB content and private image delivery as recorded below. Shared-route administrator access was subsequently confirmed as recorded below. The 2026-11-20 decision below excludes project deletion and introduces cancellation with a required reason.
+### Rich project content — confirmed on 2026-11-14
+
+The owner selected a substantial visual rich-text editor for description and objectives, including image support. Tiptap, strict Zod-validated JSONB documents, Supabase Storage in a private bucket and controlled image delivery through Next.js are confirmed (ADRs 0001 and 0002). Optional description/objectives/repository values may be empty even when publishing. The repository is an optional HTTPS URL, without embedded credentials, at most 2,048 characters and not restricted to a provider. Supporting information follows project publication.
+
+The initial /admin editor prototype has been superseded by the owner-confirmed shared project views described below. Image processing dependencies, detailed upload limits and lifecycle behavior must remain explicit in implementation status. Deleting projects still needs a decision about the existing cascading deletion of columns and tasks.
+
+### Rich-text implementation status — 2026-11-14
+
+The shared Projects listing provides draft creation and project selection; the shared detail view provides editing and separate publish/hide actions. Deletion is not exposed. Public queries remain anonymous and session-independent; administrator previews use an explicit private image request. Session refresh covers /admin, /projects and /project-images, with independent server authorization for private operations.
+
+Supported documents include paragraphs, level 2/3 headings, bold/italic/strike/inline code, HTTPS links, nested lists, paragraph-only quotes, code blocks, dividers and stable image references. List items contain paragraphs and nested lists; images are top-level blocks. Limits are 50,000 Unicode code points, 200,000 serialized UTF-8 bytes, 2,000 typed nodes, structural depth 24 and 20 image nodes per field. Empty textual content is null unless it contains an image. Cards display a 240-character plain summary and metadata uses plain text. The original description column remains a derived plain-text compatibility field capped at its existing 5,000-character limit.
+
+A scoped system font is provisionally used inside rich content so real bold and italic faces are visible, without changing shell typography or adding fonts. The form presentation, toolbar and typography require owner visual review; its placement in shared project views is confirmed. No browser or responsive/keyboard interaction review has been performed yet.
+
+The additive local migration, controlled download route and Sharp upload processing are implemented and tested with real image bytes. Sharp 0.35.5 is an accepted direct server dependency. Uploads accept JPEG/PNG/WebP and normalize to WebP without metadata, within the source/output limits recorded below. File cleanup and project deletion remain pending decisions.
+
+## Shared project management follow-up - 2026-11-14
+
+The owner confirmed project creation from a button in Projects, opening the
+form in that view, and editing through the shared project detail view.
+/admin has no project-management role; it authenticates and redirects to
+Projects. This supersedes the earlier provisional /admin editor placement.
+Authenticated administrators see drafts and visibility labels in Projects,
+and an edit button on project details. Visitors retain published-only
+access. Task CRUD will follow the same shared-view direction but is not
+implemented by this project increment.
+
+Sharp 0.35.5 has been accepted and incorporated for image upload processing.
+The editor accepts JPEG, PNG and WebP after the first draft save; uploads
+are at most 8 MiB and 25 million pixels, single-frame, and normalized to
+WebP with no retained metadata, at most 4,096 pixels per side and 2 MiB.
+Images are inserted as root document blocks with required alternative text.
+Saving applies document references; removing a node does not delete the
+stored file. Successful uploads abandoned before saving remain private.
+No existing files are automatically deleted. Project deletion and its
+column/task/file behavior still require the owner's decision.
+
+The initial inline form presentation was provisional and is superseded by
+the owner-requested modal below. Toolbar, rich-text font and the modal's
+visual presentation still require owner review before acceptance.
+
+### Project session-control follow-up - 2026-11-15
+
+The owner requested removing the separate sign-out control from the
+Projects listing because main already manages session controls in the
+shared shell. This branch no longer adds a project-level sign-out button.
+The shared session controls remain owned by main; main has not been merged
+into this worktree as part of this focused correction.
+
+### Project form modal - 2026-11-15
+
+The owner requested a modal form, initially with a left-aligned creation
+button. The subsequent style revision below moves actions to the right.
+Creation and editing now use a native dialog from their existing shared
+project views. The form remains lazy-loaded, with internal scrolling on
+small screens and a visible close button. Its title receives initial
+focus; Tab and Shift+Tab stay within the modal, Escape closes it when idle,
+and closing restores focus to the opening button. Background interaction
+and scrolling are blocked while it is open. Saving, publishing and image
+uploads block dismissal. Closing an idle form discards unsaved edits as
+before; no autosave or file-cleanup policy is added. Modal width, spacing
+and styling are a working prototype awaiting owner visual review.
+
+### Cozy modal and editor styling refinement - 2026-11-15
+
+The owner requested right-aligned actions, a gentle modal entrance, an X
+in the header, a labelled close action at the bottom, and a review of the
+rich-text fields' appearance. Creation/editing buttons now align right.
+The creation button shares the introduction row from 1,024px viewport width;
+below that breakpoint it follows the description and fills the available
+content width, as subsequently requested by the owner.
+The modal keeps its X in the header and Close/Save actions together in a
+fixed footer, with only the form body scrolling. Publication, link and
+image-upload actions also align right where space allows.
+
+The working prototype uses a short fade and soft upward/scale entrance,
+a fading blurred backdrop, warm cream/peach surfaces and honey accents.
+Reduced-motion preferences disable the entrance and interaction transitions.
+Rich-text controls use compact grouped icons with translated accessible
+names and hover titles, 44px targets, visible pressed/focus states, softer
+field borders and a localized empty-writing hint. Supported formatting and
+content limits remain unchanged. Exact styling remains provisional for
+owner review; no dependency is added.
+
+
+### Project visibility and board-focused detail - 2026-11-15
+
+The owner requested a publication switch in creation and editing. Both
+modes use the same modal/form with optional initial project values. New
+forms default to private; saving explicitly applies the switch together
+with content in one project mutation. Editing a published project saves
+its content and selected visibility together. The previous separate
+Publish/Hide action is superseded. Saving redirects to the project board
+without automatically opening the editor. Explicit edit=1 links remain
+available for direct editor entry.
+
+The detail page now concentrates on the board with compact back/edit
+controls and an administrator visibility badge. Description, objectives
+and repository are retained as stored, editable content but have no
+visible detail section. The project name remains an accessible heading
+and public metadata continues to use published content. The future
+information presentation is undecided; this layout remains WIP.
+
+Images during creation are requested but their staging and failure
+lifecycle await the owner decision described in ADR 0002. The current
+upload still requires an existing project; no automatic draft-on-upload
+or temporary Storage policy has been introduced.
+
+
+### Project title, information and requested data fields - 2026-11-15
+
+The owner requested a visible title with an adjacent information icon.
+The icon opens description, objectives and repository in a cozy native
+dialog, including an empty-information state. The verified administrator
+has an Edit project button beside the title; visitors have no edit
+control. The fixed Read only badge is removed. The board remains the
+primary page content. Visual review remains pending.
+
+The owner also requested a lifecycle status with Active / in development,
+Maintenance, Completed and Cancelled, plus an independent hidden flag.
+These data fields are not implemented yet: hidden access semantics and
+the default status for existing projects require confirmation. ADR 0001
+contains the concrete migration/access proposal. The currently implemented
+visibility model still has only is_published. The creation-image staging
+proposal remains pending and is not included in this UI adjustment.
+
+### Information modal edit action refinement - 2026-11-15
+
+The owner moved Edit project into the information modal footer. The title
+row now contains the information icon and administrator visibility badge,
+without an external edit button. The icon has no border or background,
+while retaining a 44px target, accessible name and visible keyboard focus.
+For the verified administrator, Edit project switches the same dialog to
+the existing shared form; no second modal is stacked. Closing and reopening
+returns to information. Explicit edit=1 entry and save redirects remain.
+This supersedes the earlier placement beside the title. Visual acceptance
+is pending; lifecycle and hidden semantics remain awaiting confirmation.
+
+The owner requested larger Description and Objectives subheadings in the
+information modal. Both use 24px text at all viewport sizes, retaining the
+existing script typeface and heading semantics. Visual review is pending.
+
+### Images during project creation - 2026-11-15
+
+The owner accepted the creation-image staging proposal in ADR 0002.
+Creation now accepts images in description and objectives before the
+project exists. Files/previews remain local until Create, with 8 MiB per
+file and a 32 MiB shared file budget across both fields. Files retained
+for undo count against that session budget; decoded browser memory may
+be greater. Closing before saving creates no project or asset.
+
+Saving first creates a private draft, uploads referenced files one at a
+time and saves successful references privately before applying requested
+publication. A stable attempt ID prevents duplicate draft creation after
+a lost initial response. If an upload fails, the form retains text, files,
+the private draft and known successful asset IDs for retry on that same
+project. It also saves successful image references to the draft where
+possible. Closing after failure discards remaining local files but keeps
+the draft and saved images; the UI explains this. Saving finishes on the
+project route without automatically opening another modal.
+
+Existing project editing retains immediate uploads followed by explicit
+content saving. Storage remains private with controlled delivery, no new
+dependency or migration, and no automatic orphan cleanup. The multipart
+reader now preserves browser boundary case so ordinary browser uploads
+are parsed correctly. Visual acceptance remains pending.
+
+
+### Image selection and keyboard submission safety - 2026-11-20
+
+A reproduced form bug submitted the project when Enter was pressed in an
+image's alternative-text field, dropping the selected file before insertion.
+Enter now validates and inserts that image, keeping the project form open.
+Explicit project saving is blocked while either field still has a selected
+file awaiting insertion. The form explains the issue and focuses the pending
+file; the owner can insert it or discard the selection before saving.
+
+Provisional UI feedback distinguishes selection, local insertion awaiting
+creation, and completed upload awaiting content save. Alternative text is
+visibly required for insertion and validation errors are associated with its
+input. Creation's button says Insert image because upload still waits for
+Create project. The accepted staging, visibility and Storage policies are
+unchanged. The feedback presentation remains pending owner review.
+
+### Project management closure decisions - 2026-11-20
+
+The owner verified that image insertion/upload now works correctly. This accepts
+that reported image flow; it does not constitute acceptance of every prior UI
+or the whole project-management increment.
+
+The owner selected the following remaining project requirements:
+
+- Projects cannot be deleted. Cancelled is a lifecycle state and must have a
+  reason stored in an additional field. Preserve project content and descendants.
+- The lifecycle values are Active / in development, Maintenance, Completed and
+  Cancelled. Both existing and new projects start as Active / in development.
+- Hidden is independent of publication. Published hidden projects remain in
+  Projects, but visitors cannot open the card or access the project by URL.
+  Protect detail content, boards, images, metadata and direct data access;
+  the administrator must retain management access.
+- Column CRUD is excluded from the initial scope. During task CRUD, define a
+  common set used by all projects. Four is provisional; the final count, labels
+  and meanings still need the owner's decision.
+
+These requirements supersede the 2026-11-15 unlisted-hidden proposal and earlier
+project-deletion/reusable-column plans. The owner confirmed the concrete plan
+and instructed implementation. Cancellation uses plain text up to 2,000 Unicode
+code points, retained when leaving Cancelled and shown in project information
+only while cancelled. Lifecycle is independent of publication and hiding.
+
+The two local migrations are applied: lifecycle/hidden/reason fields, public
+summary RPC, content/descendant RLS and application DELETE denial, followed by a
+Unicode-whitespace constraint correction. Shared creation/editing controls and
+status/reason presentation are implemented in English, Spanish and Catalan.
+Published hidden cards expose name/status without navigation or content to
+visitors; owner cards retain management access. Database, HTTP and isolated
+browser tests pass. The new form/card presentation remains pending owner visual
+review; see ADRs 0001/0002 and validation.md. No task or column CRUD was added.
+
+
+### Local project-management acceptance - 2026-11-20
+
+The owner accepted the reviewed project-management increment after the main
+integration and local sign-in configuration fix, and requested publication of
+the branch as a PR to main. This accepts the shared creation/editing and
+information dialogs, rich-text/image flow, lifecycle/cancellation and hidden
+visibility behavior within this increment. Earlier WIP commits and review notes
+remain historical. Task/column CRUD, the common column definition, file cleanup
+policy and remote deployment remain outside this acceptance.

@@ -1,12 +1,14 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../supabase/database.types";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "../supabase/server";
 import { isSupabaseConfigured } from "../supabase/env";
 
-export async function getAdministrator() {
+export async function getAdministrator(client?: SupabaseClient<Database>) {
   if (!isSupabaseConfigured()) return null;
-  const supabase = await createServerSupabaseClient();
+  const supabase = client ?? await createServerSupabaseClient();
 
   // getUser verifies the session with Auth; getSession and metadata are not trusted.
   const { data: { user }, error } = await supabase.auth.getUser();

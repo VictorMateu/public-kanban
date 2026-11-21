@@ -56,7 +56,8 @@ function setup(options: { authorized?: boolean; loginError?: boolean; logoutErro
     },
   };
   const actions = {} as Actions;
-  compileFunction(compiled, ["exports", "require"])(actions, (name: string) => {
+  const loadActions = compileFunction(compiled, ["exports", "require"]) as (exports: Actions, require: (name: string) => unknown) => void;
+  loadActions(actions, (name) => {
     assert.ok(Object.hasOwn(adapters, name), `Unexpected action dependency: ${name}`);
     return adapters[name];
   });
