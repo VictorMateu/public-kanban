@@ -70,6 +70,20 @@ Open questions:
 
 The current information requirement is description, objectives and a repository link. Task types and derived views are outside the current implementation scope.
 
+## Task comments
+
+The owner could add comments to tasks and choose each comment's visibility.
+Public comments would remain subject to the visibility of the parent task and
+project. Editing, deletion, available visibility options, and presentation need
+definition before implementation. Comments are not part of the initial Kanban.
+
+## Customizable Kanban columns
+
+Explore whether the owner should be able to customize the current fixed stages.
+Decide whether configurations would be per project or shared, and how changing
+or removing a stage would affect existing tasks and Done's completion-date
+behavior. The initial Kanban keeps its four predefined stages.
+
 ## History and development updates
 
 Explore a combination of current-state Kanban, relevant change history and owner-written updates.

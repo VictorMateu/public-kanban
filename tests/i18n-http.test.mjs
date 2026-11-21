@@ -14,16 +14,6 @@ const catalogs = Object.fromEntries(["en", "es", "ca"].map(locale => [
   locale, JSON.parse(readFileSync(new URL(`../messages/${locale}.json`, import.meta.url), "utf8")),
 ]));
 
-function hasProjectNotFoundHeading(html, title) {
-  // Inspect the actual React heading, not merely a string in a message catalog.
-  const chunks = [...html.matchAll(/self\.__next_f\.push\((\[[\s\S]*?\])\)<\/script>/g)]
-    .map(match => JSON.parse(match[1]))
-    .filter(chunk => chunk[0] === 1 && typeof chunk[1] === "string")
-    .map(chunk => chunk[1]).join("");
-  const heading = chunks.match(/\["\$","h1",null,\{[^\n]*?"children":("(?:[^"\\]|\\.)*")/);
-  return heading !== null && JSON.parse(heading[1]) === title;
-}
-
 async function page(path, headers = {}) {
   const response = await fetch(new URL(path, origin), { headers, redirect: "manual" });
   const html = await response.text();
@@ -113,7 +103,13 @@ for (const locale of ["en", "es", "ca"]) {
 
     const missing = await page("/projects/InvalidSlug", headers);
     assert.equal(missing.response.status, 404);
-    assert.ok(hasProjectNotFoundHeading(missing.html, catalogs[locale].Project.notFoundTitle));
+    assertSharedLayout(missing.renderedHtml);
+    assert.match(missing.renderedHtml, new RegExp(`<html lang="${locale}"`));
+    const missingHeading = missing.renderedHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1];
+    assert.equal(htmlText(missingHeading ?? ""), catalogs[locale].Project.notFoundTitle);
+    const missingMain = missing.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? "";
+    assert.ok(htmlText(missingMain).includes(catalogs[locale].Project.notFoundDescription));
+    assert.match(missingMain, /<a\b[^>]*href="\/"/);
     const unknown = await page("/unknown-i18n-test-route", headers);
     assert.equal(unknown.response.status, 404);
     assertSharedLayout(unknown.renderedHtml);

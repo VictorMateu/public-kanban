@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAdministrator } from "../auth/server";
 import { createServerSupabaseClient } from "../supabase/server";
 
@@ -50,6 +51,22 @@ export async function getPublishedProjectBySlug(slug: string): Promise<Project |
     .from("projects").select("*").eq("is_published", true).eq("is_hidden", false).eq("slug", slug).maybeSingle();
   if (error) throw new Error("Unable to query the project.", { cause: error });
   return data ? readProject(data) : null;
+}
+
+export async function findProjectRoute(slug: string, session?: SupabaseClient<Database>): Promise<"found" | "missing" | "unavailable"> {
+  try {
+    const published = await createPublicSupabaseClient().from("projects").select("id")
+      .eq("is_published", true).eq("is_hidden", false).eq("slug", slug).maybeSingle();
+    if (published.error) return "unavailable";
+    if (published.data) return "found";
+    if (!session || !await getAdministrator(session)) return "missing";
+
+    const managed = await session.from("projects").select("id").eq("slug", slug).maybeSingle();
+    if (managed.error) return "unavailable";
+    return managed.data ? "found" : "missing";
+  } catch {
+    return "unavailable";
+  }
 }
 
 // Private queries authorize independently; public queries above always stay anonymous.

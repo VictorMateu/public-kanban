@@ -43,32 +43,23 @@ The owner selected a presentation-only summary for the home page, with an introd
 - Support creating, reading, editing, archiving and individually hiding tasks. Archiving removes a task from the board and preserves its data. The owner can open a read-only archive from the same project, ordered most recently archived first.
 - A task belongs directly to one project. The owner can select its state in the edit dialog, drag the card to a specific position in or across columns, or press Alt + Up or Alt + Down on the focused card to reorder it within its column.
 - Task content includes a title and an optional rich-text description with images. The form and detail dialog reuse the project editor and renderer. Existing plain-text descriptions are readable and editable.
-- Priority and an expected completion date are optional. Task comments remain a separate product decision.
+- Priority and an expected completion date are optional.
 - Entering Done records the actual completion date automatically. Leaving Done clears it. The date is read-only.
 - A hidden task inside a public project is visible only to the administrator. Task images follow the visibility of the referencing task and its project.
 - Successful task changes update the board without a confirmation banner. Failures remain visible.
 
-The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action sits directly below the cards and scrolls with the column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit or archive from the dialog. The detail groups status, priority, dates and visibility above the description. On touch screens, swiping scrolls and holding the card initiates dragging. Visual acceptance of the implementation awaits owner review.
+The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action sits directly below the cards and scrolls with the column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit or archive from the dialog. The detail groups status, priority, dates and visibility above the description. On touch screens, swiping scrolls and holding the card initiates dragging.
 
 The columns retain their own gradients and sit directly on the page background without a shared card.
 
-Below the provisional 83rem viewport breakpoint, the board stacks columns as independent disclosures. The first column with visible tasks opens initially, or the first column if all are empty. The page scrolls as a whole, and the owner can drag between open columns or use the task's status selector to move to a closed column. At wider widths all columns are visible side by side and their lists scroll independently. The compact layout and breakpoint await visual review.
+Below the 83rem viewport breakpoint, the board stacks columns as independent disclosures. The first column with visible tasks opens initially, or the first column if all are empty. The page scrolls as a whole, and the owner can drag between open columns or use the task's status selector to move to a closed column. At wider widths all columns are visible side by side and their lists scroll independently. The owner accepted the current board layout, including the compact layout and task controls, on 2026-11-21.
 
-### Comments
-
-- Only the owner can write comments.
-- The owner can choose each comment's visibility.
-- Public comments must respect the visibility of their parent task and project; hiding a parent must not expose its comments through another route or query.
-
-Editing, deletion and the presentation of comments still need definition. Comments are not implemented.
+The owner accepts the current 1,000-task read limit for now. The public board, owner board and archive each use a separate unpaginated query subject to the Data API's 1,000-row response cap. This does not prevent creating more tasks. A query that matches more than 1,000 tasks can return an incomplete list; revisit pagination if a project approaches that volume.
 
 ### Progress and evolution
 
 - A current-state Kanban is the minimum required experience.
-- A combination of history and owner-written updates may be explored.
-- History, milestones, versions and update messages do not yet have an approved implementation scope.
-
-Possible approaches are recorded in [Future ideas](ideas.md).
+- [Task comments](ideas.md#task-comments), [customizable columns](ideas.md#customizable-kanban-columns), and [history and development updates](ideas.md#history-and-development-updates) are possible future extensions, not requirements for the initial Kanban or approved implementation work.
 
 ## Technical and quality boundaries
 
@@ -162,23 +153,20 @@ A future Settings entry has no current feature scope. Mobile settings access was
 | Administration | Shared views implement creation, reading, editing, publication, lifecycle, required cancellation reasons and listed-but-inaccessible hidden cards. Project DELETE is denied. Local validation passes; visual review of the new controls remains pending |
 | Project information | Description and objectives use optional rich-text JSONB; repository is optional HTTPS; editor, public rendering and private image upload/processing are implemented |
 | Columns | Four predefined stages stored per project, with localized interface labels |
-| Tasks | Shared-board creation, editing, movement, ordering, hiding and archiving implemented locally. The existing `due_date` stores the expected completion date. The actual completion date follows the Done transition |
-| Comments | Visibility, editing and deletion remain outside the task-management increment |
+| Tasks | Shared-board creation, editing, movement, ordering, hiding and archiving implemented locally; the owner accepted the current visual presentation. The existing `due_date` stores the expected completion date. The actual completion date follows the Done transition |
 | Language | English instructions and documentation; existing interface localized in English, Spanish and Catalan, with cookie selection and English fallback |
-| Visual foundation | Cozy palette centralized in CSS; shared sidebar shell implemented provisionally for visual review; project and task component restyling remains pending |
+| Visual foundation | Cozy palette centralized in CSS; the Kanban presentation is accepted. The shared sidebar shell and other provisional treatments retain their separate review status |
 | Hosting and remote services | No deployments or remote Supabase connection |
 
 The schema is an implementation baseline that can be revised through confirmed, versioned migrations. Its existing fields and constraints do not settle open product decisions.
 
-Project 404 responses currently deliver localized content through the React payload but have an empty initial HTML body. Resolving that rendering limitation and verifying hydration remain pending; see [Validation](validation.md#project-404-rendering-limitation).
+Project 404 responses display the localized message in the initial HTML at the original URL. For visitors, nonexistent, draft and hidden projects share the same response. Owners retain access to their existing private projects.
 
 ## Decisions required before the relevant implementation
 
 1. Home-page content, navigation and project information/board entry points.
 2. Screen-level visual design beyond the selected cozy direction and palette, component-library adoption and the review method for each UI change.
 3. Code-structure adjustments justified by the selected screens and interactions.
-4. Comment visibility options, editing and deletion.
-5. Presentation of project evolution, if brought into a later task's scope.
 
 ## Earlier work boundary - superseded by the project increments below
 
