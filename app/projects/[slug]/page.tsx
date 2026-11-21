@@ -50,7 +50,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   if (!project) notFound();
   const cancelled = project.status === "cancelled";
   return (
-    <main id="main-content" data-project-board-page="" className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-5 pt-2 pb-5 sm:px-8 sm:pt-3 sm:pb-6">
+    <main id="main-content" data-project-board-page="" className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-5 pt-2 pb-5 sm:px-8 sm:pt-3 sm:pb-6 lg:pt-0">
       <div className="shrink-0">
         <Link href="/projects" className="inline-flex min-h-11 items-center gap-2 rounded-sm text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus">
           <span aria-hidden="true">←</span> {t("allProjects")}
@@ -81,7 +81,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         </div>}
       </div>
       {administrator && saved === ENABLED_QUERY_FLAG && <p role="status" className="sr-only">{form("saved")}</p>}
-      <section aria-labelledby="board-heading" className="mt-3 flex min-h-0 flex-1 flex-col border-t border-border/20 pt-3 sm:mt-4 sm:pt-4">
+      <section aria-labelledby="board-heading" className="mt-3 flex min-h-0 flex-1 flex-col border-t border-border/20 pt-3 sm:max-lg:mt-4 sm:max-lg:pt-4">
         <h2 id="board-heading" className="sr-only">{t("board")}</h2>
         <Suspense fallback={<p role="status" className="rounded-xl border border-slate-200 bg-white p-8 text-slate-600">{t("loading")}</p>}>
           <ProjectBoard projectId={project.id} administrator={administrator} />
