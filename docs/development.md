@@ -934,8 +934,22 @@ so those boards can be reviewed before retrying. Existing tasks in a legacy
 Done column retain an unknown actual completion date. New transitions use
 the UTC calendar date. Leaving Done clears it.
 
-The owner dialog edits content, expected completion date, visibility and
-stage. The task editor styles the native status and priority pickers where
+The owner dialog reuses the project rich-text editor and image upload for the
+optional task description. The detail dialog renders the document with the
+shared renderer. Existing plain descriptions remain readable and seed the
+editor. Rich descriptions use the same document and image limits, with the
+existing 10,000-character task text limit.
+
+The image upload accepts a task UUID scoped to its project. New task forms
+reserve that UUID when opened so images can be uploaded and previewed before
+saving. Successful uploads use the existing private bucket and carry the
+task scope in their asset row. The task mutation refuses references to
+unready images or images scoped to other tasks or projects. Public downloads
+require a ready, referenced image, an active visible task and a visible,
+published project. Owner previews authorize separately. Unreferenced uploads
+stay private and follow the pending file cleanup policy.
+
+The owner dialog also edits expected completion date, visibility and stage. The task editor styles the native status and priority pickers where
 customizable selects are supported. The due-date field allows direct entry
 and opens a themed calendar with arrow-key navigation, Page Up and Page Down
 for months, and Shift with those keys for years. The native date picker

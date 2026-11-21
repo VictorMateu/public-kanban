@@ -11,7 +11,7 @@ const priorities = {
   high: "bg-surface-secondary",
 };
 
-export type TaskPreview = Pick<Task, "id" | "column_id" | "title" | "description" | "priority" | "due_date" | "completed_on" | "is_hidden">;
+export type TaskPreview = Pick<Task, "id" | "column_id" | "title" | "description" | "description_content" | "priority" | "due_date" | "completed_on" | "is_hidden">;
 
 export type TaskCardControl = {
   onClick: MouseEventHandler<HTMLButtonElement>;

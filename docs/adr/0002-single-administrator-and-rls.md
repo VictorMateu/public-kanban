@@ -249,3 +249,20 @@ separate browser requests. The RPC instead applies each change atomically,
 checks the expected task version and refuses destinations outside the project.
 Direct application writes to tasks and columns are revoked. A trigger assigns
 the UTC completion date on entry to Done and clears it on reopening.
+
+
+### Task description images - 2026-11-21
+
+The project uses the same private bucket and controlled route for project
+and task images. Task uploads carry the project and the task UUID, which a
+new task form reserves before saving. The task mutation checks that each
+referenced asset is ready and belongs to that exact task and project. This
+permits pre-save owner preview while keeping pending references private.
+
+Public asset access requires that the current document reference the image.
+Task assets also require a visible, unarchived task within a published,
+visible project. The existing Storage policy follows asset RLS, so these
+checks also cover direct downloads. A separate bucket and asset table
+would provide storage isolation at the cost of duplicating the upload and
+access policy surface. Unreferenced assets remain private; automated file
+cleanup is a separate decision.

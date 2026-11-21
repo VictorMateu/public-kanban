@@ -1956,3 +1956,23 @@ row. The task detail retains the full labels.
   3134. It verified that the date fits within the card on a narrow viewport,
   retains its semantic label and appears in the detail dialog. Escape
   returns focus to the card.
+
+### Task description rich text and images
+
+- The local migration `20261121000300_task_rich_text` was applied to the
+  populated development instance. The migration CLI used a temporary copy
+  containing the exact `20261121000200_public_hidden_project_excerpts`
+  migration already present in the local database from another branch.
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed.
+- `tests/task-browser.ts` passed against the production build on port 3136.
+  It uploaded a real PNG during task creation, saved formatted text,
+  retained the image on editing, rejected a cross-task reference and
+  checked anonymous route and Storage access before saving, after hiding,
+  after showing and after archiving. The public detail still rendered
+  legacy plain text. The fixture population was restored after the test.
+- The project image browser cases passed for upload, editing, publication,
+  retries and keyboard insertion. The full suite failed its hidden-project
+  listing case. The local RPC from the other branch returns an excerpt for
+  a hidden project, while this checkout's public summary validator requires
+  that field to be null for hidden projects.

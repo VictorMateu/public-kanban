@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
+import sharp from "sharp";
 import { z } from "zod";
 import type { Database } from "../lib/supabase/database.types.ts";
 import { launchBrowser, waitFor } from "./support/image-browser.ts";
@@ -78,7 +79,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       "function(selector, fraction) {const r=document.querySelector(selector).getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height*fraction)};}",
       [selector, fraction],
     ));
-    async function create(title: string) {
+    async function create(title: string, fillDescription?: () => Promise<void>) {
       await waitFor(async () => {
         if (!await exists("[data-new-task]")) return false;
         if (!await exists(editable)) await click("[data-new-task]");
@@ -88,6 +89,8 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       assert.equal(await exists(dialog + " [data-archive-task]"), false);
       await click(editable);
       await send("Input.insertText", { text: title });
+      await fillDescription?.();
+      await has(confirm + ":enabled");
       await click(confirm);
       await waitFor(async () => !await exists(dialog), "save task and close editor");
       const response = await admin.from("tasks").select("id").eq("project_id", projectId).eq("title", title).single();
@@ -145,7 +148,58 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await waitFor(async () => await boardTop() > 0, "board is laid out below the project header");
     await evaluate("document.fonts.ready.then(() => true)");
     const initialBoardTop = await boardTop();
-    const alpha = await create("Task Alpha");
+    const descriptionEditor = `${dialog} [contenteditable=true][role=textbox]`;
+    const descriptionImage = `${dialog} .rich-text img[alt="Task diagram"]`;
+    const png = await sharp({ create: { width: 64, height: 32, channels: 3, background: "#cba56b" } }).png().toBuffer();
+    let imagePath = "";
+    const alpha = await create("Task Alpha", async () => {
+      await has(descriptionEditor);
+      await click(descriptionEditor);
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "b", code: "KeyB", modifiers: 2 });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "b", code: "KeyB", modifiers: 2 });
+      await send("Input.insertText", { text: "Task with a diagram" });
+      await has(descriptionEditor + " strong");
+      const file = `${dialog} input[type=file]`;
+      const uploadGroup = `${dialog} [role=group]:has(input[type=file])`;
+      await has(file + ":enabled");
+      await evaluate(`function(selector, png) {
+        const field = document.querySelector(selector);
+        const files = new DataTransfer();
+        files.items.add(new File([Uint8Array.from(atob(png), symbol => symbol.charCodeAt(0))], "diagram.png", { type: "image/png" }));
+        field.files = files.files;
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+      }`, [file, png.toString("base64")]);
+      await click(`${uploadGroup} input[aria-required=true]`);
+      await send("Input.insertText", { text: "Task diagram" });
+      await click(`${uploadGroup} button:first-of-type`);
+      await has(descriptionImage);
+      const preview = z.string().parse(await evaluate("function(selector) { return document.querySelector(selector).src; }", [descriptionImage]));
+      imagePath = new URL(preview).pathname;
+      assert.equal((await fetch(preview)).status, 404, "Anonymous requests cannot use the preview URL");
+      assert.equal(await evaluate("async function(src) { return (await fetch(src)).status; }", [preview]), 200);
+      assert.equal((await fetch(origin.origin + imagePath)).status, 404, "An upload is private before saving the task");
+    });
+    async function assertImageVisibility(visible: boolean) {
+      const response = await fetch(origin.origin + imagePath);
+      assert.equal(response.status, visible ? 200 : 404);
+      const assetId = imagePath.split("/").at(-1);
+      assert.ok(assetId);
+      const file = await anon.storage.from("project-images").download(`${projectId}/${assetId}.webp`);
+      assert.equal(file.error === null, visible);
+      if (visible) assert.equal(response.headers.get("content-type"), "image/webp");
+      await response.body?.cancel();
+    }
+    await assertImageVisibility(true);
+    const alphaDocument = (await task(alpha)).description_content;
+    assert.ok(alphaDocument);
+    assert.equal((await task(alpha)).description, "Task with a diagram");
+    assert.equal((await admin.rpc("mutate_task", { p_operation: "create", p_project: projectId, p_task: randomUUID(),
+      p_column: todo.id, p_title: "Image belongs to another task", p_hidden: false, p_description_content: alphaDocument })).data, "invalid");
+    await click(open(alpha));
+    await has(`${dialog} .rich-text strong`);
+    await has(descriptionImage);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "close formatted task detail");
     assert.equal(await boardTop(), initialBoardTop);
     const beta = await create("Task Beta");
     const addInProgress = column(progress.id) + " [data-new-task]";
@@ -274,6 +328,20 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     assert.equal((await task(alpha)).is_hidden, true);
     const publicTasks = await anon.from("tasks").select("id").eq("project_id", projectId);
     assert.deepEqual(publicTasks.data, [{ id: beta }]);
+    await assertImageVisibility(false);
+
+    await edit(alpha);
+    await has(descriptionEditor + " strong");
+    await has(descriptionImage);
+    await click(`${dialog} label:has(input[name=hidden])`);
+    await click(confirm);
+    await waitFor(async () => !await exists(dialog), "show the task again");
+    await assertImageVisibility(true);
+    await click(open(alpha));
+    await click(`${dialog} footer [data-archive-task]`);
+    await click(confirm);
+    await waitFor(async () => !await exists(card(alpha)), "archive the task with an image");
+    await assertImageVisibility(false);
 
     await click(open(beta));
     const archiveButton = `${dialog} footer [data-archive-task]`;
@@ -288,7 +356,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     for (const headers of [new Headers(), new Headers({ RSC: "1" })]) {
       const response = await fetch(origin.origin + pathname, { headers });
       assert.equal(response.status, 200);
-      assert.doesNotMatch(await response.text(), /Task Alpha|Task Beta|data-edit-task/);
+      assert.doesNotMatch(await response.text(), /Task Alpha|Task Beta|Task with a diagram|data-edit-task/);
     }
 
     // Only the list scrolls. A quick swipe starting on a card must scroll it without moving that task.
@@ -358,6 +426,12 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await assertBoardFitsViewport();
   } finally {
     await browser?.close();
+    const assets = await admin.from("project_assets").select("id, object_path").eq("project_id", projectId);
+    assert.equal(assets.error, null);
+    if (assets.data?.length) {
+      assert.equal((await admin.storage.from("project-images").remove(assets.data.map(({ object_path }) => object_path))).error, null);
+      assert.equal((await admin.from("project_assets").delete().eq("project_id", projectId).in("id", assets.data.map(({ id }) => id))).error, null);
+    }
     removeLocalProjectFixture(projectId, [slug]);
     assert.equal(population(), before);
   }

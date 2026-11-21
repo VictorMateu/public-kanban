@@ -58,6 +58,7 @@ export type Database = {
                     "object_path": string;
                     "project_id": string;
                     "status": string;
+                    "task_id": string | null;
                     "width": number;
                 };
                 ComputedFields: never;
@@ -70,6 +71,7 @@ export type Database = {
                     "object_path": string;
                     "project_id": string;
                     "status"?: string;
+                    "task_id"?: string | null;
                     "width": number;
                 };
                 Update: {
@@ -81,6 +83,7 @@ export type Database = {
                     "object_path"?: string;
                     "project_id"?: string;
                     "status"?: string;
+                    "task_id"?: string | null;
                     "width"?: number;
                 };
                 Relationships: [
@@ -157,6 +160,7 @@ export type Database = {
                     "completed_on": string | null;
                     "created_at": string;
                     "description": string | null;
+                    "description_content": Json | null;
                     "due_date": string | null;
                     "id": string;
                     "is_hidden": boolean;
@@ -173,6 +177,7 @@ export type Database = {
                     "completed_on"?: string | null;
                     "created_at"?: string;
                     "description"?: string | null;
+                    "description_content"?: Json | null;
                     "due_date"?: string | null;
                     "id"?: string;
                     "is_hidden"?: boolean;
@@ -188,6 +193,7 @@ export type Database = {
                     "completed_on"?: string | null;
                     "created_at"?: string;
                     "description"?: string | null;
+                    "description_content"?: Json | null;
                     "due_date"?: string | null;
                     "id"?: string;
                     "is_hidden"?: boolean;
@@ -251,6 +257,7 @@ export type Database = {
                     "p_before"?: string;
                     "p_column"?: string;
                     "p_description"?: string;
+                    "p_description_content"?: Json;
                     "p_due_date"?: string;
                     "p_hidden"?: boolean;
                     "p_operation": string;
