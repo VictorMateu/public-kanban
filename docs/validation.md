@@ -2176,3 +2176,18 @@ columns, tasks and images. No remote database migration was applied.
   hidden or archived records. Cleanup restored the original values.
 - The three locale checks also passed against a production server without
   Supabase configuration. Browser interaction and visual review remain pending.
+
+### Project 404 initial HTML fix
+
+On 2026-11-22, the production build returned a localized project heading and
+home link in initial HTML with HTTP 404, no redirect and no shared caching.
+This supersedes the earlier [rendering limitation](#project-404-rendering-limitation).
+The HTTP suite checked English, Spanish and Catalan; identical public handling
+of draft, hidden and missing projects; absence of private data in HTML and
+React Flight responses; rejection of a caller-supplied routing marker on a
+visible project; and continued owner access to private projects.
+
+Lint, TypeScript, 97 unit tests, and the production build passed. The HTTP
+suite against existing local Supabase passed 30 checks and skipped the
+empty-catalog check on the populated database. It used the existing owner and
+removed only its own fixtures. No migration or browser run was performed.

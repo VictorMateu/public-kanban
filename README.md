@@ -9,7 +9,7 @@ A public Kanban for exploring my projects, their progress and supporting informa
 - **Phase 3 visual prototype; acceptance pending:** a cozy full-viewport layout provides Overview/Projects navigation, a public project listing, a sidebar language selector, a collapsible mobile menu without decorative media and a desktop account disclosure and mobile-menu sign-out for the verified administrator session. Overview shows public project and task counts in a viewport-aware layout, with a public activity chart; login and 404 pages share the visual direction.
 - The interface supports English (default), Spanish and Catalan through `next-intl`, with a cookie preference and unchanged URLs.
 - Project management in the shared views supports creation, reading, editing, publication, lifecycle status and cancellation with a required reason. Published hidden projects remain listed while visitor detail/board/image access is blocked. Description and objectives support rich text and private, normalized images; the owner verified the image flow. Projects cannot be deleted. The owner accepted this project-management increment locally; file cleanup policy remains pending. See [current scope](docs/product.md). No remote services are connected or deployments made.
-- The shared board supports owner-only task creation, editing, hiding, archiving and ordering, with four predefined columns per project. Tasks can move by status selector or drag and drop. Task descriptions support rich text and images using the shared project editor. The owner can consult archived tasks from the board. Task controls await owner visual review.
+- The shared board supports owner-only task creation, editing, hiding, archiving and ordering, with four predefined columns per project. Tasks can move by status selector or drag and drop. Task descriptions support rich text and images using the shared project editor. The owner can consult archived tasks from the board. The owner accepted the board layout and task controls. The [project 404](docs/validation.md#project-404-initial-html-fix) renders its localized message without JavaScript.
 - Strict GitHub Actions CI and security workflows are configured on `main`, with required gates and the approved temporary parser-scoped minimatch override. Local validation of the integrated project branch passes; hosted validation of this branch remains pending. See the [recorded evidence](docs/validation.md).
 
 ## Architecture
@@ -73,7 +73,7 @@ Open [localhost:3000](http://localhost:3000). The Overview presentation works wi
 - [ADR 0003: Interface internationalization](docs/adr/0003-interface-internationalization.md)
 - [ADR 0004: Strict CI and security gates](docs/adr/0004-strict-ci-and-security.md)
 
-The owner accepted the first responsive Overview presentation and the local project-management increment. Overview data integration, the common task-column set and file cleanup policy remain pending decisions; authentication still needs verification in the eventual HTTPS deployment. Each implementation scope and phase transition requires the owner's confirmation.
+The owner accepted the first responsive Overview presentation, the local project-management increment and the current Kanban presentation. The file cleanup policy remains pending; authentication still needs verification in the eventual HTTPS deployment. Each implementation scope and phase transition requires the owner's confirmation.
 
 ## License
 

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Dancing_Script, Handlee } from "next/font/google";
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AppShell } from "../components/layout/app-shell";
+import { PROJECT_NOT_FOUND_HEADER } from "../lib/projects/urls";
 import "./globals.css";
 
 const dancingScript = Dancing_Script({
@@ -23,6 +25,10 @@ const handlee = Handlee({
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
   const common = await getTranslations("Common");
+  if ((await headers()).get(PROJECT_NOT_FOUND_HEADER) === "1") {
+    const project = await getTranslations("Project");
+    return { title: `${project("notFoundTitle")} | ${common("appName")}`, robots: { index: false, follow: false } };
+  }
   return { title: common("appName"), description: t("description") };
 }
 

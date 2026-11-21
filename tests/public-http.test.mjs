@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { htmlText, serverMarkup } from "./helpers/html.ts";
+import { PROJECT_NOT_FOUND_HEADER } from "../lib/projects/urls.ts";
 
 // Run only against local Next.js and Supabase; no passwords or user creation.
 const origin = new URL(process.env.KANBAN_TEST_URL ?? "http://127.0.0.1:3000");
@@ -165,14 +166,29 @@ test("public project pages use real local data and preserve existing users", asy
       assert.ok(result.html.includes('tabindex="0"') || result.html.includes('tabIndex="0"'), "Scrollable board should be keyboard-focusable");
     });
 
-    await context.test("returns the same not-found state for drafts and unknown slugs", async () => {
-      for (const slug of [`${marker}-draft`, `${marker}-missing`, "InvalidSlug"]) {
-        const result = await page(`/projects/${slug}`);
+    await context.test("serves the same project 404 in HTML and React for drafts, hidden projects and unknown slugs", async () => {
+      for (const slug of [`${marker}-draft`, `${marker}-hidden`, `${marker}-missing`, "InvalidSlug"]) {
+        const path = `/projects/${slug}`;
+        const result = await page(path);
         assert.equal(result.status, 404);
-        assert.ok(result.html.includes('children\\\":\\\"Project not found'), "The React response should contain the generic not-found heading");
-        assert.ok(!result.html.includes(names.draft), "Private project name must not appear in metadata or body");
-        assert.ok(!result.html.includes("Descripción privada de prueba"), "Private description must not appear in metadata or body");
+        assert.equal(result.headers.get("location"), null);
+        assert.match(result.headers.get("cache-control") ?? "", /no-store/);
+        assert.match(result.renderedHtml, /<h1\b[^>]*>Project not found<\/h1>/);
+        assert.match(result.renderedHtml, /<meta name="robots" content="noindex/);
+
+        const flight = await page(path, { RSC: "1" });
+        assert.equal(flight.status, 404);
+        assert.match(flight.headers.get("content-type") ?? "", /text\/x-component/);
+        assert.ok(flight.html.includes("Project not found"));
+        for (const body of [result.html, flight.html]) {
+          assert.ok(!body.includes(names.draft), "Private project name must not appear in metadata or body");
+          assert.ok(!body.includes("Descripción privada de prueba"));
+          assert.ok(!body.includes(`${marker}-private-board-task`));
+        }
       }
+      const published = await page(`/projects/${marker}-published`, { [PROJECT_NOT_FOUND_HEADER]: "1" });
+      assert.equal(published.status, 200, "A request header cannot turn a visible project into a 404");
+      assert.ok(published.renderedHtml.includes(names.published));
     });
 
     await context.test("ignores session cookies when reading public projects", async () => {

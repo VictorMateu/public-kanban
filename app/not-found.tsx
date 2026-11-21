@@ -1,8 +1,12 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { PageMessage } from "../components/shared/page-message";
+import { PROJECT_NOT_FOUND_HEADER } from "../lib/projects/urls";
+import ProjectNotFound from "./projects/[slug]/not-found";
 
 export default async function NotFound() {
+  if ((await headers()).get(PROJECT_NOT_FOUND_HEADER) === "1") return <ProjectNotFound />;
   const t = await getTranslations("NotFound");
   const common = await getTranslations("Common");
   return (

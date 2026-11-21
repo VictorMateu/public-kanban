@@ -278,7 +278,7 @@ The following describes the preserved phase 3 navigation and visual design, whic
 
 The routes use dynamically rendered Server Components. Queries use the anonymous client and do not persist responses in a shared cache. `React.cache` shares the project query between metadata and the page only within a request. Private and nonexistent projects return the same generic 404, including metadata.
 
-Observed limitation: project 404 responses currently deliver the localized heading in the React/RSC payload while their initial HTML body is empty. HTTP tests check the actual React heading and absence of private data; they do not establish a working project 404 without JavaScript. Unknown-route 404 pages do render localized HTML. Browser hydration and a solution for the project-404 initial response remain pending review; no framework upgrade or routing workaround has been introduced.
+Project 404s use the root not-found renderer to work around an empty initial HTML response from the segment-level boundary. For project-detail GET and HEAD requests, Proxy checks the slug and queries only the project ID: first anonymously, then through the existing administrator check if an authenticated session could see a private project. A confirmed miss is marked for a relative internal rewrite to an unmatched path, so Next.js returns HTTP 404 with the shared layout and localized project message at the original URL. The marker selects presentation only; Proxy strips an incoming marker on project requests. Page, action and database authorization remain in place. If visibility cannot be determined, the request proceeds to the existing page rather than reporting a false 404; without Supabase configuration, valid slugs retain the unavailable view. This adds an ID lookup on ordinary project navigations but avoids changing dependencies, status codes or access rules. Reassess the workaround when upgrading Next.js and keep the initial-HTML regression tests.
 
 Project and task loading uses `Suspense` in the retained listing and board. The board does not start streaming until publication has been checked, preserving the 404 response for unavailable projects. The owner selected a shared application layout without a public/private route group: `app/layout.tsx` now supplies the sidebar shell for all pages, including sign-in. The home and project routes live directly under `app/`, and `app/error.tsx` handles page errors within that layout. URLs remain unchanged. `app/admin/layout.tsx` retains only its metadata and search-indexing restrictions; `/admin` remains an authorization-checked compatibility route that redirects the owner to Overview; anonymous visitors still go to `/admin/login`.
 
@@ -455,8 +455,8 @@ The owner approved the transport-hardening proposals on 2026-11-08:
 The following findings remain outside the current implementation:
 
 - **Inline administration follow-up:** the confirmed project increment extends session refresh to `/admin/:path*`, `/projects/:path*` and `/project-images/:path*`, with separate authorization for owner queries/actions and session-independent public reads. Overview counts remain public even for a signed-in administrator.
-- **Response limits:** local Data API responses are capped at 1,000 rows, and the retained list queries do not paginate. A board exceeding that number of tasks can be incomplete. Propose pagination or an explicit product limit before that scale; use exact server counts for KPIs.
-- **Project 404:** the localized heading is still absent from initial HTML, although the response is HTTP 404 and contains the heading in RSC. Current HTTP checks do not prove visual hydration or no-JavaScript behavior. Do not claim that styling closes this limitation.
+- **Response limits:** local Data API responses are capped at 1,000 rows. The owner accepts this read limit for the unpaginated public board, owner board and archive for now. Each query has its own cap; writes do not enforce a task-count limit. Lists can be incomplete above the cap. Revisit pagination as a project approaches it. Overview KPIs use exact server counts.
+- **Project 404:** the original segment-level rendering issue is recorded in [Validation](validation.md#project-404-rendering-limitation); the current routing workaround is described above.
 
 Production dependency-audit and local read-only policy inspection evidence is recorded in [Validation](validation.md#structure-security-and-supporting-page-review--2026-11-08). The subsequent transport decision is recorded in [ADR 0002](adr/0002-single-administrator-and-rls.md#transport-hardening-update--2026-11-08). Further security, schema and dependency decisions still require owner confirmation.
 
@@ -986,8 +986,10 @@ The project detail fills the viewport and gives the board the space below
 the app navigation, project header and any board errors. Column headers
 stay visible while the task lists scroll vertically. The owner Add task
 action appears as a row below the tasks and scrolls with the list.
-The board scrolls horizontally on narrow viewports. The workspace keeps a
-24rem minimum height so very short windows can still reach the controls.
+Below 83rem, the board stacks columns as independent disclosures and the
+document scrolls vertically. The first column with visible tasks opens by
+default, or the first column if all are empty. At 83rem and wider, columns
+sit side by side with independently scrollable task lists.
 The space below the board uses 1.25rem on phones and 1.5rem on wider layouts.
 Successful task changes update the board without a confirmation banner.
 Add task opens the editor with that column selected. Completed cards carry
