@@ -929,7 +929,10 @@ not run against a populated owner instance.
 Project creation initializes five hidden starter tasks in the To do column in
 its database transaction. The versioned migration extends the project insert
 trigger. Later saves, draft retries and publication do not seed again. Starter
-rows use the same task fields and mutation RPC as manually created tasks.
+rows are marked with `tasks.is_system = TRUE` directly by the project insert
+trigger. The task mutation RPC rejects edits and archival for those rows and
+continues to support moving and reordering. Manual and pre-existing tasks have
+`is_system = FALSE` by default. Their origin is never inferred from content.
 Starter task descriptions use the editor's rich-text document format with headings
 and lists. The plain-text field mirrors the document for existing readers.
 The description migration applies to new inserts and preserves existing tasks.

@@ -164,6 +164,7 @@ export type Database = {
                     "due_date": string | null;
                     "id": string;
                     "is_hidden": boolean;
+                    "is_system": boolean;
                     "position": number;
                     "priority": string | null;
                     "project_id": string;
@@ -181,6 +182,7 @@ export type Database = {
                     "due_date"?: string | null;
                     "id"?: string;
                     "is_hidden"?: boolean;
+                    "is_system"?: boolean;
                     "position"?: number;
                     "priority"?: string | null;
                     "project_id": string;
@@ -197,6 +199,7 @@ export type Database = {
                     "due_date"?: string | null;
                     "id"?: string;
                     "is_hidden"?: boolean;
+                    "is_system"?: boolean;
                     "position"?: number;
                     "priority"?: string | null;
                     "project_id"?: string;

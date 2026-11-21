@@ -417,14 +417,15 @@ policy and remote deployment remain outside this acceptance.
 
 ### Starter tasks for new projects
 
-New projects start with five editable English tasks in To do. Each has a title
+New projects start with five English system tasks in To do. Each has a title
 and a description covering the first milestone, architecture and its boundaries,
 the technology stack, repository and local setup, or tests and continuous
 integration. Each description has an objective, actionable steps, and criteria
 for completion. The architecture task includes deciding between a modular
-monolith and separate services. The owner can publish the tasks individually by
-turning off their hidden setting, and can edit, move or archive them like other
-tasks. Existing projects receive no new tasks.
+monolith and separate services. System tasks carry a badge, start hidden, and
+can be moved or reordered. Their content and visibility are read-only, and they
+cannot be archived. Existing tasks keep their regular task behavior because
+the database previously stored no reliable record of how they were created.
 
 ### Responsive project catalog and covers
 

@@ -115,7 +115,7 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const draft = await admin.from("projects").select("*").eq("id", draftProjectId).single();
       assert.ok(draft.data); assert.equal(draft.data.is_published, false);
       assert.equal((await fetch(origin.origin + "/projects/" + draftFields.slug)).status, 404);
-      const starterTasks = () => admin.from("tasks").select("id, title, description, description_content, is_hidden")
+      const starterTasks = () => admin.from("tasks").select("id, title, description, description_content, is_hidden, is_system")
         .eq("project_id", draftProjectId).order("position");
       const initialTasks = await starterTasks();
       assert.equal(initialTasks.error, null);
@@ -129,6 +129,7 @@ test("rich project HTTP paths enforce image visibility without creating users", 
         assert.deepEqual(document.content.flatMap(block => block.type === "bulletList" ? [block.content.length] : []), [4, 2]);
         assert.equal(richTextToPlainText(document), task.description);
         assert.equal(task.is_hidden, true);
+        assert.equal(task.is_system, true);
       }
       const replay = await invoke("saveProjectDraft", draftFields);
       assert.ok((await replay.text()).includes('"success":true'));

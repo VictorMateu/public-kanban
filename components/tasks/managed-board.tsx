@@ -106,7 +106,7 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editor || content === null || uploading) return;
+    if (!editor || task?.is_system || content === null || uploading) return;
     const fields = new FormData(event.currentTarget);
     const values = {
       projectId, taskId: editor.id, columnId: String(fields.get("columnId")),
@@ -147,10 +147,10 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
     <ProjectDialog id="task-editor" open={editor !== null} busy={pending || uploading} triggerRef={trigger}
       title={confirmArchive ? t("archiveTask") : task?.title ?? t("newTask")}
       closeLabel={t("close")} onClose={() => setEditor(null)}
-      leadingAction={task && !confirmArchive && <button type="button" data-archive-task="" disabled={pending || uploading}
+      leadingAction={task && !task.is_system && !confirmArchive && <button type="button" data-archive-task="" disabled={pending || uploading}
         className="project-secondary-action me-auto"
         onClick={() => { setError(null); setConfirmArchive(true); setContent(null); }}>{t("archiveTask")}</button>}
-      actions={confirmArchive && task
+      actions={task?.is_system ? null : confirmArchive && task
         ? <button type="button" className="project-primary-action" disabled={pending} onClick={() => submit({
           operation: "archive", projectId, taskId: task.id, version: task.updated_at,
         })}>{t("archiveTask")}</button>

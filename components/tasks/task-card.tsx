@@ -11,7 +11,7 @@ const priorities = {
   high: "bg-surface-secondary",
 };
 
-export type TaskPreview = Pick<Task, "id" | "column_id" | "title" | "description" | "description_content" | "priority" | "due_date" | "completed_on" | "is_hidden">;
+export type TaskPreview = Pick<Task, "id" | "column_id" | "title" | "description" | "description_content" | "priority" | "due_date" | "completed_on" | "is_hidden" | "is_system">;
 
 export type TaskCardControl = {
   onClick: MouseEventHandler<HTMLButtonElement>;
@@ -33,7 +33,7 @@ export function TaskMetadata({ task, detail = false, status }: {
   const priority = task.priority ? { color: priorities[task.priority], label: t(task.priority) } : null;
   const dueDate = task.due_date ? formatDueDate(task.due_date, locale) : null;
   const completedOn = detail && task.completed_on ? formatDueDate(task.completed_on, locale) : null;
-  if (!(status || priority || dueDate || completedOn || task.is_hidden)) return null;
+  if (!(status || priority || dueDate || completedOn || task.is_hidden || task.is_system)) return null;
 
   const badgeClass = detail ? "px-2.5 py-0.5" : "px-2 leading-5";
   return <dl className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ${detail ? "" : "mt-1.5"}`}>
@@ -51,6 +51,10 @@ export function TaskMetadata({ task, detail = false, status }: {
         {!detail && <span aria-hidden="true" className={`${fieldStyles.calendarIcon} shrink-0`} />}
         <time className="wrap-anywhere" dateTime={task.due_date ?? undefined}>{dueDate}</time>
       </dd>
+    </div>}
+    {task.is_system && <div className={`rounded-full bg-surface-highlight ${badgeClass}`}>
+      <dt className="sr-only">{t("kind")}</dt>
+      <dd>{t("systemTask")}</dd>
     </div>}
     {task.is_hidden && <div className={`rounded-full bg-surface-warm ${badgeClass}`}>
       <dt className="sr-only">{t("visibility")}</dt>

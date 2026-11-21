@@ -77,6 +77,8 @@
     "noDescription": "Sin descripción.",
     "visibility": "Visibilidad",
     "hidden": "Oculta",
+    "kind": "Tipo",
+    "systemTask": "Tarea del sistema",
     "priority": "Prioridad",
     "priorityValue": "Prioridad {priority}",
     "low": "baja",

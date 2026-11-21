@@ -77,6 +77,8 @@
     "noDescription": "Sense descripció.",
     "visibility": "Visibilitat",
     "hidden": "Oculta",
+    "kind": "Tipus",
+    "systemTask": "Tasca del sistema",
     "priority": "Prioritat",
     "priorityValue": "Prioritat {priority}",
     "low": "baixa",
