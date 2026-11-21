@@ -33,7 +33,7 @@ function findTarget(board: HTMLElement, drag: Drag): DropTarget | null {
   const columnId = column?.dataset.boardColumn;
   if (!column || !columnId) return null;
   const list = column.querySelector<HTMLElement>("[data-column-scroll]");
-  if (!list) return null;
+  if (!list?.getClientRects().length) return null;
   const viewport = list.getBoundingClientRect();
   const y = Math.max(viewport.top, Math.min(drag.point.y, viewport.bottom));
   for (const card of list.querySelectorAll<HTMLElement>("[data-board-task]")) {
@@ -63,13 +63,18 @@ export function useTaskDrag(board: RefObject<HTMLDivElement | null>, onDrop: (ta
     if (!drag?.active || !scroll) return;
     const { x, y } = drag.point;
     const bounds = scroll.getBoundingClientRect();
-    if (y >= Math.max(0, bounds.top) && y <= Math.min(window.innerHeight, bounds.bottom)) {
-      scroll.scrollLeft += edgeSpeed(x, bounds.left, bounds.right);
-    }
-    const list = columnAt(scroll, drag.point)?.querySelector<HTMLElement>("[data-column-scroll]");
-    if (list) {
-      const viewport = list.getBoundingClientRect();
-      list.scrollTop += edgeSpeed(y, Math.max(0, viewport.top), Math.min(window.innerHeight, viewport.bottom));
+    if (getComputedStyle(scroll).overflowX === "auto") {
+      if (y >= Math.max(0, bounds.top) && y <= Math.min(window.innerHeight, bounds.bottom)) {
+        scroll.scrollLeft += edgeSpeed(x, bounds.left, bounds.right);
+      }
+      const list = columnAt(scroll, drag.point)?.querySelector<HTMLElement>("[data-column-scroll]");
+      if (list) {
+        const viewport = list.getBoundingClientRect();
+        list.scrollTop += edgeSpeed(y, Math.max(0, viewport.top), Math.min(window.innerHeight, viewport.bottom));
+      }
+    } else if (x >= bounds.left && x <= bounds.right && y >= 0 && y <= window.innerHeight) {
+      const speed = edgeSpeed(y, 0, window.innerHeight);
+      if (speed) window.scrollBy({ top: speed, behavior: "instant" });
     }
     const target = findTarget(scroll, drag);
     setPreview((previous) => previous && previous.point === drag.point

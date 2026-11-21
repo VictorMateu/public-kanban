@@ -50,6 +50,10 @@ The owner selected a presentation-only summary for the home page, with an introd
 
 The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action sits directly below the cards and scrolls with the column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit or archive from the dialog. The detail groups status, priority, dates and visibility above the description. On touch screens, swiping scrolls and holding the card initiates dragging. Visual acceptance of the implementation awaits owner review.
 
+The columns retain their own gradients and sit directly on the page background without a shared card.
+
+Below the provisional 83rem viewport breakpoint, the board stacks columns as independent disclosures. The first column with visible tasks opens initially, or the first column if all are empty. The page scrolls as a whole, and the owner can drag between open columns or use the task's status selector to move to a closed column. At wider widths all columns are visible side by side and their lists scroll independently. The compact layout and breakpoint await visual review.
+
 ### Comments
 
 - Only the owner can write comments.

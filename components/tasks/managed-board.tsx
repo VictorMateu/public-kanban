@@ -56,7 +56,12 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
     if (pending || !taskId) return;
     focusAfterMutation.current = null;
     const card = board.current?.querySelector<HTMLButtonElement>(`[data-open-task="${taskId}"]`);
-    (card ?? board.current?.querySelector<HTMLElement>("[data-task-scroll]"))?.focus();
+    if (card?.getClientRects().length) {
+      card.focus();
+    } else {
+      const toggle = card?.closest("[data-board-column]")?.querySelector<HTMLButtonElement>("[data-column-toggle]");
+      (toggle ?? board.current?.querySelector<HTMLElement>("[data-task-scroll]"))?.focus();
+    }
   }, [pending]);
 
   function submit(mutation: TaskMutation) {

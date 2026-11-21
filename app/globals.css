@@ -167,15 +167,16 @@
   }
 }
 
-/* The board gets the workspace remainder after the navigation and account controls. */
-.workspace-stage:has(> .workspace-content > [data-project-board-page]) {
-  block-size: 100dvh;
-  min-block-size: max(100svh, 24rem);
-  grid-template-rows: auto minmax(0, 1fr);
-}
+@media (width >= 83rem) {
+  .workspace-stage:has(> .workspace-content > [data-project-board-page]) {
+    block-size: 100dvh;
+    min-block-size: max(100svh, 24rem);
+    grid-template-rows: minmax(0, 1fr);
+  }
 
-.workspace-stage:has(> .workspace-content > [data-project-board-page]) > .workspace-content {
-  min-block-size: 0;
+  .workspace-stage:has(> .workspace-content > [data-project-board-page]) > .workspace-content {
+    min-block-size: 0;
+  }
 }
 
 .workspace-content {
@@ -188,10 +189,6 @@
   .workspace-stage {
     grid-template-columns: calc(var(--workspace-sidebar-width) + var(--workspace-inset)) minmax(0, 1fr);
     grid-template-rows: auto;
-  }
-
-  .workspace-stage:has(> .workspace-content > [data-project-board-page]) {
-    grid-template-rows: minmax(0, 1fr);
   }
 
   .workspace-sidebar {

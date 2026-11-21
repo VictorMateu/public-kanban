@@ -2135,6 +2135,19 @@ columns, tasks and images. No remote database migration was applied.
   An unchanged production build of `ea577bc` failed at the same assertion
   against the same local instance. Later task browser steps were not verified.
 
+### Compact project board disclosures
+
+- `npm run lint`, `npm run typecheck`, `npm test` (95 tests), and `npm run build`
+  passed.
+- `node --test tests/task-browser.ts` passed against the local production build
+  and existing Supabase administrator. Chromium verified side-by-side columns
+  with independent scrolling at 1920 × 1080 and 1440 × 540, and stacked columns
+  without horizontal overflow at 1280 × 540, 390 × 480, and 390 × 844.
+- The browser test also verified touch and keyboard toggles, page scrolling,
+  touch drag with edge scrolling, and focus on the closed destination after
+  changing a task's status. A visitor sees the first nonempty column expanded.
+  The test cleaned up its own fixture; visual acceptance is pending.
+
 ### Public Overview KPIs
 
 - `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and

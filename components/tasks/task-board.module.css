@@ -1,10 +1,4 @@
-﻿.board {
-  background:
-    radial-gradient(ellipse at 88% 0%, color-mix(in srgb, var(--palette-honey) 20%, transparent), transparent 65%),
-    color-mix(in srgb, var(--palette-cream) 58%, transparent);
-}
-
-.column {
+﻿.column {
   --lane-tone: var(--palette-peach);
   --lane-accent: color-mix(in srgb, var(--lane-tone) 72%, var(--palette-cream));
   display: flex;
@@ -33,10 +27,54 @@
 }
 
 .columnScroll {
-  flex: 1 1 0;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--palette-espresso) 50%, var(--lane-tone)) transparent;
-  overscroll-behavior-y: contain;
+}
+
+.columnToggle {
+  display: none;
+}
+
+@media (width < 83rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .columnHeader {
+    padding-inline-end: 2.75rem;
+  }
+
+  .columnToggle {
+    display: flex;
+    cursor: pointer;
+  }
+
+  .columnToggle[aria-expanded="true"] svg {
+    rotate: 180deg;
+  }
+
+  .column[data-expanded="false"] .columnScroll {
+    display: none;
+  }
+}
+
+@media (width >= 83rem) {
+  .boardScroll {
+    overflow: auto hidden;
+  }
+
+  .columns {
+    height: 100%;
+    grid-auto-columns: minmax(14rem, 1fr);
+    grid-auto-flow: column;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .columnScroll {
+    flex: 1 1 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
 }
 
 .cardControl:focus-visible {
