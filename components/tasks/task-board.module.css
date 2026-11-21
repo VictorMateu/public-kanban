@@ -1,27 +1,60 @@
+﻿.board {
+  background:
+    radial-gradient(ellipse at 88% 0%, color-mix(in srgb, var(--palette-honey) 20%, transparent), transparent 65%),
+    color-mix(in srgb, var(--palette-cream) 58%, transparent);
+}
+
 .column {
-  --lane-surface: var(--palette-peach-soft);
-  --lane-accent: var(--palette-peach);
-  border-color: color-mix(in srgb, var(--palette-espresso) 15%, transparent);
-  background: var(--lane-surface);
+  --lane-tone: var(--palette-peach);
+  --lane-accent: color-mix(in srgb, var(--lane-tone) 72%, var(--palette-cream));
+  display: flex;
+  flex-direction: column;
+  border-color: color-mix(in srgb, var(--palette-espresso) 13%, transparent);
+  background-color: color-mix(in srgb, var(--lane-tone) 38%, var(--palette-cream));
+  background-image: linear-gradient(155deg,
+    color-mix(in srgb, var(--lane-tone) 65%, var(--palette-cream)),
+    color-mix(in srgb, var(--lane-tone) 28%, var(--palette-cream)));
 }
 
 .column[data-stage="in_progress"] {
-  --lane-surface: color-mix(in srgb, var(--palette-honey) 27%, var(--palette-cream));
-  --lane-accent: color-mix(in srgb, var(--palette-honey) 60%, var(--palette-cream));
+  --lane-tone: var(--palette-honey);
 }
 
 .column[data-stage="review"] {
-  --lane-surface: color-mix(in srgb, var(--palette-cream) 96%, var(--palette-espresso));
-  --lane-accent: color-mix(in srgb, var(--palette-cream) 86%, var(--palette-espresso));
+  --lane-tone: color-mix(in srgb, var(--palette-cream) 84%, var(--palette-espresso));
 }
 
 .column[data-stage="done"] {
-  --lane-surface: var(--palette-sage-soft);
-  --lane-accent: var(--palette-sage);
+  --lane-tone: var(--palette-sage);
 }
 
-.columnHeader {
-  background: color-mix(in srgb, var(--lane-accent) 42%, transparent);
+.columnHeader, .columnFooter {
+  flex: none;
+}
+
+.columnFooter {
+  border-block-start: 1px solid color-mix(in srgb, var(--palette-espresso) 10%, transparent);
+  background: color-mix(in srgb, var(--palette-cream) 28%, transparent);
+}
+
+.columnScroll {
+  flex: 1 1 0;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--palette-espresso) 50%, var(--lane-tone)) transparent;
+  overscroll-behavior-y: contain;
+}
+
+.cardControl:focus-visible {
+  outline: 2px solid var(--palette-espresso);
+  outline-offset: -2px;
+}
+
+.cardControl[data-task-drag] {
+  -webkit-touch-callout: none;
+}
+
+.card:has(.cardControl:not(:disabled):hover) {
+  border-color: color-mix(in srgb, var(--palette-espresso) 46%, transparent);
 }
 
 .taskMark {

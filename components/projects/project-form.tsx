@@ -11,6 +11,7 @@ import { prepareCreationImages, type CreationImageSession } from "../../lib/proj
 import { uploadProjectImage } from "../../lib/projects/image-upload";
 import { projectStatusSchema, type ProjectIdentity } from "../../lib/projects/schemas";
 import type { Project } from "../../lib/projects/queries";
+import selectStyles from "../shared/select.module.css";
 
 type EditableProject = Pick<Project, "id" | "name" | "slug" | "repository_url" | "updated_at" | "is_published" | "status" | "is_hidden" | "cancellation_reason">;
 const control = "mt-2 min-h-11 w-full rounded-2xl border border-border/30 bg-surface px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
@@ -75,7 +76,7 @@ export function ProjectForm({ project, description, objectives, formId, onStatus
         <div><label htmlFor="repository-url">{t("repository")}</label><input id="repository-url" name="repository_url" type="url" maxLength={2048} value={details.repository} onChange={(event) => setDetails((previous) => ({ ...previous, repository: event.target.value }))} className={control} aria-invalid={Boolean(state.errors?.repository_url)} aria-describedby="repository-help" /><p id="repository-help" className="mt-1 text-sm">{t("repositoryHelp")}</p>{errorFor("repository_url")}</div>
         <div>
           <label htmlFor="project-status">{t("status")}</label>
-          <select id="project-status" name="status" value={status} onChange={(event) => setStatus(projectStatusSchema.parse(event.target.value))} className={control} aria-invalid={Boolean(state.errors?.status)} aria-describedby={state.errors?.status ? "status-error" : undefined}>
+          <select id="project-status" name="status" value={status} onChange={(event) => setStatus(projectStatusSchema.parse(event.target.value))} className={`${control} ${selectStyles.select}`} aria-invalid={Boolean(state.errors?.status)} aria-describedby={state.errors?.status ? "status-error" : undefined}>
             {projectStatusSchema.options.map((value) => <option key={value} value={value}>{t(value)}</option>)}
           </select>
           {errorFor("status")}

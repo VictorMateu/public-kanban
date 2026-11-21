@@ -1,9 +1,8 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { KanbanColumn } from "../../lib/columns/queries";
-import type { Task } from "../../lib/tasks/queries";
 import { EmptyState } from "../shared/empty-state";
-import { TaskCard } from "./task-card";
+import { TaskCard, type TaskCardControl, type TaskPreview } from "./task-card";
 import styles from "./task-board.module.css";
 
 const stageIcons = {
@@ -25,10 +24,11 @@ const stageIcons = {
 
 export type DropTarget = { columnId: string; beforeId: string | null };
 
-export function BoardColumns({ columns, tasks, renderActions, renderAddTask, dropTarget }: {
+export function BoardColumns<T extends TaskPreview>({ columns, tasks, cardControl, renderAddTask, dropTarget, draggedTaskId }: {
   columns: KanbanColumn[];
-  tasks: Task[];
-  renderActions?: (task: Task, index: number, columnTasks: Task[]) => ReactNode;
+  tasks: T[];
+  cardControl: (task: T) => TaskCardControl;
+  draggedTaskId?: string;
   renderAddTask?: (column: KanbanColumn) => ReactNode;
   dropTarget?: DropTarget | null;
 }) {
@@ -37,14 +37,14 @@ export function BoardColumns({ columns, tasks, renderActions, renderAddTask, dro
 
   return (
     <div data-task-scroll="" role="region" aria-label={t("region")} tabIndex={0}
-      className="overflow-x-auto rounded-2xl pb-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus">
-      <div className="grid auto-cols-[minmax(14rem,1fr)] grid-flow-col gap-4">
+      className={`${styles.board} min-h-0 flex-1 overflow-x-auto overflow-y-hidden rounded-3xl p-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus sm:p-3`}>
+      <div className="grid h-full auto-cols-[minmax(14rem,1fr)] grid-flow-col grid-rows-[minmax(0,1fr)] gap-4">
         {columns.map((column) => {
           const columnTasks = tasks.filter((task) => task.column_id === column.id);
           const active = dropTarget?.columnId === column.id;
           return (
             <section key={column.id} data-board-column={column.id} data-stage={column.stage} aria-labelledby={`column-${column.id}`}
-              className={`${styles.column} min-h-60 min-w-0 rounded-3xl border`}>
+              className={`${styles.column} min-w-0 rounded-3xl border`}>
               <header className={`${styles.columnHeader} flex min-h-14 items-center gap-2 rounded-t-3xl px-3 py-2`}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
                   aria-hidden="true" focusable="false" className="size-6 shrink-0">
@@ -56,21 +56,23 @@ export function BoardColumns({ columns, tasks, renderActions, renderAddTask, dro
                   <span aria-hidden="true">{columnTasks.length}</span>
                 </span>
               </header>
-              <div className="grid gap-2.5 p-2.5">
+              <div data-column-scroll="" role="region" aria-label={t("columnTasks", { column: t(column.stage) })}
+                tabIndex={0} className={`${styles.columnScroll} min-h-0 overflow-y-auto p-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus`}>
                 {columnTasks.length ? (
                   <ul className="space-y-2.5">
-                    {columnTasks.map((task, index) => (
+                    {columnTasks.map((task) => (
                       <li key={task.id} data-board-task={task.id}
+                        data-dragging={draggedTaskId === task.id || undefined}
                         data-drop-before={active && dropTarget.beforeId === task.id || undefined}
-                        className="relative data-[drop-before]:before:absolute data-[drop-before]:before:inset-x-0 data-[drop-before]:before:-top-1.5 data-[drop-before]:before:h-1 data-[drop-before]:before:rounded data-[drop-before]:before:bg-focus">
-                        <TaskCard task={task} completed={column.stage === "done"} actions={renderActions?.(task, index, columnTasks)} />
+                        className="relative data-[dragging]:opacity-45 data-[drop-before]:before:absolute data-[drop-before]:before:inset-x-0 data-[drop-before]:before:-top-1.5 data-[drop-before]:before:h-1 data-[drop-before]:before:rounded data-[drop-before]:before:bg-focus">
+                        <TaskCard task={task} completed={column.stage === "done"} control={cardControl(task)} />
                       </li>
                     ))}
                   </ul>
                 ) : <p className="rounded-xl border border-dashed border-border/25 bg-surface/55 px-3 py-2 text-sm">{t("emptyColumn")}</p>}
-                {active && dropTarget.beforeId === null && <div data-drop-end="" aria-hidden="true" className="h-1 rounded bg-focus" />}
-                {renderAddTask?.(column)}
+                {active && dropTarget.beforeId === null && <div data-drop-end="" aria-hidden="true" className="mt-1.5 h-1 rounded bg-focus" />}
               </div>
+              {renderAddTask && <footer className={`${styles.columnFooter} rounded-b-3xl p-2.5`}>{renderAddTask(column)}</footer>}
             </section>
           );
         })}

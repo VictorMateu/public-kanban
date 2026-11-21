@@ -885,6 +885,9 @@ or new Markdown file was added.
 ### Lifecycle and hidden-project implementation
 
 ProjectForm submits explicit status, is_hidden and cancellation_reason values.
+The project status, task status and task priority pickers share the same
+palette-based styling. Browsers without customizable select support use
+their native pickers.
 parseProjectSubmission validates them with Zod before existing Server Actions
 persist changes with authorization and optimistic updated_at matching. Cancelled
 requires a trimmed, nonblank plain-text reason up to 2,000 Unicode code points.
@@ -940,19 +943,33 @@ remains available where the themed calendar is unsupported. The editor uses
 the same switch styling as project visibility for Hide from visitors. The
 archive action is in the edit dialog footer and opens a confirmation view.
 
-The shared board uses cream task cards and four tones derived from the
+The shared board uses cream task cards and warm gradients derived from the
 existing palette: peach, honey, warm cream and sage. Column headings pair
 localized stage names with a checklist, hourglass, document inspection or
 circled check. The project detail header keeps the board close to the title
 and retains a separate accessible board heading.
-Each owner column offers Add task, which opens the editor with that column
-selected. Completed cards carry a visual check and a struck-through title.
-The board scrolls horizontally within its region on narrow viewports.
+The project detail fills the viewport and gives the board the space below
+the app navigation, project header and any board errors. Column headers and
+owner Add task footers stay visible while the task lists scroll vertically.
+The board scrolls horizontally on narrow viewports. The workspace keeps a
+24rem minimum height so very short windows can still reach the controls.
+The space below the board uses 1.25rem on phones and 1.5rem on wider layouts.
+Successful task changes update the board without a confirmation banner.
+Add task opens the editor with that column selected. Completed cards carry
+a visual check and a struck-through title.
 
-The board includes an independent drag handle and keyboard-operable
-up/down buttons. Selector moves append to the destination. Dragging uses the
-insertion marker and supports horizontal edge scrolling. Archiving preserves
-the row and excludes it from both boards.
+Activating a card opens the task detail dialog, with read-only content for
+visitors and separate edit, reorder and archive controls for the owner.
+Selector moves append to the destination. The whole card can be dragged
+with a mouse or after a 350 ms hold on touch screens. Dragging uses an
+insertion marker and scrolls near the vertical edges of the list and the
+horizontal edges of the board. Archiving preserves the row and excludes it
+from both boards.
+
+For owner review over local HTTP, use the development server and sign in at
+`/admin/login` on the same hostname used for the board. Browser cookies for
+`localhost` and `127.0.0.1` are separate. The visitor board supports opening
+task details. Creating and dragging tasks require an owner session.
 
 All task writes go through the owner-checked `mutate_task` RPC. It serializes
 each board's writes, checks task versions and applies ordering in one

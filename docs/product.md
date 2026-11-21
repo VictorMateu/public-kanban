@@ -41,13 +41,14 @@ The owner selected a presentation-only summary for the home page, with an introd
 ### Tasks
 
 - Support creating, reading, editing, archiving and individually hiding tasks. Archiving removes a task from the board and preserves its data.
-- A task belongs directly to one project. The owner can select its state in the edit dialog, drag it to a specific position in or across columns, or use the board's up and down controls to reorder it within a column.
+- A task belongs directly to one project. The owner can select its state in the edit dialog, drag the card to a specific position in or across columns, or use the up and down controls in the task detail to reorder it within its column.
 - Task content includes a title and description.
 - Priority and an expected completion date are optional. Task comments remain a separate product decision.
 - Entering Done records the actual completion date automatically. Leaving Done clears it. The date is read-only.
 - A hidden task inside a public project is visible only to the administrator.
+- Successful task changes update the board without a confirmation banner. Failures remain visible.
 
-The task-management controls use a working prototype. Visual acceptance awaits owner review.
+The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action stays at the bottom of each column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit, reorder or archive from the dialog. On touch screens, swiping scrolls and holding the card initiates dragging. Visual acceptance of the implementation awaits owner review.
 
 ### Comments
 

@@ -30,8 +30,8 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const columns = await admin.from("columns").select("id, stage").eq("project_id", projectId).order("position");
     assert.equal(columns.error, null);
     assert.deepEqual(columns.data?.map((column) => column.stage), ["todo", "in_progress", "review", "done"]);
-    const [todo, progress, , done] = columns.data ?? [];
-    assert.ok(todo && progress && done);
+    const [todo, progress, review, done] = columns.data ?? [];
+    assert.ok(todo && progress && review && done);
     const denied = await anon.rpc("mutate_task", { p_operation: "create", p_project: projectId, p_task: randomUUID(),
       p_column: todo.id, p_title: "Denied", p_hidden: false });
     assert.equal(denied.error?.code, "42501");
@@ -44,15 +44,35 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await setViewport(1600, 880, false);
     await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
     await send("Network.setCookies", { cookies: cookies.map(({ name, value }) => ({ name, value, url: origin.origin })) });
-    await send("Page.navigate", { url: origin.origin + pathname });
+    await send("Page.navigate", { url: origin.origin + pathname + "?edit=1" });
     const exists = async (selector: string) => z.boolean().parse(await evaluate("function(selector) { return Boolean(document.querySelector(selector)); }", [selector]));
     const has = (selector: string) => waitFor(() => exists(selector), selector);
     const card = (id: string) => `[data-board-task="${id}"]`;
     const column = (id: string) => `[data-board-column="${id}"]`;
-    const edit = (id: string) => `[data-edit-task="${id}"]`;
+    const open = (id: string) => `[data-open-task="${id}"]`;
     const dialog = "dialog:modal";
     const editable = `${dialog} [name=title]`;
+    async function edit(id: string) {
+      await click(open(id));
+      await click(dialog + " [data-edit-task]");
+      await has(editable + ":not(:disabled)");
+      assert.equal(await exists(dialog + " [data-edit-task]"), false);
+    }
     const confirm = `${dialog} .project-primary-action`;
+    async function assertBoardFitsViewport() {
+      const bounds = await evaluate(`(() => {
+        const root = document.documentElement;
+        const board = document.querySelector("[data-task-scroll]");
+        const boardBounds = board.getBoundingClientRect();
+        return {
+          pageFits: root.scrollHeight === root.clientHeight,
+          boardFits: boardBounds.top >= 0 && root.clientHeight - boardBounds.bottom >= 20,
+          footerFits: [...board.querySelectorAll("[data-new-task]")].every(button =>
+            button.getBoundingClientRect().bottom <= boardBounds.bottom),
+        };
+      })()`);
+      assert.deepEqual(bounds, { pageFits: true, boardFits: true, footerFits: true });
+    }
     const pointSchema = z.object({ x: z.number(), y: z.number() });
     const point = async (selector: string, fraction = 0.5) => pointSchema.parse(await evaluate(
       "function(selector, fraction) {const r=document.querySelector(selector).getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height*fraction)};}",
@@ -87,7 +107,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"nearest",inline:"nearest"}); }', [fromSelector]);
       const from = await point(fromSelector);
       const to = await point(destination, fraction);
-      assert.equal(await evaluate("function(selector, point) { return document.elementFromPoint(point.x, point.y) === document.querySelector(selector); }", [fromSelector, from]), true, "Drag handle is reachable");
+      assert.equal(await evaluate("function(selector, point) { return document.querySelector(selector).contains(document.elementFromPoint(point.x, point.y)); }", [fromSelector, from]), true, "Drag surface is reachable");
       assert.equal(await evaluate("function(selector, point) { return document.querySelector(selector).contains(document.elementFromPoint(point.x, point.y)); }", [destination, to]), true, "Drop destination is reachable");
       await send("Input.dispatchMouseEvent", { type: "mouseMoved", ...from });
       await send("Input.dispatchMouseEvent", { type: "mousePressed", ...from, button: "left", buttons: 1, clickCount: 1 });
@@ -103,11 +123,34 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const calendar = `${dialog} [popover]:popover-open`;
     const calendarTrigger = `${dialog} [popovertarget]`;
     const dateInput = `${dialog} [name=due_date]`;
+    const projectStatus = `${dialog} #project-status`;
+    await has(projectStatus);
+    await evaluate("function(selector) { document.querySelector(selector).focus(); }", [projectStatus]);
+    await press("Enter", 13);
+    await has(projectStatus + ":open");
+    assert.equal(await evaluate("function(selector) { return getComputedStyle(document.querySelector(selector), '::picker(select)').appearance; }", [projectStatus]), "base-select");
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(projectStatus + ":open"), "Escape closes the project status picker");
+    assert.equal(await exists(projectStatus + ":focus"), true);
+    await press("Enter", 13);
+    await has(projectStatus + ":open");
+    await press("End", 35);
+    await press("Enter", 13);
+    await has(`${dialog} textarea[name=cancellation_reason]:required`);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "dismiss project edit without saving");
+
+    await has("[data-new-task]");
+    const boardTop = async () => z.number().parse(await evaluate('document.querySelector("[data-task-scroll]").getBoundingClientRect().top'));
+    await waitFor(async () => await boardTop() > 0, "board is laid out below the project header");
+    await evaluate("document.fonts.ready.then(() => true)");
+    const initialBoardTop = await boardTop();
     const alpha = await create("Task Alpha");
+    assert.equal(await boardTop(), initialBoardTop);
     const beta = await create("Task Beta");
     const addInProgress = column(progress.id) + " [data-new-task]";
     assert.equal(await evaluate("document.querySelectorAll('[data-new-task]').length"), 4);
-    assert.equal(await evaluate("new Set([...document.querySelectorAll('[data-stage]')].map(column => getComputedStyle(column).backgroundColor)).size"), 4);
+    assert.equal(await evaluate("new Set([...document.querySelectorAll('[data-stage]')].map(column => getComputedStyle(column).backgroundImage)).size"), 4);
     await click(addInProgress);
     await has(editable);
     assert.equal(await evaluate("document.querySelector('dialog:modal [name=columnId]').value"), progress.id);
@@ -117,9 +160,15 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await drag(card(beta) + " [data-task-drag]", card(alpha), 0.2);
     await has(column(todo.id) + " li:first-child" + card(beta));
     assert.deepEqual([(await task(beta)).position, (await task(alpha)).position], [0, 1]);
+    await has("[data-new-task]:not(:disabled)");
+    assert.equal(await boardTop(), initialBoardTop);
 
     // Use the keyboard alternative for ordering and the editor for changing stages.
-    const moveDown = card(beta) + " [data-move-down]:not(:disabled)";
+    await waitFor(async () => !await exists(dialog), "drag does not open the task");
+    await evaluate("function(selector) { document.querySelector(selector).focus(); }", [open(beta)]);
+    await press("Enter", 13);
+    await has(dialog + " [data-edit-task]");
+    const moveDown = dialog + " [data-move-down]:not(:disabled)";
     await has(moveDown);
     await evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
     await evaluate("function(selector) { document.querySelector(selector).focus(); }", [moveDown]);
@@ -127,7 +176,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await send("Input.dispatchKeyEvent", { type: "keyDown", key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " });
     await send("Input.dispatchKeyEvent", { type: "keyUp", key: " ", code: "Space", windowsVirtualKeyCode: 32 });
     await has(column(todo.id) + " li:first-child" + card(alpha));
-    await click(edit(alpha));
+    await edit(alpha);
     const status = `${dialog} select[name=columnId]`;
     await click(status);
     await has(status + ":open");
@@ -153,14 +202,24 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const touchFrom = await point(card(alpha) + " [data-task-drag]");
     const touchTo = await evaluate('function(selector) { const r=document.querySelector(selector).getBoundingClientRect(); return {x:Math.round(r.left+45),y:Math.round(r.top+50)}; }', [column(progress.id)]);
     await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [touchFrom] });
+    await has("[data-dragging=true]");
     await send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [pointSchema.parse(touchTo)] });
+    await has(column(progress.id) + " [data-drop-end]");
     await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await has(column(progress.id) + " " + card(alpha));
     assert.equal((await task(alpha)).column_id, progress.id);
     assert.equal(await evaluate("document.documentElement.scrollWidth === document.documentElement.clientWidth"), true);
+    await waitFor(async () => !await exists(dialog), "touch drag does not open the task");
+    await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"nearest",inline:"center"}); }', [open(alpha)]);
+    const tapPoint = await point(open(alpha));
+    await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [tapPoint] });
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await has(dialog + " [data-edit-task]");
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "dismiss the detail opened with a tap");
     await send("Emulation.setTouchEmulationEnabled", { enabled: false });
 
-    await click(edit(alpha));
+    await edit(alpha);
     await click(calendarTrigger);
     await has(calendar + " [data-calendar-day]:focus");
     const focusedDay = () => evaluate("document.activeElement?.dataset.calendarDay ?? null");
@@ -190,7 +249,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await waitFor(async () => !await exists(dialog), "save expected completion date");
     assert.equal((await task(alpha)).due_date, selectedDate);
 
-    await click(edit(alpha));
+    await edit(alpha);
     const hiddenSwitch = `${dialog} input[name=hidden][role=switch]`;
     await evaluate("function(selector) { document.querySelector(selector).focus(); }", [hiddenSwitch]);
     await send("Input.dispatchKeyEvent", { type: "keyDown", key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " });
@@ -202,7 +261,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const publicTasks = await anon.from("tasks").select("id").eq("project_id", projectId);
     assert.deepEqual(publicTasks.data, [{ id: beta }]);
 
-    await click(edit(beta));
+    await click(open(beta));
     const archiveButton = `${dialog} footer [data-archive-task]`;
     await has(archiveButton);
     assert.equal(await evaluate("function(selector) { const footer = document.querySelector(selector); return footer.scrollWidth === footer.clientWidth; }", [`${dialog} footer`]), true);
@@ -217,6 +276,68 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       assert.equal(response.status, 200);
       assert.doesNotMatch(await response.text(), /Task Alpha|Task Beta|data-edit-task/);
     }
+
+    // Only the list scrolls. A quick swipe starting on a card must scroll it without moving that task.
+    const visibleTask = randomUUID();
+    for (let i = 0; i < 15; i += 1) {
+      assert.equal((await admin.rpc("mutate_task", { p_operation: "create", p_project: projectId,
+        p_task: i === 0 ? visibleTask : randomUUID(), p_column: review.id, p_title: "Review task " + i,
+        p_description: "Review task details " + i, p_hidden: i !== 0 })).data, "ok");
+    }
+    await send("Page.navigate", { url: origin.origin + pathname });
+    await has(open(visibleTask));
+    await waitFor(async () => await evaluate("document.readyState") === "complete", "owner board finishes loading");
+    await evaluate("document.fonts.ready.then(() => true)");
+    for (const [width, height, mobile] of [[1920, 1080, false], [1280, 540, false], [390, 480, true], [390, 844, true]] as const) {
+      await setViewport(width, height, mobile);
+      await assertBoardFitsViewport();
+    }
+    const reviewList = column(review.id) + " [data-column-scroll]";
+    const reviewFooter = column(review.id) + " [data-new-task]";
+    assert.equal(await evaluate("new Set([...document.querySelectorAll('[data-stage]')].map(column => column.getBoundingClientRect().height)).size"), 1);
+    await waitFor(async () => z.boolean().parse(await evaluate(
+      "function(selector) { const list = document.querySelector(selector); return list.scrollHeight > list.clientHeight; }", [reviewList],
+    )), "review tasks overflow their column");
+    await send("Emulation.setTouchEmulationEnabled", { enabled: true });
+    let swipeStart = { x: 0, y: 0 };
+    await waitFor(async () => {
+      await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"nearest",inline:"center",behavior:"instant"}); }', [open(visibleTask)]);
+      const center = await point(open(visibleTask));
+      swipeStart = { x: center.x, y: center.y + 15 };
+      return z.boolean().parse(await evaluate("function(selector, point) { return document.elementFromPoint(point.x, point.y) === document.querySelector(selector); }",
+        [open(visibleTask), swipeStart]));
+    }, "swipe starts on the task card");
+    const footer = await point(reviewFooter);
+    await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [swipeStart] });
+    for (const distance of [20, 44, 68]) {
+      await send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: swipeStart.x, y: swipeStart.y - distance }] });
+    }
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await waitFor(async () => z.boolean().parse(await evaluate("function(selector) { return document.querySelector(selector).scrollTop > 0; }", [reviewList])), "swipe scrolls the task list");
+    assert.deepEqual(await point(reviewFooter), footer);
+    assert.equal(await evaluate("window.scrollY"), 0);
+    await assertBoardFitsViewport();
+    assert.equal(await exists(dialog + ", [data-dragging=true]"), false);
+    assert.equal((await task(visibleTask)).position, 0);
+    await send("Emulation.setTouchEmulationEnabled", { enabled: false });
+
+    await send("Network.clearBrowserCookies");
+    await send("Page.navigate", { url: origin.origin + pathname });
+    await waitFor(async () => {
+      if (!await exists(open(visibleTask)) || await exists("[data-new-task]") || await evaluate("document.readyState") !== "complete") return false;
+      if (!await exists(dialog)) {
+        await evaluate("function(selector) { document.querySelector(selector).focus(); }", [open(visibleTask)]);
+        await press("Enter", 13);
+      }
+      return exists(dialog);
+    }, "public task detail opens after hydration");
+    assert.equal(await evaluate("document.querySelector('dialog:modal').textContent.includes('Review task details 0')"), true);
+    assert.equal(await evaluate("document.querySelectorAll('[data-open-task]').length"), 1);
+    assert.equal(await exists("[data-task-drag], [data-new-task], [data-edit-task], [data-archive-task]"), false);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "public task detail closes with Escape");
+    assert.equal(await exists(open(visibleTask) + ":focus"), true);
+    await assertBoardFitsViewport();
   } finally {
     await browser?.close();
     removeLocalProjectFixture(projectId, [slug]);

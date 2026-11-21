@@ -7,9 +7,10 @@ import type { KanbanColumn } from "../../lib/columns/queries";
 import type { Task } from "../../lib/tasks/queries";
 import { taskPrioritySchema, type TaskMutation, type TaskMutationResult } from "../../lib/tasks/schemas";
 import { ProjectDialog } from "../projects/project-dialog";
+import selectStyles from "../shared/select.module.css";
 import { BoardColumns, type DropTarget } from "./board-columns";
+import { TaskDetail } from "./task-detail";
 import { TaskDateField } from "./task-date-field";
-import styles from "./task-fields.module.css";
 import boardStyles from "./task-board.module.css";
 import { useTaskDrag } from "./use-task-drag";
 
@@ -23,21 +24,27 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
   const board = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
-  const [result, setResult] = useState<TaskMutationResult | null>(null);
+  const [error, setError] = useState<Exclude<TaskMutationResult, "ok"> | null>(null);
   const [pending, startTransition] = useTransition();
   const task = editor?.task;
+  const taskColumn = columns.find(({ id }) => id === task?.column_id);
+  const columnTasks = showDetail && task ? tasks.filter(({ column_id }) => column_id === task.column_id) : [];
+  const taskIndex = columnTasks.findIndex(({ id }) => id === task?.id);
+  const previousTask = columnTasks[taskIndex - 1];
 
   function submit(mutation: TaskMutation) {
     if (pending) return;
-    setResult(null);
+    setError(null);
     startTransition(async () => {
       const outcome = await mutateTask(mutation).catch(() => "unavailable" as const);
-      setResult(outcome);
-      if (outcome === "ok") {
+      if (outcome !== "ok") {
+        setError(outcome);
+      } else {
         setEditor(null);
         if (mutation.operation !== "create") requestAnimationFrame(() => {
-          const edit = board.current?.querySelector<HTMLButtonElement>(`[data-edit-task="${mutation.taskId}"]`);
+          const edit = board.current?.querySelector<HTMLButtonElement>(`[data-open-task="${mutation.taskId}"]`);
           (edit ?? board.current?.querySelector<HTMLElement>("[data-task-scroll]"))?.focus();
         });
       }
@@ -55,8 +62,9 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
 
   function open(button: HTMLButtonElement, columnId: string, item?: Task) {
     trigger.current = button;
-    setResult(null);
+    setError(null);
     setConfirmArchive(false);
+    setShowDetail(Boolean(item));
     setEditor({ id: item?.id ?? crypto.randomUUID(), columnId, task: item });
   }
 
@@ -70,58 +78,55 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
       priority: fields.get("priority"), due_date: String(fields.get("due_date")), hidden: fields.has("hidden"),
     };
     const priority = values.priority === "" ? "" as const : taskPrioritySchema.safeParse(values.priority).data;
-    if (priority === undefined) { setResult("invalid"); return; }
+    if (priority === undefined) { setError("invalid"); return; }
     const details = { ...values, priority };
     submit(task ? { ...details, operation: "edit", version: task.updated_at } : { ...details, operation: "create" });
   }
 
   const formId = "task-editor-form";
-  return <div ref={board}>
-    <p aria-live="polite" className="mb-3 text-sm empty:mb-0">{!editor && result ? t(result) : ""}</p>
-    <BoardColumns columns={columns} tasks={tasks} dropTarget={drag.preview?.target} renderAddTask={(column) => (
+  return <div ref={board} className="flex min-h-0 flex-1 flex-col">
+    {!editor && error && <p role="alert" className="mb-3 shrink-0 text-sm">{t(error)}</p>}
+    <BoardColumns columns={columns} tasks={tasks} dropTarget={drag.preview?.target} draggedTaskId={drag.preview?.task.id} renderAddTask={(column) => (
       <button type="button" data-new-task="" aria-haspopup="dialog" aria-label={t("addTaskInColumn", { column: boardText(column.stage) })}
         className={`${boardStyles.addTask} flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border px-2 py-1`}
         disabled={pending} onClick={(event) => open(event.currentTarget, column.id)}>
         <span aria-hidden="true" className="text-xl leading-none">+</span>{t("addTask")}
       </button>
-    )} renderActions={(item, index, columnTasks) => (
-      <div className="flex flex-wrap items-center justify-between gap-1">
-        {item.is_hidden && <span className="text-sm">{t("hiddenBadge")}</span>}
-        <div className="flex flex-wrap gap-1">
-          <button type="button" data-edit-task={item.id} className="editor-tool min-h-11 px-2"
-            aria-label={t("editNamed", { title: item.title })} aria-haspopup="dialog" disabled={pending}
-            onClick={(event) => open(event.currentTarget, item.column_id, item)}>{t("editTask")}</button>
-          <button type="button" data-move-up="" className="editor-tool min-h-11 min-w-11"
-            title={t("moveUp")} aria-label={t("moveUp")} disabled={pending || index === 0}
-            onClick={() => { const previous = columnTasks[index - 1]; if (previous) move(item, { columnId: item.column_id, beforeId: previous.id }); }}>
-            <span aria-hidden="true">↑</span>
-          </button>
-          <button type="button" data-move-down="" className="editor-tool min-h-11 min-w-11"
-            title={t("moveDown")} aria-label={t("moveDown")} disabled={pending || index === columnTasks.length - 1}
-            onClick={() => move(item, { columnId: item.column_id, beforeId: columnTasks[index + 2]?.id ?? null })}>
-            <span aria-hidden="true">↓</span>
-          </button>
-          <span data-task-drag="" className="editor-tool min-h-11 min-w-11 touch-none cursor-grab select-none active:cursor-grabbing"
-            title={t("dragTask", { title: item.title })} aria-hidden="true"
-            onPointerDown={(event) => { if (!pending) drag.start(event, item); }}>⠿</span>
-        </div>
-      </div>
-    )} />
+    )} cardControl={(item) => ({
+      disabled: pending,
+      onClick: (event) => {
+        if (!drag.suppressesClick(event)) open(event.currentTarget, item.column_id, item);
+      },
+      onPointerDown: (event) => drag.startPointer(event, item),
+      onTouchStart: (event) => drag.startTouch(event, item),
+    })} />
     {drag.preview && <div aria-hidden="true" className="pointer-events-none fixed z-50 max-w-48 rounded-lg border border-focus bg-surface p-2 text-sm shadow-panel wrap-anywhere"
       style={{ left: Math.min(drag.preview.point.x + 12, window.innerWidth - 200), top: drag.preview.point.y + 12 }}>{drag.preview.task.title}</div>}
 
     <ProjectDialog id="task-editor" open={editor !== null} busy={pending} triggerRef={trigger}
-      title={confirmArchive ? t("archiveTask") : task ? t("editTask") : t("newTask")}
+      title={confirmArchive ? t("archiveTask") : task?.title ?? t("newTask")}
       closeLabel={t("close")} onClose={() => setEditor(null)}
       leadingAction={task && !confirmArchive && <button type="button" data-archive-task="" disabled={pending}
         className="project-secondary-action me-auto"
-        onClick={() => { setResult(null); setConfirmArchive(true); }}>{t("archiveTask")}</button>}
+        onClick={() => { setError(null); setConfirmArchive(true); }}>{t("archiveTask")}</button>}
       actions={confirmArchive && task
         ? <button type="button" className="project-primary-action" disabled={pending} onClick={() => submit({
           operation: "archive", projectId, taskId: task.id, version: task.updated_at,
         })}>{t("archiveTask")}</button>
-        : <button type="submit" form={formId} className="project-primary-action" disabled={pending}>{t(pending ? "saving" : "save")}</button>}>
-      {confirmArchive ? <p>{t("archivePrompt", { title: task?.title ?? "" })}</p> : <form id={formId} key={editor?.id} onSubmit={save} className="space-y-4">
+        : showDetail
+          ? <button key="edit" type="button" data-edit-task="" className="project-primary-action" disabled={pending}
+            onClick={() => { setShowDetail(false); document.getElementById("task-editor-heading")?.focus(); }}>{t("editTask")}</button>
+          : <button key="save" type="submit" form={formId} className="project-primary-action" disabled={pending}>{t(pending ? "saving" : "save")}</button>}>
+      {confirmArchive ? <p>{t("archivePrompt", { title: task?.title ?? "" })}</p> : showDetail && task ? <>
+        <TaskDetail task={task} stage={taskColumn?.stage} />
+        {columnTasks.length > 1 && <fieldset disabled={pending} className="mt-4 flex flex-wrap gap-2">
+          <legend className="mb-1">{t("order")}</legend>
+          <button type="button" data-move-up="" className="project-secondary-action" disabled={!previousTask}
+            onClick={() => { if (previousTask) move(task, { columnId: task.column_id, beforeId: previousTask.id }); }}>{t("moveUp")}</button>
+          <button type="button" data-move-down="" className="project-secondary-action" disabled={taskIndex >= columnTasks.length - 1}
+            onClick={() => move(task, { columnId: task.column_id, beforeId: columnTasks[taskIndex + 2]?.id ?? null })}>{t("moveDown")}</button>
+        </fieldset>}
+      </> : <form id={formId} key={editor?.id} onSubmit={save} className="space-y-4">
         <fieldset disabled={pending} className="grid gap-4">
           <label className="grid gap-1">{t("title")}
             <input className={fieldClass} name="title" required defaultValue={task?.title} />
@@ -131,12 +136,12 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
           </label>
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="grid gap-1">{t("stage")}
-              <select className={`${fieldClass} ${styles.select}`} name="columnId" required defaultValue={editor?.columnId}>
+              <select className={`${fieldClass} ${selectStyles.select}`} name="columnId" required defaultValue={editor?.columnId}>
                 {columns.map((column) => <option key={column.id} value={column.id}>{boardText(column.stage)}</option>)}
               </select>
             </label>
             <label className="grid gap-1">{taskText("priority")}
-              <select className={`${fieldClass} ${styles.select}`} name="priority" defaultValue={task?.priority ?? ""}>
+              <select className={`${fieldClass} ${selectStyles.select}`} name="priority" defaultValue={task?.priority ?? ""}>
                 <option value="">{t("noPriority")}</option>
                 {taskPrioritySchema.options.map((priority) => <option key={priority} value={priority}>{taskText(priority)}</option>)}
               </select>
@@ -152,7 +157,7 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
           </label>
         </fieldset>
       </form>}
-      {editor && result && result !== "ok" && <p role="alert" className="mt-3">{t(result)}</p>}
+      {editor && error && <p role="alert" className="mt-3">{t(error)}</p>}
     </ProjectDialog>
   </div>;
 }

@@ -1880,3 +1880,56 @@ accessible board heading. Owner visual review is pending.
   and a labelled board heading. The board starts at 137 px and 211 px from
   the top, respectively. The narrow viewport scrolls within the board
   without widening the document.
+
+### Warm gradient board and task detail
+
+The owner selected the warm gradient proposal. The implementation uses
+the existing palette, equal-height columns, independently scrolling task
+lists and a fixed Add task footer in every owner column. Visual acceptance
+of the implementation is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against local Supabase and the
+  production server in isolated Chromium at 1600 px and 390 px. It verified
+  distinct column gradients, same-column and cross-column dragging,
+  keyboard reordering from inside the dialog, touch hold to drag, tap to
+  open, swipe to scroll only the task list, an unmoved Add task footer,
+  and a read-only visitor dialog with focus restored on Escape. The test
+  cleaned up its fixture and verified that database row counts returned
+  to their initial values.
+
+### Board-contained vertical scrolling
+
+The project board fills the workspace below the navigation and project
+header. Lists scroll vertically within their columns. Short windows
+below the workspace minimum can still scroll to reach the controls.
+Owner visual review is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- `node --test tests/task-browser.ts` passed in isolated Chromium. The
+  owner board with an overflowing list fit the viewport at 1920 × 1080,
+  1280 × 540, 390 × 480 and 390 × 844. The touch swipe moved the task list
+  and kept the document scroll offset and Add task footer unchanged.
+  The visitor board also fit at 390 × 844.
+
+The follow-up increased the bottom spacing to 1.25rem on phones and
+1.5rem on wider layouts. The browser suite passed against both development
+and production servers with a 20px minimum gap assertion. The owner
+session created tasks and reordered them by mouse and touch. The visitor
+session opened the task detail by keyboard and had no creation or drag
+controls. The local development login page returned HTTP 200.
+
+### Task confirmation and project status picker
+
+Successful task changes update the board without inserting a banner.
+The project status picker shares the task status and priority styles.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against the development server
+  in isolated Chromium. The board kept its top position after creating and
+  dragging a task. The project status picker opened using the keyboard,
+  Escape closed it and restored focus, and selecting Cancelled displayed
+  the required cancellation reason.
