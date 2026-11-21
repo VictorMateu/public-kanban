@@ -129,6 +129,35 @@
   margin-top: 0.5rem;
 }
 
+.activityBuckets {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.activityBucket {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.25rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.activityBars {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 0.125rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-border) 20%, transparent);
+}
+
+.activityBar {
+  width: min(27%, 1.25rem);
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+
 @container (width >= 20rem) and (width < 34rem) {
   .projectMetric,
   .taskMetric {

@@ -54,11 +54,17 @@ for (const locale of ["en", "es", "ca"]) {
     assert.ok(mainText.includes(catalogs[locale].Overview.title));
     assert.ok(mainText.includes(catalogs[locale].Overview.description));
     assert.match(main[1], /href="https:\/\/victormateulopez\.com"/);
-    assert.equal((main[1].match(/<dd\b/g) ?? []).length, 8, "The overview contains four project and four task metrics");
-    assert.equal((main[1].match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8, "Pending metrics must never be rendered as zero");
-    assert.ok(mainText.includes(catalogs[locale].Overview.pendingValue));
+    const values = [...main[1].matchAll(/<dd\b[^>]*>([\s\S]*?)<\/dd>/g)].map(([, value]) => htmlText(value));
+    assert.equal(values.length, 7, "The overview contains four project and three task metrics");
+    assert.ok(mainText.includes(catalogs[locale].Overview.publicBoardScope));
+    if (mainText.includes(catalogs[locale].Overview.metricsUnavailable)) {
+      assert.deepEqual(values, Array(7).fill(catalogs[locale].Overview.unavailableValue));
+      assert.ok(mainText.includes(catalogs[locale].Overview.activityUnavailable));
+    } else {
+      assert.ok(values.every(value => /^\p{Decimal_Number}[\p{Decimal_Number}.,\s]*$/u.test(value)));
+      assert.ok(main[1].includes(`aria-label="${catalogs[locale].Overview.activityLastMonths}"`));
+    }
     assert.ok(mainText.includes(catalogs[locale].Overview.taskActivityMonths));
-    assert.ok(mainText.includes(catalogs[locale].Overview.pending));
     assert.doesNotMatch(main[1], /<video\b|<canvas\b/, "The provisional overview must not render media or a simulated chart");
     assert.ok(home.renderedHtml.includes(`aria-label="${catalogs[locale].Common.mainContent}"`));
     assert.equal((home.renderedHtml.match(/<button\b[^>]*name="locale"/g) ?? []).length, 3);

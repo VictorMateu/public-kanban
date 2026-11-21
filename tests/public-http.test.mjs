@@ -38,11 +38,33 @@ async function page(path, headers = {}) {
   return { status: response.status, html, renderedHtml: serverMarkup(html), headers: response.headers };
 }
 
+function overviewCounts(result) {
+  assert.equal(result.status, 200);
+  const main = result.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1];
+  assert.ok(main);
+  const counts = [...main.matchAll(/<dd\b[^>]*>([\s\S]*?)<\/dd>/g)].map(([, value]) => {
+    const text = htmlText(value);
+    assert.match(text, /^\d[\d,]*$/);
+    return Number(text.replaceAll(",", ""));
+  });
+  assert.equal(counts.length, 7);
+  return counts;
+}
+
+function taskActivityCounts(result) {
+  const buckets = [...result.renderedHtml.matchAll(/<li\b[^>]*title="[^"]*Created: ([\d,]+) · Completed: ([\d,]+)"/gu)];
+  assert.equal(buckets.length, 6);
+  return buckets.map(([, created, completed]) => [created, completed].map(count => Number(count.replaceAll(",", ""))));
+}
+
 test("public project pages use real local data and preserve existing users", async (context) => {
   const before = population();
+  const initialOverview = await page("/");
+  const initialCounts = overviewCounts(initialOverview);
+  const initialActivity = taskActivityCounts(initialOverview);
   const marker = `public-check-${randomUUID()}`;
-  const projects = Array.from({ length: 3 }, () => randomUUID());
-  const tasks = Array.from({ length: 5 }, () => randomUUID());
+  const projects = Array.from({ length: 6 }, () => randomUUID());
+  const tasks = Array.from({ length: 9 }, () => randomUUID());
   const names = { published: `Published project ${marker}`, draft: `Unpublished project ${marker}`, noTasks: `Project without tasks ${marker}` };
   const firstTask = `${marker}-first-task`;
   const secondTask = `${marker}-second-task`;
@@ -56,6 +78,11 @@ test("public project pages use real local data and preserve existing users", asy
         ('${projects[0]}', '${marker}-published', ${literal(names.published)}, 'Descripción pública de prueba', TRUE, 1),
         ('${projects[1]}', '${marker}-draft', ${literal(names.draft)}, 'Descripción privada de prueba', FALSE, 0),
         ('${projects[2]}', '${marker}-no-tasks', ${literal(names.noTasks)}, NULL, TRUE, 3);
+      UPDATE public.projects SET status = 'maintenance' WHERE id = '${projects[2]}';
+      INSERT INTO public.projects (id, slug, name, status, cancellation_reason, is_published, is_hidden) VALUES
+        ('${projects[3]}', '${marker}-completed', '${marker}-completed', 'completed', NULL, TRUE, FALSE),
+        ('${projects[4]}', '${marker}-cancelled', '${marker}-cancelled', 'cancelled', 'Fixture cancellation', TRUE, FALSE),
+        ('${projects[5]}', '${marker}-hidden', '${marker}-hidden', 'development', NULL, TRUE, TRUE);
       INSERT INTO public.tasks (id, project_id, column_id, title, description, priority, due_date, position, is_hidden, archived_at)
       SELECT v.id::UUID, c.project_id, c.id, v.title, v.description, v.priority, v.due_date::DATE,
         v.position, v.hidden, CASE WHEN v.archived THEN now() END
@@ -64,21 +91,29 @@ test("public project pages use real local data and preserve existing users", asy
         ('${tasks[1]}', 'todo', ${literal(firstTask)}, 'Descripción de tarea', 'high', '2026-11-01', 0, FALSE, FALSE),
         ('${tasks[2]}', 'review', ${literal(escapedTitle)}, NULL, 'medium', NULL, 0, FALSE, FALSE),
         ('${tasks[3]}', 'todo', ${literal(privateTitle)}, NULL, NULL, NULL, 3, TRUE, FALSE),
-        ('${tasks[4]}', 'todo', ${literal(archivedTitle)}, NULL, NULL, NULL, 4, FALSE, TRUE)
+        ('${tasks[4]}', 'done', ${literal(archivedTitle)}, NULL, NULL, NULL, 4, FALSE, TRUE),
+        ('${tasks[5]}', 'done', '${marker}-done-task', NULL, NULL, NULL, 0, FALSE, FALSE),
+        ('${tasks[6]}', 'in_progress', '${marker}-in-progress-task', NULL, NULL, NULL, 0, FALSE, FALSE)
       ) v(id, stage, title, description, priority, due_date, position, hidden, archived)
-      JOIN public.columns c ON c.stage = v.stage AND c.project_id = '${projects[0]}';
+      JOIN public.columns c ON c.stage = v.stage
+        AND c.project_id = CASE WHEN v.stage = 'in_progress' THEN '${projects[3]}'::UUID ELSE '${projects[0]}'::UUID END;
+      INSERT INTO public.tasks (id, project_id, column_id, title, position)
+      SELECT CASE WHEN c.project_id = '${projects[1]}' THEN '${tasks[7]}'::UUID ELSE '${tasks[8]}'::UUID END,
+        c.project_id, c.id, '${marker}-private-board-task', 0
+      FROM public.columns c WHERE c.stage = 'done' AND c.project_id IN ('${projects[1]}', '${projects[5]}');
       COMMIT;`);
 
-    await context.test("keeps overview metrics pending without serializing project data", async () => {
+    await context.test("counts public board projects and visible tasks without serializing fixture content", async () => {
       const result = await page("/");
-      assert.equal(result.status, 200);
-      for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "The pending overview must not serialize project data");
+      const addedCounts = [4, 2, 1, 1, 5, 4, 1];
+      assert.deepEqual(overviewCounts(result), initialCounts.map((count, index) => count + addedCounts[index]));
+      assert.deepEqual(taskActivityCounts(result), initialActivity.map(([created, completed], index) =>
+        index === initialActivity.length - 1 ? [created + 5, completed + 1] : [created, completed]));
+      assert.ok(!result.html.includes(marker), "The overview must not serialize project or task data");
       const main = result.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1];
       assert.ok(main);
       assert.doesNotMatch(main, /<(form|input|select)\b/);
       assert.doesNotMatch(result.renderedHtml, /href="\/projects\//);
-      assert.equal((main.match(/<dd\b/g) ?? []).length, 8);
-      assert.equal((main.match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8);
     });
 
     await context.test("lists published projects in order on the projects route without exposing drafts", async () => {
@@ -180,6 +215,8 @@ test("public project pages use real local data and preserve existing users", asy
       const hidden = await page(`/projects/${marker}-published`);
       assert.equal(hidden.status, 404);
       assert.ok(!hidden.html.includes(names.published), "Previously published content must no longer be returned");
+      const remainingCounts = [3, 1, 1, 1, 1, 1, 0];
+      assert.deepEqual(overviewCounts(await page("/")), initialCounts.map((count, index) => count + remainingCounts[index]));
       sql(`UPDATE public.projects SET is_published = TRUE WHERE id = '${projects[0]}'::uuid;`);
       assert.equal((await page(`/projects/${marker}-published`)).status, 200);
     });
@@ -189,15 +226,11 @@ test("public project pages use real local data and preserve existing users", asy
     assert.equal(population(), before, "Fixtures should be removed and existing data and users preserved");
   }
 
-  await context.test("keeps overview metrics pending after fixture cleanup", async () => {
+  await context.test("returns to the original overview counts after fixture cleanup", async () => {
     const result = await page("/");
-    assert.equal(result.status, 200);
-    const main = result.renderedHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1];
-    assert.ok(main, "The overview should retain its main landmark after cleanup");
-    assert.equal((main.match(/<dd\b/g) ?? []).length, 8);
-    assert.equal((main.match(/<span aria-hidden="true">—<\/span>/g) ?? []).length, 8);
-    for (const name of Object.values(names)) assert.ok(!result.html.includes(name), "Cleaned fixtures must not appear in HTML or React payloads");
-    assert.ok(!result.renderedHtml.includes("No published projects yet"));
+    assert.deepEqual(overviewCounts(result), initialCounts);
+    assert.deepEqual(taskActivityCounts(result), initialActivity);
+    assert.ok(!result.html.includes(marker));
   });
 
   await context.test("shows the empty projects state after fixture cleanup", {

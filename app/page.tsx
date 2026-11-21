@@ -1,14 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import { OverviewActivity } from "../components/overview/overview-activity";
 import { OverviewMetrics } from "../components/overview/overview-metrics";
-import { getOverviewSummary } from "../lib/overview/queries";
+import { getOverviewActivity, getOverviewSummary } from "../lib/overview/queries";
 import styles from "../components/overview/overview.module.css";
 
 export default async function Home() {
-  const [t, common, summary] = await Promise.all([
+  const summaryQuery = getOverviewSummary();
+  const [t, common, summary, activity] = await Promise.all([
     getTranslations("Overview"),
     getTranslations("Common"),
-    getOverviewSummary(),
+    summaryQuery,
+    getOverviewActivity(summaryQuery),
   ]);
 
   return (
@@ -27,12 +29,12 @@ export default async function Home() {
           <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="size-4 shrink-0"><path d="M7 17 17 7M7 7h10v10" /></svg>
         </a>
       </header>
-      <OverviewMetrics entity="projects" />
+      <OverviewMetrics entity="projects" counts={summary?.projects} />
       <div className={styles.content}>
-        <OverviewMetrics entity="tasks" />
-        <OverviewActivity />
+        <OverviewMetrics entity="tasks" counts={summary?.tasks} />
+        <OverviewActivity data={activity} />
       </div>
-      <p role="status" className="text-sm text-foreground/75">{t(summary.status)}</p>
+      {!summary && <p role="status" className="text-sm text-foreground/75">{t("metricsUnavailable")}</p>}
     </main>
   );
 }

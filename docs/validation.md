@@ -2147,3 +2147,32 @@ columns, tasks and images. No remote database migration was applied.
   touch drag with edge scrolling, and focus on the closed destination after
   changing a task's status. A visitor sees the first nonempty column expanded.
   The test cleaned up its own fixture; visual acceptance is pending.
+
+### Public Overview KPIs
+
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed. The production HTTP suite passed 30 checks and
+  skipped the empty-catalog check against the populated local database.
+- HTTP fixtures verified all seven count deltas, including the exclusion
+  of draft and hidden projects, their tasks, and hidden and archived
+  tasks on public boards. The counts changed immediately after unpublishing,
+  returned to baseline after cleanup and matched with or without the
+  existing administrator session. The Overview did not serialize fixture
+  content. No migration or user creation was needed.
+- A second production server without Supabase configuration passed the
+  three locale checks, including the unavailable state instead of zero.
+  HTTP assertions cover markup and localized output, not browser layout,
+  keyboard interaction or visual acceptance.
+
+### Public Overview activity
+
+- `npm run lint`, `npm run typecheck`, `npm test` (93 tests) and
+  `npm run build` passed. Unit checks cover UTC windows, a leap-day
+  boundary, independent creation and completion dates, zeroes and
+  unavailable buckets.
+- The production HTTP suite passed 30 checks and skipped the empty catalog
+  check against the populated local database. The server-rendered task chart
+  showed the expected creation and completion deltas without counting
+  hidden or archived records. Cleanup restored the original values.
+- The three locale checks also passed against a production server without
+  Supabase configuration. Browser interaction and visual review remain pending.
