@@ -1867,3 +1867,16 @@ any column with that stage selected. Owner visual acceptance is pending.
   `list_project_summaries()` function returns a non-null description for a
   published hidden project, which the application rejects. Its definition
   differs from the versioned projection in this checkout.
+
+### Column icons and compact board header
+
+Column headings use four decorative status icons beside their localized
+labels. The project header uses less vertical space and retains an
+accessible board heading. Owner visual review is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), `npm run build`
+  and `node --test tests/task-browser.ts` passed.
+- Isolated Chromium checks found four distinct icons at 1600 px and 390 px
+  and a labelled board heading. The board starts at 137 px and 211 px from
+  the top, respectively. The narrow viewport scrolls within the board
+  without widening the document.

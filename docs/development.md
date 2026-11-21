@@ -941,7 +941,10 @@ the same switch styling as project visibility for Hide from visitors. The
 archive action is in the edit dialog footer and opens a confirmation view.
 
 The shared board uses cream task cards and four tones derived from the
-existing palette: peach, honey, warm cream and sage.
+existing palette: peach, honey, warm cream and sage. Column headings pair
+localized stage names with a checklist, hourglass, document inspection or
+circled check. The project detail header keeps the board close to the title
+and retains a separate accessible board heading.
 Each owner column offers Add task, which opens the editor with that column
 selected. Completed cards carry a visual check and a struck-through title.
 The board scrolls horizontally within its region on narrow viewports.

@@ -157,7 +157,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await has(column(progress.id) + " " + card(alpha));
     assert.equal((await task(alpha)).column_id, progress.id);
-    assert.equal(await evaluate("document.documentElement.scrollWidth === innerWidth"), true);
+    assert.equal(await evaluate("document.documentElement.scrollWidth === document.documentElement.clientWidth"), true);
     await send("Emulation.setTouchEmulationEnabled", { enabled: false });
 
     await click(edit(alpha));

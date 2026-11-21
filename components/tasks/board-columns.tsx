@@ -6,6 +6,23 @@ import { EmptyState } from "../shared/empty-state";
 import { TaskCard } from "./task-card";
 import styles from "./task-board.module.css";
 
+const stageIcons = {
+  todo: <>
+    <rect x="8" y="3" width="8" height="4" rx="1.4" />
+    <path d="M8 5H5.5A1.5 1.5 0 0 0 4 6.5v13A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 18.5 5H16M7.5 11h.1m3 0h6m-9.1 3.5h.1m3 0h6m-9.1 3.5h.1m3 0h6" />
+  </>,
+  in_progress: <path d="M5 3h14M5 21h14M7 3v3c0 3 2.5 4.5 5 6-2.5 1.5-5 3-5 6v3m10-18v3c0 3-2.5 4.5-5 6 2.5 1.5 5 3 5 6v3M8 19l4-3 4 3" />,
+  review: <>
+    <path d="M13 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6l4 4v2m-4-6v4h4M6.5 10.5h4m-4 4h2.5m-2.5 4h2" />
+    <circle cx="16" cy="15" r="4" />
+    <path d="m19 18 3 3" />
+  </>,
+  done: <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m8 12 2.7 2.7L16 9.5" />
+  </>,
+} satisfies Record<KanbanColumn["stage"], ReactNode>;
+
 export type DropTarget = { columnId: string; beforeId: string | null };
 
 export function BoardColumns({ columns, tasks, renderActions, renderAddTask, dropTarget }: {
@@ -29,9 +46,12 @@ export function BoardColumns({ columns, tasks, renderActions, renderAddTask, dro
             <section key={column.id} data-board-column={column.id} data-stage={column.stage} aria-labelledby={`column-${column.id}`}
               className={`${styles.column} min-h-60 min-w-0 rounded-3xl border`}>
               <header className={`${styles.columnHeader} flex min-h-14 items-center gap-2 rounded-t-3xl px-3 py-2`}>
-                <span aria-hidden="true" className={styles.stageMark} />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+                  aria-hidden="true" focusable="false" className="size-6 shrink-0">
+                  {stageIcons[column.stage]}
+                </svg>
                 <h3 id={`column-${column.id}`} className="min-w-0 grow text-2xl wrap-anywhere">{t(column.stage)}</h3>
-                <span className={`${styles.taskCount} grid min-w-7 shrink-0 place-items-center rounded-full px-1.5 text-sm`}>
+                <span className={`${styles.taskCount} relative grid min-w-7 shrink-0 place-items-center rounded-full px-1.5 text-sm`}>
                   <span className="sr-only">{t("taskCount", { count: columnTasks.length })}</span>
                   <span aria-hidden="true">{columnTasks.length}</span>
                 </span>
