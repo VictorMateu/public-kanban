@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 
-export function ProjectDialog({ id, title, closeLabel, open, busy = false, onClose, onAfterClose, triggerRef, children, actions }: {
+export function ProjectDialog({ id, title, closeLabel, open, busy = false, onClose, onAfterClose, triggerRef, children, leadingAction, actions }: {
   id: string; title: string; closeLabel: string; open: boolean; busy?: boolean;
   onClose: () => void; onAfterClose?: () => void;
-  triggerRef: RefObject<HTMLButtonElement | null>; children: ReactNode; actions?: ReactNode;
+  triggerRef: RefObject<HTMLButtonElement | null>; children: ReactNode; leadingAction?: ReactNode; actions?: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -29,7 +29,7 @@ export function ProjectDialog({ id, title, closeLabel, open, busy = false, onClo
   function handleDialogKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
     if (event.key !== "Tab" || event.defaultPrevented) return;
     const controls = [...event.currentTarget.querySelectorAll<HTMLElement>(
-      'button, a[href], input, select, textarea, [tabindex], [contenteditable="true"]',
+      'button, a[href], input, select, textarea, details > summary:first-child, [tabindex], [contenteditable="true"]',
     )].filter((element) => element.tabIndex >= 0 && !element.matches(":disabled") && element.getClientRects().length > 0);
     const first = controls[0];
     const last = controls.at(-1);
@@ -48,6 +48,9 @@ export function ProjectDialog({ id, title, closeLabel, open, busy = false, onClo
   return <dialog ref={dialog} id={id} aria-labelledby={id + "-heading"} onKeyDown={handleDialogKeyDown} closedby={busy ? "none" : "closerequest"}
     onKeyDownCapture={(event) => {
       if (event.key === "Escape") {
+        const modal = event.currentTarget;
+        if ((CSS.supports("selector(:popover-open)") && modal.querySelector(":popover-open")) ||
+            (CSS.supports("selector(select:open)") && modal.querySelector("select:open"))) return;
         event.preventDefault();
         event.stopPropagation();
         if (!busy) onClose();
@@ -75,10 +78,11 @@ export function ProjectDialog({ id, title, closeLabel, open, busy = false, onClo
         </button>
       </div>
       <div className="project-dialog-body min-h-0 min-w-0 overflow-y-auto overscroll-contain px-5 py-6 sm:px-7">{children}</div>
-      <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-border/15 bg-surface-warm/60 px-5 py-4 sm:px-7">
+      <footer className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-border/15 bg-surface-warm/60 px-5 py-4 sm:px-7">
+        {leadingAction}
         <button type="button" disabled={busy} onClick={onClose} className="project-secondary-action">{closeLabel}</button>
         {actions}
-      </div>
+      </footer>
     </>}
   </dialog>;
 }

@@ -64,6 +64,16 @@ export async function listManagedProjects(): Promise<ListedProject[]> {
   }));
 }
 
+export async function listCancellationReasons(projectIds: string[], administrator: boolean): Promise<Map<string, string>> {
+  if (projectIds.length === 0) return new Map();
+  const client = administrator ? await createServerSupabaseClient() : createPublicSupabaseClient();
+  if (administrator && !await getAdministrator(client)) throw new Error("Administrator authorization required.");
+  const query = client.from("projects").select("id, cancellation_reason").eq("status", "cancelled").in("id", projectIds);
+  const { data, error } = await (administrator ? query : query.eq("is_published", true).eq("is_hidden", false));
+  if (error) throw new Error("Unable to query project cancellation reasons.", { cause: error });
+  return new Map(data.flatMap(({ id, cancellation_reason }) => cancellation_reason ? [[id, cancellation_reason]] : []));
+}
+
 export async function getManagedProjectBySlug(slug: string): Promise<Project | null> {
   const client = await createServerSupabaseClient();
   if (!await getAdministrator(client)) throw new Error("Administrator authorization required.");

@@ -885,6 +885,9 @@ or new Markdown file was added.
 ### Lifecycle and hidden-project implementation
 
 ProjectForm submits explicit status, is_hidden and cancellation_reason values.
+The project status, task status and task priority pickers share the same
+palette-based styling. Browsers without customizable select support use
+their native pickers.
 parseProjectSubmission validates them with Zod before existing Server Actions
 persist changes with authorization and optimistic updated_at matching. Cancelled
 requires a trimmed, nonblank plain-text reason up to 2,000 Unicode code points.
@@ -921,3 +924,93 @@ projects. Cleanup validates exact fixture UUIDs/slugs and removes only those
 projects after their exact test image objects are removed. The empty-database
 pgTAP suite's project-delete expectation was updated but that suite must still
 not run against a populated owner instance.
+## Task management
+
+Project creation initializes five hidden starter tasks in the To do column in
+its database transaction. The versioned migration extends the project insert
+trigger. Later saves, draft retries and publication do not seed again. Starter
+rows use the same task fields and mutation RPC as manually created tasks. The
+plain-text descriptions load into the existing rich-text editor on edit.
+
+The shared board uses the four fixed stage keys `todo`, `in_progress`,
+`review` and `done`. A project insert initializes its columns in the same
+transaction. The migration updates recognized legacy stages in place and
+keeps each column and task UUID. It aborts on unknown or duplicate mappings,
+so those boards can be reviewed before retrying. Existing tasks in a legacy
+Done column retain an unknown actual completion date. New transitions use
+the UTC calendar date. Leaving Done clears it.
+
+The owner dialog reuses the project rich-text editor and image upload for the
+optional task description. The detail dialog renders the document with the
+shared renderer. Existing plain descriptions remain readable and seed the
+editor. Rich descriptions use the same document and image limits, with the
+existing 10,000-character task text limit.
+
+The image upload accepts a task UUID scoped to its project. New task forms
+reserve that UUID when opened so images can be uploaded and previewed before
+saving. Successful uploads use the existing private bucket and carry the
+task scope in their asset row. The task mutation refuses references to
+unready images or images scoped to other tasks or projects. Public downloads
+require a ready, referenced image, an active visible task and a visible,
+published project. Owner previews authorize separately. Unreferenced uploads
+stay private and follow the pending file cleanup policy.
+
+The owner dialog also edits expected completion date, visibility and stage. The task editor styles the native status and priority pickers where
+customizable selects are supported. The due-date field allows direct entry
+and opens a themed calendar with arrow-key navigation, Page Up and Page Down
+for months, and Shift with those keys for years. The native date picker
+remains available where the themed calendar is unsupported. The editor uses
+the same switch styling as project visibility for Hide from visitors. The
+archive action is in the edit dialog footer and opens a confirmation view.
+
+The shared board uses cream task cards and warm gradients derived from the
+existing palette: peach, honey, warm cream and sage. Column headings pair
+localized stage names with a checklist, hourglass, document inspection or
+circled check. The project detail header keeps the board close to the title
+and retains a separate accessible board heading.
+The project detail fills the viewport and gives the board the space below
+the app navigation, project header and any board errors. Column headers
+stay visible while the task lists scroll vertically. The owner Add task
+action appears as a row below the tasks and scrolls with the list.
+The board scrolls horizontally on narrow viewports. The workspace keeps a
+24rem minimum height so very short windows can still reach the controls.
+The space below the board uses 1.25rem on phones and 1.5rem on wider layouts.
+Successful task changes update the board without a confirmation banner.
+Add task opens the editor with that column selected. Completed cards carry
+a visual check and a struck-through title. Compact priority badges and
+calendar dates sit below the title and wrap to fit the card. The detail
+dialog shows the full metadata labels.
+
+Activating a card opens the task detail dialog, with read-only content for
+visitors and separate edit, reorder and archive controls for the owner.
+Selector moves append to the destination. The whole card can be dragged
+with a mouse or after a 350 ms hold on touch screens. Dragging uses an
+insertion marker and scrolls near the vertical edges of the list and the
+horizontal edges of the board. Archiving preserves the row and excludes it
+from both boards. The owner can open Archived tasks from the board header.
+The modal lists the latest archives first, shows the archive date in UTC
+and expands each task to its read-only detail with owner image previews.
+The archive query is scoped to the current project and checks owner access.
+
+Cancelled projects expose their saved reason from the status in the detail
+header and from a separate action in the catalog. The catalog batches a read
+of the reasons and follows the same visibility rules as the individual
+project pages. Public cards for hidden projects have no reason action.
+The catalog action opens a dialog and keeps the current URL.
+
+For owner review over local HTTP, use the development server and sign in at
+`/admin/login` on the same hostname used for the board. Browser cookies for
+`localhost` and `127.0.0.1` are separate. The visitor board supports opening
+task details. Creating and dragging tasks require an owner session.
+
+All task writes go through the owner-checked `mutate_task` RPC. It serializes
+each board's writes, checks task versions and applies ordering in one
+transaction. Direct column and task writes are denied to application roles.
+Public reads use the anonymous client and require a visible, published
+project and a visible, active task.
+
+Run `node --test tests/task-browser.ts` against a local production server and
+Supabase with the existing local administrator configured. The test uses an
+isolated Chromium profile and removes only its own project fixture. The
+populated-database-safe `tests/project-management-db.sql` also covers task
+authorization and lifecycle, rolling back its fixtures.

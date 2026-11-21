@@ -19,7 +19,7 @@ Language preference is stored in a cookie while URLs remain unchanged. Without a
 - Provide a project listing; more than one project may be active at a time.
 - Each project has its own independent board and tasks.
 - Initial supporting information includes a description, objectives and a repository link.
-- The owner can create, read, update, publish, unpublish and hide projects. Projects cannot be deleted; cancellation preserves the project and requires a reason.
+- The owner can create, read, update, publish, unpublish and hide projects. Projects cannot be deleted; cancellation preserves the project and requires a reason. A cancelled project exposes its reason through the status on its detail page and through a separate action in the catalog, subject to existing project visibility.
 - Lifecycle states are Active / in development, Maintenance, Completed and Cancelled. New and existing projects start as Active / in development when the status field is introduced.
 - Visitors can see published projects in the listing. A published hidden project remains listed with a plain-text description excerpt and a decorative cover. Its card is static, and its detail URL and board are unavailable to visitors. The administrator retains access. Unpublished projects remain private regardless of the hidden flag.
 
@@ -36,21 +36,19 @@ The owner selected a presentation-only summary for the home page, with an introd
 ### Columns
 
 - Column CRUD is excluded from the initial product scope. This supersedes the earlier reusable-definition and propagation requirements.
-- Projects will use the same predefined set of columns. Define and implement that set during the task CRUD increment, not during project management.
-- Four columns were mentioned as a provisional starting point; the owner explicitly left the final count, names and meanings undecided.
-
-The existing database stores columns per project. No schema conversion, column creation, rename, deletion or task movement is authorized by this deferral. The task increment must propose how to populate the selected set for new and existing projects while preserving current data.
+- Every project uses the predefined To do, In progress, In review and Done columns in that order. The task-management migration initializes the set for new and existing projects while preserving existing column and task IDs.
 
 ### Tasks
 
-- Support creating, reading, updating, deleting and individually hiding tasks.
-- Support ordering and moving tasks between columns to change their state.
-- Task content includes a title and description.
-- Priority, an expected completion date and comments are optional.
-- Record the actual completion date automatically when a task is marked completed. It must not be manually editable.
-- A hidden task inside a public project is visible only to the administrator.
+- Support creating, reading, editing, archiving and individually hiding tasks. Archiving removes a task from the board and preserves its data. The owner can open a read-only archive from the same project, ordered most recently archived first.
+- A task belongs directly to one project. The owner can select its state in the edit dialog, drag the card to a specific position in or across columns, or use the up and down controls in the task detail to reorder it within its column.
+- Task content includes a title and an optional rich-text description with images. The form and detail dialog reuse the project editor and renderer. Existing plain-text descriptions are readable and editable.
+- Priority and an expected completion date are optional. Task comments remain a separate product decision.
+- Entering Done records the actual completion date automatically. Leaving Done clears it. The date is read-only.
+- A hidden task inside a public project is visible only to the administrator. Task images follow the visibility of the referencing task and its project.
+- Successful task changes update the board without a confirmation banner. Failures remain visible.
 
-The completion rule, behavior when reopening a task and detailed interactions remain open. No drag-and-drop library or interaction pattern has been selected.
+The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action sits directly below the cards and scrolls with the column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit, reorder or archive from the dialog. On touch screens, swiping scrolls and holding the card initiates dragging. Visual acceptance of the implementation awaits owner review.
 
 ### Comments
 
@@ -157,9 +155,9 @@ A future Settings entry has no current feature scope. Mobile settings access was
 | Public project listing and read-only boards | Listing available at `/projects`; existing board routes preserved; Overview has a responsive presentation-only summary; metrics and activity remain pending |
 | Administration | Shared views implement creation, reading, editing, publication, lifecycle, required cancellation reasons and listed-but-inaccessible hidden cards. Project DELETE is denied. Local validation passes; visual review of the new controls remains pending |
 | Project information | Description and objectives use optional rich-text JSONB; repository is optional HTTPS; editor, public rendering and private image upload/processing are implemented |
-| Columns | Stored per project today; column CRUD is excluded from the initial scope. A common predefined set is deferred to task CRUD; count, labels and meanings remain undecided |
-| Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
-| New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
+| Columns | Four predefined stages stored per project, with localized interface labels |
+| Tasks | Shared-board creation, editing, movement, ordering, hiding and archiving implemented locally. The existing `due_date` stores the expected completion date. The actual completion date follows the Done transition |
+| Comments | Visibility, editing and deletion remain outside the task-management increment |
 | Language | English instructions and documentation; existing interface localized in English, Spanish and Catalan, with cookie selection and English fallback |
 | Visual foundation | Cozy palette centralized in CSS; shared sidebar shell implemented provisionally for visual review; project and task component restyling remains pending |
 | Hosting and remote services | No deployments or remote Supabase connection |
@@ -173,11 +171,8 @@ Project 404 responses currently deliver localized content through the React payl
 1. Home-page content, navigation and project information/board entry points.
 2. Screen-level visual design beyond the selected cozy direction and palette, component-library adoption and the review method for each UI change.
 3. Code-structure adjustments justified by the selected screens and interactions.
-4. The common predefined column set (final count, labels and meanings), its initial population and data-preserving migration during task CRUD; column CRUD is excluded.
-5. Task completion semantics, automatic date behavior and reopening rules.
-6. Task ordering/movement interactions and deletion or archival behavior.
-7. Comment visibility options, editing and deletion.
-8. Presentation of project evolution, if brought into a later task's scope.
+4. Comment visibility options, editing and deletion.
+5. Presentation of project evolution, if brought into a later task's scope.
 
 ## Earlier work boundary - superseded by the project increments below
 
@@ -420,13 +415,25 @@ visibility behavior within this increment. Earlier WIP commits and review notes
 remain historical. Task/column CRUD, the common column definition, file cleanup
 policy and remote deployment remain outside this acceptance.
 
+### Starter tasks for new projects
+
+New projects start with five editable English tasks in To do. Each has a title
+and a description covering the first milestone, architecture and its boundaries,
+the technology stack, repository and local setup, or tests and continuous
+integration. The architecture task includes deciding between a modular monolith
+and separate services. The owner can publish the tasks individually by turning
+off their hidden setting, and can edit, move or archive them like other tasks.
+Existing projects receive no new tasks.
+
 ### Responsive project catalog and covers
 
 The owner requested a cozier, responsive project catalog with optional photo
 covers. The listing uses the shared palette, a shorter header and a grid that
 fits the available content width. Cards distinguish lifecycle from the owner's
 publication and hidden labels, and show up to three lines of description. The
-visitor and administrator have distinct empty states.
+visitor and administrator have distinct empty states. For projects whose
+cancellation reason the viewer can access, the cancelled status badge opens
+the reason directly from the catalog.
 
 The first image in the description supplies the cover and its alternative text.
 The current prototype uses a top-aligned 16:9 crop. A decorative palette

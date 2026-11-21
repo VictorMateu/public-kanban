@@ -7,8 +7,8 @@ import { IMAGE_LIMITS, imageAltSchema } from "../../lib/projects/image-input";
 import { uploadProjectImage } from "../../lib/projects/image-upload";
 import type { ProjectImageStaging } from "../../lib/projects/image-staging";
 
-export function EditorImageUpload({ projectId, imageStaging, disabled, onInsert, onBusyChange }: {
-  projectId?: string; imageStaging?: ProjectImageStaging; disabled: boolean;
+export function EditorImageUpload({ projectId, taskId, imageStaging, disabled, onInsert, onBusyChange }: {
+  projectId?: string; taskId?: string; imageStaging?: ProjectImageStaging; disabled: boolean;
   onInsert: (assetId: string, alt: string) => boolean;
   onBusyChange: (busy: boolean) => void;
 }) {
@@ -36,7 +36,7 @@ export function EditorImageUpload({ projectId, imageStaging, disabled, onInsert,
           imageStaging.discard(staged.id); setError("imageLimit"); return;
         }
       } else {
-        const uploaded = await uploadProjectImage(projectId ?? "", file);
+        const uploaded = await uploadProjectImage(projectId ?? "", file, taskId);
         if (!uploaded.success) { setError(uploaded.error); return; }
         if (!onInsert(uploaded.assetId, description.data)) { setError("imageLimit"); return; }
       }

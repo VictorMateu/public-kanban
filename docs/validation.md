@@ -1803,6 +1803,198 @@ is required to confirm both findings are resolved. The empty-database SQL suite
 was not run on the populated owner instance. Browser checks are automated
 assertions, not a new owner visual review or cross-platform certification.
 
+## Task management - 2026-11-21
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 passing tests) and
+  `npm run build` passed on Windows with Node.js 24.22.1 and npm 11.19.1.
+- Supabase CLI 2.122.0 applied migration `20261121000100` locally.
+  `supabase db lint --local --fail-on warning` passed. The existing project
+  received the four columns and had no previous tasks or columns to convert.
+- The rollback suite `tests/project-management-db.sql` passed through local
+  PostgreSQL with `ON_ERROR_STOP=1`. It checked owner authorization, cross-project
+  destination rejection, stale writes, retry-safe creation, completion,
+  reopening, archiving and per-task visibility without creating users.
+- `npm run test:public` against the local production server passed with 29
+  tests and one expected skip for the empty-list case on a populated database.
+- `node --test tests/task-browser.ts` passed in isolated Chromium at desktop
+  and mobile widths. It checked modal focus, create/edit, pointer reordering
+  and movement, keyboard ordering, touch movement, completion/reopening,
+  hiding, archiving and anonymous HTML/RSC exclusion. The test verified
+  fixture cleanup and preserved the existing population and authorization.
+- The disposable-database pgTAP suite was updated for the new schema.
+  It was not run on the populated owner instance because it creates fixed test
+  identities and requires an empty instance. Owner visual acceptance remains
+  pending.
+
+### Task editor picker styling
+
+The task status and priority menus use the shared palette where the browser
+supports customizable selects. The due-date field adds a themed calendar with
+keyboard navigation and keeps direct date entry. Visual acceptance is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests) and `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against the local production
+  build in isolated Chromium. It checks the styled status picker, keyboard
+  selection, the calendar bounds at 390 px, keyboard month/day navigation,
+  Escape dismissal and date persistence, alongside the existing task flows.
+- The browser run exposed a drag cancellation on ordinary focus changes.
+  Dragging now cancels for window blur and the pointer/touch checks pass.
+
+### Task editor footer and visibility control
+
+The edit dialog places Archive task in the footer opposite Close and Save.
+Hide from visitors uses the project visibility switch styling. Visual
+acceptance is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests) and `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against the local production
+  build in isolated Chromium. The test checked keyboard toggling and saved
+  visibility, footer placement and fit at 390 px, and archive confirmation.
+
+### Pastel board presentation
+
+The shared board uses four tones derived from the existing palette,
+cream cards and a completion marker. Owners can open the task editor from
+any column with that stage selected. Owner visual acceptance is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests) and `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against the local production
+  build in isolated Chromium. It covered per-column creation controls,
+  stage preselection, focus return, completion styling and the existing
+  desktop and mobile task flows.
+- `npm run test:public` passed the board rendering, localization and task
+  visibility checks. Two project-list assertions failed. The local
+  `list_project_summaries()` function returns a non-null description for a
+  published hidden project, which the application rejects. Its definition
+  differs from the versioned projection in this checkout.
+
+### Column icons and compact board header
+
+Column headings use four decorative status icons beside their localized
+labels. The project header uses less vertical space and retains an
+accessible board heading. Owner visual review is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), `npm run build`
+  and `node --test tests/task-browser.ts` passed.
+- Isolated Chromium checks found four distinct icons at 1600 px and 390 px
+  and a labelled board heading. The board starts at 137 px and 211 px from
+  the top, respectively. The narrow viewport scrolls within the board
+  without widening the document.
+
+### Warm gradient board and task detail
+
+The owner selected the warm gradient proposal. The implementation uses
+the existing palette, equal-height columns, independently scrolling task
+lists and a fixed Add task footer in every owner column. Visual acceptance
+of the implementation is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against local Supabase and the
+  production server in isolated Chromium at 1600 px and 390 px. It verified
+  distinct column gradients, same-column and cross-column dragging,
+  keyboard reordering from inside the dialog, touch hold to drag, tap to
+  open, swipe to scroll only the task list, an unmoved Add task footer,
+  and a read-only visitor dialog with focus restored on Escape. The test
+  cleaned up its fixture and verified that database row counts returned
+  to their initial values.
+
+### Board-contained vertical scrolling
+
+The project board fills the workspace below the navigation and project
+header. Lists scroll vertically within their columns. Short windows
+below the workspace minimum can still scroll to reach the controls.
+Owner visual review is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- `node --test tests/task-browser.ts` passed in isolated Chromium. The
+  owner board with an overflowing list fit the viewport at 1920 × 1080,
+  1280 × 540, 390 × 480 and 390 × 844. The touch swipe moved the task list
+  and kept the document scroll offset and Add task footer unchanged.
+  The visitor board also fit at 390 × 844.
+
+The follow-up increased the bottom spacing to 1.25rem on phones and
+1.5rem on wider layouts. The browser suite passed against both development
+and production servers with a 20px minimum gap assertion. The owner
+session created tasks and reordered them by mouse and touch. The visitor
+session opened the task detail by keyboard and had no creation or drag
+controls. The local development login page returned HTTP 200.
+
+### Task confirmation and project status picker
+
+Successful task changes update the board without inserting a banner.
+The project status picker shares the task status and priority styles.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against the development server
+  in isolated Chromium. The board kept its top position after creating and
+  dragging a task. The project status picker opened using the keyboard,
+  Escape closed it and restored focus, and selecting Cancelled displayed
+  the required cancellation reason.
+
+### Task card spacing and inline creation
+
+Task cards give the due date its own line below the badges. The owner
+creation action is a row below the task cards inside each column list.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- The task browser suite passed on the development server. It verified
+  that the inline action is reachable after scrolling a long column on
+  mobile, opens the editor for that column and restores focus on Escape.
+
+### Compact task card metadata
+
+Task cards place the short priority badge and calendar date in a wrapping
+row. The task detail retains the full labels.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests), and
+  `npm run build` passed.
+- The task browser suite passed against the local production build on port
+  3134. It verified that the date fits within the card on a narrow viewport,
+  retains its semantic label and appears in the detail dialog. Escape
+  returns focus to the card.
+
+### Task description rich text and images
+
+- The local migration `20261121000300_task_rich_text` was applied to the
+  populated development instance. The migration CLI used a temporary copy
+  containing the exact `20261121000200_public_hidden_project_excerpts`
+  migration already present in the local database from another branch.
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed.
+- `tests/task-browser.ts` passed against the production build on port 3136.
+  It uploaded a real PNG during task creation, saved formatted text,
+  retained the image on editing, rejected a cross-task reference and
+  checked anonymous route and Storage access before saving, after hiding,
+  after showing and after archiving. The public detail still rendered
+  legacy plain text. The fixture population was restored after the test.
+- The project image browser cases passed for upload, editing, publication,
+  retries and keyboard insertion. The full suite failed its hidden-project
+  listing case. The local RPC from the other branch returns an excerpt for
+  a hidden project, while this checkout's public summary validator requires
+  that field to be null for hidden projects.
+
+### Archive and cancellation reason access
+
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed.
+- The task and project image browser suites passed all 11 cases against
+  port 3138. The task test checked the empty archive, reverse date order,
+  read-only detail, keyboard opening and focus restoration, and the absence
+  of archive data from public HTML and RSC. It also checked both cancellation
+  triggers, the catalog URL, and access to reasons for visible, hidden and
+  unpublished projects.
+- `npm run test:public` passed 24 cases and skipped the empty-database case.
+  Three assertions failed: two board checks expect the earlier priority
+  label markup, and the direct project-summary RPC check expects null
+  descriptions for hidden projects. The local migration from another branch
+  returns excerpts through that RPC. The application discards those excerpts
+  before validating the catalog response, and browser checks verified that
+  hidden descriptions and reasons stay out of public HTML and RSC.
+
 ## Responsive project catalog and covers - 2026-11-21
 
 `npm run lint`, `npm run typecheck`, `npm test` (88 passed),
@@ -1845,3 +2037,48 @@ checks passed. The legacy public-board fixture suite was not run against the
 new column schema. The privacy assertions covered the 240-character excerpt in
 RPC, HTML and RSC, draft omission, and continued denial of hidden details,
 columns, tasks and images. No remote database migration was applied.
+
+## Task archive and project catalog integration - 2026-11-21
+
+- Lint, TypeScript, all 91 unit tests and the production build passed.
+- The production HTTP suite passed 29 checks. The empty catalog check was
+  skipped because the local database contains existing projects. Board checks
+  verify the localized priority label and value and the task description in
+  the detail payload.
+- The Chromium suites passed all 11 checks. The catalog cancellation test
+  verifies keyboard access for visible projects. It confirms that a published
+  hidden project exposes only its allowed description excerpt and omits the
+  cancellation reason in HTML and RSC responses.
+- The project and task database suite passed using a rolled-back transaction
+  against the local Supabase instance.
+
+### Cancellation badge in the project catalog
+
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed. `npm run test:public` passed 29 checks and
+  skipped the empty catalog check against the populated local database.
+- The task browser test verified keyboard and touch activation from the
+  cancellation badge, focus restoration, and separate board navigation at
+  mobile width. The image browser suite passed on retry after an editor
+  readiness timeout in the first run. It also checked catalog widths of
+  320, 390 and 1440 CSS pixels.
+
+### Starter tasks on project creation
+
+- Migration `20261121000400` applied locally with the existing project and
+  task counts unchanged. `supabase db lint --local --fail-on warning` and
+  the populated-database-safe `tests/project-management-db.sql` suite passed.
+  The latter checks task order, descriptions and visibility for every
+  project visibility combination and rolls back its fixtures.
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed. The production HTTP suite passed 29 checks, with
+  the empty catalog check skipped against the populated instance. The
+  project actions test verifies that draft retries, edits and publication
+  preserve the same task rows and that anonymous HTML and RSC omit them.
+- The image browser suite passed all 10 checks. The task browser check
+  passed after adjusting its touch gesture to scroll the task into view
+  below the starter rows. It also verified the original English description
+  loads into the task editor.
+- The disposable `supabase test db --local` suite was left to CI because it
+  requires an empty instance and creates user fixtures. No remote migration
+  was applied.

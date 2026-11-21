@@ -30,7 +30,7 @@ async function persistProject(form: FormData, draftOnly: boolean): Promise<Proje
     const assets = [...new Set([...richTextAssetIds(input.data.description_content), ...richTextAssetIds(input.data.objectives_content)])];
     if (assets.length) {
       if (!id) return { success: false, state: { error: "invalid" } };
-      const available = await client.from("project_assets").select("id").eq("project_id", id).eq("status", "ready").in("id", assets);
+      const available = await client.from("project_assets").select("id").eq("project_id", id).is("task_id", null).eq("status", "ready").in("id", assets);
       if (available.error || available.data.length !== assets.length) return { success: false, state: { error: "invalid" } };
     }
     const payload = {

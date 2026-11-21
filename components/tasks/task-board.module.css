@@ -1,0 +1,110 @@
+﻿.board {
+  background:
+    radial-gradient(ellipse at 88% 0%, color-mix(in srgb, var(--palette-honey) 20%, transparent), transparent 65%),
+    color-mix(in srgb, var(--palette-cream) 58%, transparent);
+}
+
+.column {
+  --lane-tone: var(--palette-peach);
+  --lane-accent: color-mix(in srgb, var(--lane-tone) 72%, var(--palette-cream));
+  display: flex;
+  flex-direction: column;
+  border-color: color-mix(in srgb, var(--palette-espresso) 13%, transparent);
+  background-color: color-mix(in srgb, var(--lane-tone) 38%, var(--palette-cream));
+  background-image: linear-gradient(155deg,
+    color-mix(in srgb, var(--lane-tone) 65%, var(--palette-cream)),
+    color-mix(in srgb, var(--lane-tone) 28%, var(--palette-cream)));
+}
+
+.column[data-stage="in_progress"] {
+  --lane-tone: var(--palette-honey);
+}
+
+.column[data-stage="review"] {
+  --lane-tone: color-mix(in srgb, var(--palette-cream) 84%, var(--palette-espresso));
+}
+
+.column[data-stage="done"] {
+  --lane-tone: var(--palette-sage);
+}
+
+.columnHeader {
+  flex: none;
+}
+
+.columnScroll {
+  flex: 1 1 0;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--palette-espresso) 50%, var(--lane-tone)) transparent;
+  overscroll-behavior-y: contain;
+}
+
+.cardControl:focus-visible {
+  outline: 2px solid var(--palette-espresso);
+  outline-offset: -2px;
+}
+
+.cardControl[data-task-drag] {
+  -webkit-touch-callout: none;
+}
+
+.card:has(.cardControl:not(:disabled):hover) {
+  border-color: color-mix(in srgb, var(--palette-espresso) 32%, transparent);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--palette-espresso) 12%, transparent);
+}
+
+.taskMark {
+  margin-block-start: .15rem;
+  color: color-mix(in srgb, var(--palette-espresso) 72%, var(--palette-cream));
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  border: 1.5px solid;
+  border-radius: 50%;
+}
+
+
+.taskCount {
+  min-block-size: 1.75rem;
+  background: var(--lane-accent);
+}
+
+.card {
+  border-color: color-mix(in srgb, var(--palette-espresso) 13%, transparent);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--palette-espresso) 8%, transparent);
+}
+
+.taskMark[data-completed] {
+  border-color: var(--palette-espresso);
+  background: var(--lane-accent);
+  color: var(--palette-espresso);
+}
+
+.taskMark[data-completed]::after {
+  inline-size: .58rem;
+  block-size: .32rem;
+  border-block-end: 1.5px solid;
+  border-inline-start: 1.5px solid;
+  transform: translateY(-.06rem) rotate(-45deg);
+  content: "";
+}
+
+.addTask {
+  border-color: color-mix(in srgb, var(--palette-espresso) 13%, transparent);
+  background: color-mix(in srgb, var(--palette-cream) 65%, transparent);
+}
+
+.addTask:hover:enabled {
+  background: var(--palette-cream);
+}
+
+.addTask:focus-visible {
+  outline: 2px solid var(--palette-espresso);
+  outline-offset: 2px;
+}
+
+.addTask:disabled {
+  opacity: .55;
+}

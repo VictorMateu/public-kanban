@@ -235,6 +235,37 @@ local PostgreSQL access for exact UUID-and-slug fixtures; application DELETE
 permissions remain denied. No broad cleanup, users, remote migration or deployment
 was introduced.
 
+## Task writes and per-task visibility - 2026-11-21
+
+It has been decided to preserve archived task rows and enforce task visibility
+at the database boundary. Anonymous and nonowner rows require a visible task
+and a visible, published project. Archived tasks are excluded from public
+reads and the managed board. The database continues to enforce the composite
+column/project foreign key.
+
+The authenticated RPC verifies the administrator and serializes mutations on
+the project row. Direct writes would leave placement and task versioning to
+separate browser requests. The RPC instead applies each change atomically,
+checks the expected task version and refuses destinations outside the project.
+Direct application writes to tasks and columns are revoked. A trigger assigns
+the UTC completion date on entry to Done and clears it on reopening.
+
+
+### Task description images - 2026-11-21
+
+The project uses the same private bucket and controlled route for project
+and task images. Task uploads carry the project and the task UUID, which a
+new task form reserves before saving. The task mutation checks that each
+referenced asset is ready and belongs to that exact task and project. This
+permits pre-save owner preview while keeping pending references private.
+
+Public asset access requires that the current document reference the image.
+Task assets also require a visible, unarchived task within a published,
+visible project. The existing Storage policy follows asset RLS, so these
+checks also cover direct downloads. A separate bucket and asset table
+would provide storage isolation at the cost of duplicating the upload and
+access policy surface. Unreferenced assets remain private; automated file
+cleanup is a separate decision.
 
 ## Description excerpts on published hidden cards - 2026-11-21
 

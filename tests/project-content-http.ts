@@ -38,9 +38,12 @@ test("rich project HTTP paths enforce image visibility without creating users", 
   try {
     const project = await admin.from("projects").insert({ id, slug, name: slug, description: "Rich HTTP fixture", description_content: document, repository_url: "https://example.com/repository" });
     assert.equal(project.error, null); projectCreated = true;
-    const columnId = randomUUID();
-    assert.equal((await admin.from("columns").insert({ id: columnId, project_id: id, name: "Private fixture column" })).error, null);
-    assert.equal((await admin.from("tasks").insert({ id: randomUUID(), column_id: columnId, project_id: id, title: "Private board fixture task" })).error, null);
+    const column = await admin.from("columns").select("id").eq("project_id", id).eq("stage", "todo").single();
+    assert.ok(column.data);
+    const task = await admin.rpc("mutate_task", { p_operation: "create", p_project: id, p_task: randomUUID(),
+      p_column: column.data.id, p_title: "Private board fixture task", p_hidden: false });
+    assert.equal(task.error, null);
+    assert.equal(task.data, "ok");
     const asset = await admin.from("project_assets").insert({ id: assetId, project_id: id, object_path: objectPath, byte_size: image.length, width: 1, height: 1 });
     assert.equal(asset.error, null); assetCreated = true;
     const upload = await admin.storage.from("project-images").upload(objectPath, image, { contentType: "image/webp", cacheControl: "0", upsert: false });
@@ -74,7 +77,7 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const detailHtml = await ownerDetail.text();
       assert.ok(detailHtml.includes('name="updated_at"'));
       assert.ok(detailHtml.includes("noindex"));
-      assert.ok(detailHtml.includes("Private fixture column"));
+      assert.ok(detailHtml.includes("To do"));
       assert.ok(detailHtml.includes("Private board fixture task"));
       const publicRsc = await fetch(origin.origin + "/projects", { headers: { RSC: "1" } });
       assert.ok(!(await publicRsc.text()).includes(slug));
@@ -111,6 +114,12 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       const draft = await admin.from("projects").select("*").eq("id", draftProjectId).single();
       assert.ok(draft.data); assert.equal(draft.data.is_published, false);
       assert.equal((await fetch(origin.origin + "/projects/" + draftFields.slug)).status, 404);
+      const starterTasks = () => admin.from("tasks").select("id, title, description, is_hidden")
+        .eq("project_id", draftProjectId).order("position");
+      const initialTasks = await starterTasks();
+      assert.equal(initialTasks.error, null);
+      assert.equal(initialTasks.data?.length, 5);
+      assert.ok(initialTasks.data?.every(({ description, is_hidden }) => description && is_hidden));
       const replay = await invoke("saveProjectDraft", draftFields);
       assert.ok((await replay.text()).includes('"success":true'));
       assert.equal((await admin.from("projects").select("id").eq("id", draftProjectId)).data?.length, 1);
@@ -121,6 +130,17 @@ test("rich project HTTP paths enforce image visibility without creating users", 
       assert.ok((await draftUpdate.text()).includes('"success":true'));
       assert.ok((await (await invoke("saveProjectDraft", { ...draftFields, updated_at: draft.data.updated_at })).text()).includes('"stale"'));
       assert.ok((await (await invoke("saveProjectDraft", draftFields)).text()).includes('"stale"'), "Initial replay cannot bypass later edits");
+      assert.deepEqual(await starterTasks(), initialTasks, "Retrying and editing the draft preserves its starter tasks");
+      const currentDraft = await admin.from("projects").select("updated_at").eq("id", draftProjectId).single();
+      assert.equal(currentDraft.error, null); assert.ok(currentDraft.data);
+      const publishDraft = await invoke("saveProject", { ...draftFields, updated_at: currentDraft.data.updated_at, is_published: "true" });
+      assert.ok(publishDraft.headers.get("x-action-redirect"));
+      assert.deepEqual(await starterTasks(), initialTasks, "Publishing the draft preserves its starter tasks");
+      for (const headers of [new Headers(), new Headers({ RSC: "1" })]) {
+        const publishedDraft = await fetch(origin.origin + "/projects/" + draftFields.slug, { headers });
+        assert.equal(publishedDraft.status, 200);
+        assert.doesNotMatch(await publishedDraft.text(), /Define the architecture and its boundaries|microservices/u);
+      }
       const denied = await invoke("saveProject", fields, false);
       assert.ok((await denied.text()).includes('"unauthorized"'));
       assert.equal((await admin.from("projects").select("id").eq("slug", actionSlug)).data?.length, 0);
@@ -245,7 +265,9 @@ test("rich project HTTP paths enforce image visibility without creating users", 
         const columns = await publicClient.from("columns").select("*").eq("project_id", id);
         const tasks = await publicClient.from("tasks").select("*").eq("project_id", id);
         const assets = await publicClient.from("project_assets").select("*").eq("id", assetId);
-        for (const result of [directProject, columns, tasks, assets]) {
+        assert.equal(columns.error, null);
+        assert.equal(columns.data?.length, accessible ? 4 : 0);
+        for (const result of [directProject, tasks, assets]) {
           assert.equal(result.error, null); assert.equal(result.data?.length, accessible ? 1 : 0);
         }
         const list = await (await fetch(origin.origin + "/projects")).text();

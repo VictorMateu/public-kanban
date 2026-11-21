@@ -25,18 +25,26 @@ export async function POST(request: Request) {
     const client = await createServerSupabaseClient(true);
     if (!await getAdministrator(client)) return result({ success: false, error: "unauthorized" }, 401);
     const form = await readImageForm(request);
-    if ([...form.keys()].some((key) => key !== "project_id" && key !== "file")) return result({ success: false, error: "invalidImage" }, 400);
+    if ([...form.keys()].some((key) => key !== "project_id" && key !== "task_id" && key !== "file")) return result({ success: false, error: "invalidImage" }, 400);
     const projectId = z.uuid().safeParse(form.getAll("project_id").length === 1 ? form.get("project_id") : undefined);
+    const taskIds = form.getAll("task_id");
+    const taskId = z.uuid().optional().safeParse(taskIds[0]);
     const files = form.getAll("file");
     const file = files.length === 1 ? files[0] : null;
-    if (!projectId.success || !(file instanceof File) || !file.size) return result({ success: false, error: "invalidImage" }, 400);
+    if (!projectId.success || taskIds.length > 1 || !taskId.success || !(file instanceof File) || !file.size) return result({ success: false, error: "invalidImage" }, 400);
     if (file.size > IMAGE_LIMITS.sourceBytes) return result({ success: false, error: "imageTooLarge" }, 413);
     const project = await client.from("projects").select("id").eq("id", projectId.data).maybeSingle();
     if (project.error || !project.data) return result({ success: false, error: "invalidImage" }, 400);
+    if (taskId.data) {
+      const task = await client.from("tasks").select("project_id, archived_at").eq("id", taskId.data).maybeSingle();
+      if (task.error || (task.data && (task.data.project_id !== projectId.data || task.data.archived_at))) {
+        return result({ success: false, error: "invalidImage" }, 400);
+      }
+    }
     const image = await normalizeProjectImage(Buffer.from(await file.arrayBuffer()), file.type);
     const assetId = randomUUID();
     const objectPath = projectId.data + "/" + assetId + ".webp";
-    const inserted = await client.from("project_assets").insert({ id: assetId, project_id: projectId.data, object_path: objectPath, byte_size: image.bytes.length, width: image.width, height: image.height });
+    const inserted = await client.from("project_assets").insert({ id: assetId, project_id: projectId.data, task_id: taskId.data, object_path: objectPath, byte_size: image.bytes.length, width: image.width, height: image.height });
     if (inserted.error) return result({ success: false, error: "uploadUnavailable" }, 503);
     let ready = false;
     try {
