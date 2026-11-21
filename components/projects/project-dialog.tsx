@@ -29,7 +29,7 @@ export function ProjectDialog({ id, title, closeLabel, open, busy = false, onClo
   function handleDialogKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
     if (event.key !== "Tab" || event.defaultPrevented) return;
     const controls = [...event.currentTarget.querySelectorAll<HTMLElement>(
-      'button, a[href], input, select, textarea, [tabindex], [contenteditable="true"]',
+      'button, a[href], input, select, textarea, details > summary:first-child, [tabindex], [contenteditable="true"]',
     )].filter((element) => element.tabIndex >= 0 && !element.matches(":disabled") && element.getClientRects().length > 0);
     const first = controls[0];
     const last = controls.at(-1);

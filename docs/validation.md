@@ -1976,3 +1976,21 @@ row. The task detail retains the full labels.
   listing case. The local RPC from the other branch returns an excerpt for
   a hidden project, while this checkout's public summary validator requires
   that field to be null for hidden projects.
+
+### Archive and cancellation reason access
+
+- `npm run lint`, `npm run typecheck`, `npm test` (91 tests) and
+  `npm run build` passed.
+- The task and project image browser suites passed all 11 cases against
+  port 3138. The task test checked the empty archive, reverse date order,
+  read-only detail, keyboard opening and focus restoration, and the absence
+  of archive data from public HTML and RSC. It also checked both cancellation
+  triggers, the catalog URL, and access to reasons for visible, hidden and
+  unpublished projects.
+- `npm run test:public` passed 24 cases and skipped the empty-database case.
+  Three assertions failed: two board checks expect the earlier priority
+  label markup, and the direct project-summary RPC check expects null
+  descriptions for hidden projects. The local migration from another branch
+  returns excerpts through that RPC. The application discards those excerpts
+  before validating the catalog response, and browser checks verified that
+  hidden descriptions and reasons stay out of public HTML and RSC.

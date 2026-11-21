@@ -19,7 +19,7 @@ Language preference is stored in a cookie while URLs remain unchanged. Without a
 - Provide a project listing; more than one project may be active at a time.
 - Each project has its own independent board and tasks.
 - Initial supporting information includes a description, objectives and a repository link.
-- The owner can create, read, update, publish, unpublish and hide projects. Projects cannot be deleted; cancellation preserves the project and requires a reason.
+- The owner can create, read, update, publish, unpublish and hide projects. Projects cannot be deleted; cancellation preserves the project and requires a reason. A cancelled project exposes its reason through the status on its detail page and through a separate action in the catalog, subject to existing project visibility.
 - Lifecycle states are Active / in development, Maintenance, Completed and Cancelled. New and existing projects start as Active / in development when the status field is introduced.
 - Visitors can see published projects in the listing. A published hidden project remains listed but its card does not open, and its detail URL and underlying content are unavailable to visitors. The administrator retains access. Unpublished projects remain private regardless of the hidden flag.
 
@@ -40,7 +40,7 @@ The owner selected a presentation-only summary for the home page, with an introd
 
 ### Tasks
 
-- Support creating, reading, editing, archiving and individually hiding tasks. Archiving removes a task from the board and preserves its data.
+- Support creating, reading, editing, archiving and individually hiding tasks. Archiving removes a task from the board and preserves its data. The owner can open a read-only archive from the same project, ordered most recently archived first.
 - A task belongs directly to one project. The owner can select its state in the edit dialog, drag the card to a specific position in or across columns, or use the up and down controls in the task detail to reorder it within its column.
 - Task content includes a title and an optional rich-text description with images. The form and detail dialog reuse the project editor and renderer. Existing plain-text descriptions are readable and editable.
 - Priority and an expected completion date are optional. Task comments remain a separate product decision.

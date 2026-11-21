@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "../shared/empty-state";
 import { ProjectCard } from "./project-card";
-import { listManagedProjects, listPublishedProjects } from "../../lib/projects/queries";
+import { listCancellationReasons, listManagedProjects, listPublishedProjects } from "../../lib/projects/queries";
 import { getAdministrator } from "../../lib/auth/server";
 import { ProjectManagement } from "./project-management";
 import { isSupabaseConfigured } from "../../lib/supabase/env";
@@ -16,9 +16,11 @@ async function Projects({ administrator }: { administrator: boolean }) {
   if (!projects.length) {
     return <EmptyState title={t("emptyTitle")} description={t("emptyDescription")} />;
   }
+  const cancelledIds = projects.filter((project) => project.status === "cancelled" && (administrator || !project.is_hidden)).map(({ id }) => id);
+  const reasons = await listCancellationReasons(cancelledIds, administrator);
   return (
     <ul aria-label={t(administrator ? "managedProjects" : "publishedProjects")} className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
-      {projects.map((project) => <li key={project.id}><ProjectCard project={project} showVisibility={administrator} /></li>)}
+      {projects.map((project) => <li key={project.id}><ProjectCard project={project} showVisibility={administrator} cancellationReason={reasons.get(project.id)} /></li>)}
     </ul>
   );
 }

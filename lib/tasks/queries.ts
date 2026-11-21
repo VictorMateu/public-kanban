@@ -30,11 +30,13 @@ export async function listPublishedTasks(projectId: string): Promise<Task[]> {
   return data.map(parseTask);
 }
 
-export async function listManagedTasks(projectId: string): Promise<Task[]> {
+export async function listManagedTasks(projectId: string, archived = false): Promise<Task[]> {
   const client = await createServerSupabaseClient();
   if (!await getAdministrator(client)) throw new Error("Administrator authorization required.");
-  const { data, error } = await client.from("tasks").select("*").eq("project_id", projectId)
-    .is("archived_at", null).order("position").order("id");
+  const query = client.from("tasks").select("*").eq("project_id", projectId);
+  const { data, error } = await (archived
+    ? query.not("archived_at", "is", null).order("archived_at", { ascending: false }).order("id")
+    : query.is("archived_at", null).order("position").order("id"));
   if (error) throw new Error("Unable to query managed tasks.", { cause: error });
   return data.map(parseTask);
 }

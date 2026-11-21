@@ -981,7 +981,16 @@ Selector moves append to the destination. The whole card can be dragged
 with a mouse or after a 350 ms hold on touch screens. Dragging uses an
 insertion marker and scrolls near the vertical edges of the list and the
 horizontal edges of the board. Archiving preserves the row and excludes it
-from both boards.
+from both boards. The owner can open Archived tasks from the board header.
+The modal lists the latest archives first, shows the archive date in UTC
+and expands each task to its read-only detail with owner image previews.
+The archive query is scoped to the current project and checks owner access.
+
+Cancelled projects expose their saved reason from the status in the detail
+header and from a separate action in the catalog. The catalog batches a read
+of the reasons and follows the same visibility rules as the individual
+project pages. Public cards for hidden projects have no reason action.
+The catalog action opens a dialog and keeps the current URL.
 
 For owner review over local HTTP, use the development server and sign in at
 `/admin/login` on the same hostname used for the board. Browser cookies for

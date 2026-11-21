@@ -47,6 +47,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   const information = await getTranslations("ProjectInformation");
   const { edit, saved } = await searchParams;
   if (!project) notFound();
+  const cancelled = project.status === "cancelled";
   return (
     <main id="main-content" data-project-board-page="" className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-5 pt-2 pb-5 sm:px-8 sm:pt-3 sm:pb-6">
       <div className="shrink-0">
@@ -55,12 +56,12 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         </Link>
       </div>
       <div className="mt-1 flex shrink-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className={`flex min-w-0 items-center gap-x-3${cancelled ? " flex-wrap" : ""}`}>
           <h1 className="min-w-0 text-3xl wrap-anywhere sm:text-4xl">{project.name}</h1>
-          <ProjectInformation key={project.updated_at} project={administrator ? project : undefined} initiallyEditing={administrator && edit === "1"}>
+          <ProjectInformation key={project.updated_at} cancelled={cancelled} project={administrator ? project : undefined} initiallyEditing={administrator && edit === "1"}>
             <div className="space-y-6">
               <p>{form("status")}: {form(project.status)}</p>
-              {project.status === "cancelled" && project.cancellation_reason && <section>
+              {cancelled && project.cancellation_reason && <section>
                 <h3 className="mb-3 text-2xl">{form("cancellationReason")}</h3>
                 <p className="whitespace-pre-wrap wrap-anywhere">{project.cancellation_reason}</p>
               </section>}
@@ -68,12 +69,12 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
               {project.description_content || project.description ? <section><h3 className="mb-3 text-2xl">{information("description")}</h3><RichTextContent preview={administrator} document={readRichText(project.description_content, project.description)} /></section> : null}
               {project.objectives_content && <section><h3 className="mb-3 text-2xl">{t("objectives")}</h3><RichTextContent preview={administrator} document={readRichText(project.objectives_content)} /></section>}
               {project.repository_url && <a href={project.repository_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t("repository")}</a>}
-              {!project.description_content && !project.description && !project.objectives_content && !project.repository_url && <p>{information("empty")}</p>}
+              {!cancelled && !project.description_content && !project.description && !project.objectives_content && !project.repository_url && <p>{information("empty")}</p>}
             </div>
           </ProjectInformation>
         </div>
         {administrator && <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form(project.status)}</span>
+          {!cancelled && <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form(project.status)}</span>}
           <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form(project.is_published ? "published" : "draft")}</span>
           {project.is_hidden && <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form("hidden")}</span>}
         </div>}

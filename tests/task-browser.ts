@@ -144,6 +144,13 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await waitFor(async () => !await exists(dialog), "dismiss project edit without saving");
 
     await has("[data-new-task]");
+    const archiveTrigger = "[data-open-archive]";
+    await click(archiveTrigger);
+    await has(dialog);
+    assert.match(z.string().parse(await evaluate("document.querySelector('dialog:modal').textContent")), /No tasks have been archived yet/);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "close the empty archive");
+    assert.equal(await exists(archiveTrigger + ":focus"), true);
     const boardTop = async () => z.number().parse(await evaluate('document.querySelector("[data-task-scroll]").getBoundingClientRect().top'));
     await waitFor(async () => await boardTop() > 0, "board is laid out below the project header");
     await evaluate("document.fonts.ready.then(() => true)");
@@ -352,11 +359,25 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     assert.equal((await task(beta)).archived_at, null);
     await click(confirm);
     await waitFor(async () => !await exists(card(beta)), "archived task leaves the board");
-    assert.ok((await task(beta)).archived_at);
+    const archivedBeta = (await task(beta)).archived_at;
+    assert.ok(archivedBeta);
+    await evaluate("document.querySelector('[data-open-archive]').focus()");
+    await press("Enter", 13);
+    await has(`${dialog} summary`);
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('dialog:modal summary')].map(item => item.firstElementChild.textContent)"), ["Task Beta", "Task Alpha"]);
+    assert.equal(await exists(`${dialog} time[datetime="${archivedBeta}"]`), true);
+    await evaluate("document.querySelectorAll('dialog:modal summary')[1].focus()");
+    await press("Enter", 13);
+    await has(`${dialog} details[open] .rich-text strong`);
+    assert.equal(await evaluate("document.querySelector('dialog:modal details[open] img').getAttribute('src').endsWith('?preview=1')"), true);
+    assert.equal(await exists(`${dialog} [data-edit-task], ${dialog} [data-archive-task]`), false);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "close the archive detail");
+    assert.equal(await exists(archiveTrigger + ":focus"), true);
     for (const headers of [new Headers(), new Headers({ RSC: "1" })]) {
       const response = await fetch(origin.origin + pathname, { headers });
       assert.equal(response.status, 200);
-      assert.doesNotMatch(await response.text(), /Task Alpha|Task Beta|Task with a diagram|data-edit-task/);
+      assert.doesNotMatch(await response.text(), /Task Alpha|Task Beta|Task with a diagram|data-edit-task|data-open-archive/);
     }
 
     // Only the list scrolls. A quick swipe starting on a card must scroll it without moving that task.
@@ -424,6 +445,57 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await waitFor(async () => !await exists(dialog), "public task detail closes with Escape");
     assert.equal(await exists(open(visibleTask) + ":focus"), true);
     await assertBoardFitsViewport();
+
+    const reason = "Cancelled because the fixture finished";
+    const reasonTrigger = "[data-open-cancellation]";
+    assert.equal(await exists(reasonTrigger), false);
+    assert.equal((await admin.from("projects").update({ status: "cancelled", cancellation_reason: reason }).eq("id", projectId)).error, null);
+
+    async function openReason(selector: string, expectedPath: string) {
+      await waitFor(async () => {
+        if (!await exists(selector) || await evaluate("document.readyState") !== "complete") return false;
+        if (!await exists(dialog)) {
+          await evaluate("function(selector) { document.querySelector(selector).focus(); }", [selector]);
+          await press("Enter", 13);
+        }
+        return exists(dialog);
+      }, "cancellation reason opens from the keyboard");
+      assert.equal(await evaluate("location.pathname"), expectedPath);
+      assert.match(z.string().parse(await evaluate("document.querySelector('dialog:modal').textContent")), new RegExp(reason, "u"));
+      await press("Escape", 27);
+      await waitFor(async () => !await exists(dialog), "close the cancellation reason");
+      assert.equal(await exists(selector + ":focus"), true);
+    }
+
+    await send("Page.navigate", { url: origin.origin + pathname });
+    await openReason(reasonTrigger, pathname);
+    const catalogTrigger = `article:has(#project-${projectId}) ${reasonTrigger}`;
+    await send("Page.navigate", { url: origin.origin + "/projects" });
+    await openReason(catalogTrigger, "/projects");
+
+    const hiddenDescription = "Hidden project description for cancellation fixture";
+    assert.equal((await admin.from("projects").update({ is_hidden: true, description: hiddenDescription }).eq("id", projectId)).error, null);
+    for (const headers of [new Headers(), new Headers({ RSC: "1" })]) {
+      const listing = await fetch(origin.origin + "/projects", { headers });
+      assert.equal(listing.status, 200);
+      const body = await listing.text();
+      assert.match(body, new RegExp(projectId, "u"));
+      assert.doesNotMatch(body, new RegExp(reason, "u"));
+      assert.doesNotMatch(body, new RegExp(hiddenDescription, "u"));
+    }
+    await send("Page.navigate", { url: origin.origin + "/projects" });
+    await has(`#project-${projectId}`);
+    assert.equal(await exists(catalogTrigger), false);
+    assert.equal((await fetch(origin.origin + pathname)).status, 404);
+
+    await send("Network.setCookies", { cookies: cookies.map(({ name, value }) => ({ name, value, url: origin.origin })) });
+    await send("Page.navigate", { url: origin.origin + "/projects" });
+    await openReason(catalogTrigger, "/projects");
+
+    assert.equal((await admin.from("projects").update({ is_hidden: false, is_published: false }).eq("id", projectId)).error, null);
+    const draftListing = await fetch(origin.origin + "/projects", { headers: { RSC: "1" } });
+    assert.equal(draftListing.status, 200);
+    assert.doesNotMatch(await draftListing.text(), new RegExp(`${projectId}|${reason}`, "u"));
   } finally {
     await browser?.close();
     const assets = await admin.from("project_assets").select("id, object_path").eq("project_id", projectId);

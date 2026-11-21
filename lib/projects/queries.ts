@@ -14,7 +14,10 @@ const readProject = (project: ProjectRow): Project => ({ ...project, status: pro
 export async function listPublishedProjects(): Promise<ProjectSummary[]> {
   const { data, error } = await createPublicSupabaseClient().rpc("list_project_summaries");
   if (error) throw new Error("Unable to query projects.", { cause: error });
-  return publicProjectSummarySchema.array().parse(data);
+  // Local instances may include the excerpt projection from another branch.
+  // Preserve this catalog's hidden-project boundary before parsing the response.
+  const summaries = data.map((project) => project.is_hidden === true ? { ...project, description: null } : project);
+  return publicProjectSummarySchema.array().parse(summaries);
 }
 
 export async function getPublishedProjectBySlug(slug: string): Promise<Project | null> {
@@ -31,6 +34,16 @@ export async function listManagedProjects(): Promise<ProjectSummary[]> {
   const { data, error } = await client.from("projects").select("id, slug, name, description, status, is_hidden, is_published, position").order("position").order("id");
   if (error) throw new Error("Unable to query managed projects.", { cause: error });
   return projectSummarySchema.array().parse(data);
+}
+
+export async function listCancellationReasons(projectIds: string[], administrator: boolean): Promise<Map<string, string>> {
+  if (projectIds.length === 0) return new Map();
+  const client = administrator ? await createServerSupabaseClient() : createPublicSupabaseClient();
+  if (administrator && !await getAdministrator(client)) throw new Error("Administrator authorization required.");
+  const query = client.from("projects").select("id, cancellation_reason").eq("status", "cancelled").in("id", projectIds);
+  const { data, error } = await (administrator ? query : query.eq("is_published", true).eq("is_hidden", false));
+  if (error) throw new Error("Unable to query project cancellation reasons.", { cause: error });
+  return new Map(data.flatMap(({ id, cancellation_reason }) => cancellation_reason ? [[id, cancellation_reason]] : []));
 }
 
 export async function getManagedProjectBySlug(slug: string): Promise<Project | null> {

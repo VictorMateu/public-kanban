@@ -10,6 +10,7 @@ import { TASK_DESCRIPTION_LIMIT, taskPrioritySchema, type TaskMutation, type Tas
 import { RichTextEditor } from "../projects/rich-text-editor";
 import { ProjectDialog } from "../projects/project-dialog";
 import selectStyles from "../shared/select.module.css";
+import { ArchivedTasks } from "./archived-tasks";
 import { BoardColumns, type DropTarget } from "./board-columns";
 import { TaskDetail } from "./task-detail";
 import { TaskDateField } from "./task-date-field";
@@ -31,7 +32,7 @@ function initialDescription(task?: Task): RichTextDocument {
   return { type: "doc", content: [{ type: "paragraph", content }] };
 }
 
-export function ManagedBoard({ projectId, columns, tasks }: { projectId: string; columns: KanbanColumn[]; tasks: Task[] }) {
+export function ManagedBoard({ projectId, columns, tasks, archived }: { projectId: string; columns: KanbanColumn[]; tasks: Task[]; archived: Task[] | null }) {
   const t = useTranslations("TaskManagement");
   const taskText = useTranslations("Task");
   const boardText = useTranslations("Board");
@@ -103,6 +104,7 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
   const formId = "task-editor-form";
   return <div ref={board} className="flex min-h-0 flex-1 flex-col">
     {!editor && error && <p role="alert" className="mb-3 shrink-0 text-sm">{t(error)}</p>}
+    <div className="mb-2 flex shrink-0 justify-end"><ArchivedTasks tasks={archived} columns={columns} /></div>
     <BoardColumns columns={columns} tasks={tasks} dropTarget={drag.preview?.target} draggedTaskId={drag.preview?.task.id} renderAddTask={(column) => (
       <button type="button" data-new-task="" aria-haspopup="dialog" aria-label={t("addTaskInColumn", { column: boardText(column.stage) })}
         className={`${boardStyles.addTask} flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border px-2 py-1`}

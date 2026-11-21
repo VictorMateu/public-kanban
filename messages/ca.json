@@ -107,6 +107,10 @@
     "moveDown": "Baixa",
     "archiveTask": "Arxiva la tasca",
     "archivePrompt": "Vols arxivar «{title}»? Es retirarà del tauler i es conservarà a la base de dades.",
+    "archivedTasks": "Arxivades",
+    "archiveEmpty": "Encara no hi ha tasques arxivades.",
+    "archiveUnavailable": "No s?han pogut carregar les tasques arxivades.",
+    "archivedOn": "Arxivada el",
     "close": "Tanca",
     "save": "Desa la tasca",
     "saving": "S’està desant…",
@@ -250,6 +254,8 @@
     "hiddenPublishOnSave": "En desar es publica una targeta a Projectes. La informació, el tauler i les imatges continuen sense estar disponibles per als visitants."
   },
   "ProjectInformation": {
+    "openCancellation": "Veure motiu",
+    "openCancellationFor": "Veure el motiu de cancel?laci? de {project}",
     "title": "Informació del projecte",
     "open": "Veure informació del projecte",
     "close": "Tancar informació",

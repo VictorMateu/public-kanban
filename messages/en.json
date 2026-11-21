@@ -108,6 +108,10 @@
     "moveDown": "Move down",
     "archiveTask": "Archive task",
     "archivePrompt": "Archive “{title}”? It will be removed from the board and kept in the database.",
+    "archivedTasks": "Archived tasks",
+    "archiveEmpty": "No tasks have been archived yet.",
+    "archiveUnavailable": "Archived tasks could not be loaded.",
+    "archivedOn": "Archived on",
     "close": "Close",
     "save": "Save task",
     "saving": "Saving…",
@@ -251,6 +255,8 @@
     "hiddenPublishOnSave": "Saving publishes a card in Projects. Its details, board and images remain unavailable to visitors."
   },
   "ProjectInformation": {
+    "openCancellation": "View reason",
+    "openCancellationFor": "View reason for cancelling {project}",
     "title": "Project information",
     "open": "View project information",
     "close": "Close information",
