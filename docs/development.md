@@ -921,3 +921,38 @@ projects. Cleanup validates exact fixture UUIDs/slugs and removes only those
 projects after their exact test image objects are removed. The empty-database
 pgTAP suite's project-delete expectation was updated but that suite must still
 not run against a populated owner instance.
+## Task management
+
+The shared board uses the four fixed stage keys `todo`, `in_progress`,
+`review` and `done`. A project insert initializes its columns in the same
+transaction. The migration updates recognized legacy stages in place and
+keeps each column and task UUID. It aborts on unknown or duplicate mappings,
+so those boards can be reviewed before retrying. Existing tasks in a legacy
+Done column retain an unknown actual completion date. New transitions use
+the UTC calendar date. Leaving Done clears it.
+
+The owner dialog edits content, expected completion date, visibility and
+stage. The task editor styles the native status and priority pickers where
+customizable selects are supported. The due-date field allows direct entry
+and opens a themed calendar with arrow-key navigation, Page Up and Page Down
+for months, and Shift with those keys for years. The native date picker
+remains available where the themed calendar is unsupported. The editor uses
+the same switch styling as project visibility for Hide from visitors. The
+archive action is in the edit dialog footer and opens a confirmation view.
+
+The board includes an independent drag handle and keyboard-operable
+up/down buttons. Selector moves append to the destination. Dragging uses the
+insertion marker and supports horizontal edge scrolling. Archiving preserves
+the row and excludes it from both boards.
+
+All task writes go through the owner-checked `mutate_task` RPC. It serializes
+each board's writes, checks task versions and applies ordering in one
+transaction. Direct column and task writes are denied to application roles.
+Public reads use the anonymous client and require a visible, published
+project and a visible, active task.
+
+Run `node --test tests/task-browser.ts` against a local production server and
+Supabase with the existing local administrator configured. The test uses an
+isolated Chromium profile and removes only its own project fixture. The
+populated-database-safe `tests/project-management-db.sql` also covers task
+authorization and lifecycle, rolling back its fixtures.

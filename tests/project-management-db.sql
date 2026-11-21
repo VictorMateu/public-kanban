@@ -17,8 +17,8 @@ GRANT SELECT ON lifecycle_fixtures TO anon, authenticated;
 INSERT INTO public.projects (id, slug, name, description, is_published, is_hidden, repository_url)
 SELECT id, 'lifecycle-db-' || id::TEXT, 'Lifecycle fixture', 'Private description ' || id::TEXT,
   published, hidden, 'https://example.com/private-repository' FROM lifecycle_fixtures;
-INSERT INTO public.columns (id, project_id, name) SELECT id, id, 'Private column' FROM lifecycle_fixtures;
-INSERT INTO public.tasks (project_id, column_id, title) SELECT id, id, 'Private task' FROM lifecycle_fixtures;
+INSERT INTO public.tasks (project_id, column_id, title)
+SELECT c.project_id, c.id, 'Private task' FROM public.columns c JOIN lifecycle_fixtures f ON f.id = c.project_id WHERE c.stage = 'todo';
 INSERT INTO public.project_assets (id, project_id, object_path, status, byte_size, width, height)
 SELECT asset_id, id, id::TEXT || '/' || asset_id::TEXT || '.webp', 'ready', 1, 1, 1 FROM lifecycle_fixtures;
 UPDATE public.projects p SET description_content = jsonb_build_object('type','doc','content',jsonb_build_array(jsonb_build_object('type','image','attrs',jsonb_build_object('assetId',f.asset_id::TEXT,'alt','Private image'))))
@@ -65,7 +65,7 @@ BEGIN
   PERFORM pg_temp.assert_true((SELECT count(*) = 2 FROM public.list_project_summaries() WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Both published cards are listed');
   PERFORM pg_temp.assert_true((SELECT bool_and(slug IS NULL AND description IS NULL AND is_published) FROM public.list_project_summaries() WHERE is_hidden AND id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden summaries contain no link or description');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.projects WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Only published nonhidden full projects are public');
-  PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.columns WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden columns remain private');
+  PERFORM pg_temp.assert_true((SELECT count(*) = 4 FROM public.columns WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden columns remain private');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.tasks WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden tasks remain private');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.project_assets WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden asset metadata remains private');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM storage.objects WHERE name IN (SELECT id::TEXT || '/' || asset_id::TEXT || '.webp' FROM lifecycle_fixtures)), 'Direct hidden Storage downloads denied');
@@ -80,6 +80,10 @@ BEGIN
   PERFORM pg_temp.assert_true(NOT public.is_admin(), 'Unassigned identity is not an administrator');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.projects WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Nonowner identity cannot bypass hidden access');
   PERFORM pg_temp.assert_true((SELECT count(*) = 2 FROM public.list_project_summaries() WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Nonowner sees only public summaries');
+  BEGIN
+    PERFORM public.mutate_task('archive', (SELECT id FROM lifecycle_fixtures LIMIT 1), gen_random_uuid());
+    RAISE EXCEPTION 'Nonowner task mutation unexpectedly allowed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END;
 $$;
 SELECT set_config('request.jwt.claim.sub',current_setting('test.lifecycle_admin'),TRUE);
@@ -94,6 +98,55 @@ BEGIN
     RAISE EXCEPTION 'Owner project DELETE unexpectedly allowed';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   PERFORM pg_temp.assert_true((SELECT count(*) = 4 FROM public.tasks WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Cancellation preserves descendants');
+END;
+$$;
+RESET ROLE;
+
+SET LOCAL ROLE authenticated;
+DO $$
+DECLARE
+  visible_project UUID; todo UUID; done UUID; wrong_column UUID;
+  first_id UUID := gen_random_uuid(); second_id UUID := gen_random_uuid();
+  original_version TIMESTAMPTZ; new_version TIMESTAMPTZ;
+BEGIN
+  SELECT id INTO visible_project FROM lifecycle_fixtures WHERE published AND NOT hidden;
+  SELECT id INTO todo FROM public.columns WHERE project_id = visible_project AND stage = 'todo';
+  SELECT id INTO done FROM public.columns WHERE project_id = visible_project AND stage = 'done';
+  SELECT id INTO wrong_column FROM public.columns WHERE project_id <> visible_project
+    AND project_id IN (SELECT id FROM lifecycle_fixtures) AND stage = 'todo' LIMIT 1;
+  PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, first_id,
+    p_column => wrong_column, p_title => 'Cross-project task', p_hidden => FALSE) = 'invalid', 'Wrong-project column is rejected');
+  PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, first_id,
+    p_column => todo, p_title => 'First task', p_hidden => FALSE) = 'ok', 'Task is created');
+  PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, first_id,
+    p_column => todo, p_title => 'Retried creation', p_hidden => FALSE) = 'ok', 'Create is retry-safe');
+  PERFORM pg_temp.assert_true((SELECT title = 'First task' FROM public.tasks WHERE id = first_id), 'Create retry preserves first write');
+  PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, second_id,
+    p_column => todo, p_title => 'Second task', p_hidden => TRUE) = 'ok', 'Owner can create hidden task');
+  SELECT updated_at INTO original_version FROM public.tasks WHERE id = first_id;
+  PERFORM pg_temp.assert_true(public.mutate_task('move', visible_project, first_id, original_version, done,
+    second_id) = 'stale', 'Anchor outside destination is rejected');
+  PERFORM pg_temp.assert_true(public.mutate_task('move', visible_project, first_id, original_version, done) = 'ok', 'Task moves to Done');
+  PERFORM pg_temp.assert_true((SELECT completed_on = (statement_timestamp() AT TIME ZONE 'UTC')::DATE
+    FROM public.tasks WHERE id = first_id), 'Entering Done records the completion date');
+  PERFORM pg_temp.assert_true(public.mutate_task('archive', visible_project, first_id, '2000-01-01') = 'stale', 'Old version cannot archive task');
+  SELECT updated_at INTO new_version FROM public.tasks WHERE id = first_id;
+  PERFORM pg_temp.assert_true(public.mutate_task('edit', visible_project, first_id, new_version, todo,
+    p_title => 'Reopened task', p_hidden => FALSE) = 'ok', 'Stage can change during editing');
+  PERFORM pg_temp.assert_true((SELECT completed_on IS NULL AND position = 2 FROM public.tasks WHERE id = first_id),
+    'Reopening clears completion and appends to column');
+  SELECT updated_at INTO new_version FROM public.tasks WHERE id = first_id;
+  PERFORM pg_temp.assert_true(public.mutate_task('archive', visible_project, first_id, new_version) = 'ok', 'Task is archived');
+  PERFORM pg_temp.assert_true((SELECT archived_at IS NOT NULL FROM public.tasks WHERE id = first_id), 'Archived data retained');
+END;
+$$;
+RESET ROLE;
+
+SET LOCAL ROLE anon;
+DO $$
+BEGIN
+  PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.tasks WHERE project_id IN (SELECT id FROM lifecycle_fixtures)),
+    'Direct public reads exclude individually hidden and archived tasks');
 END;
 $$;
 RESET ROLE;

@@ -12,6 +12,7 @@ export type Database = {
                     "name": string;
                     "position": number;
                     "project_id": string;
+                    "stage": string;
                     "updated_at": string;
                 };
                 ComputedFields: never;
@@ -21,6 +22,7 @@ export type Database = {
                     "name": string;
                     "position"?: number;
                     "project_id": string;
+                    "stage": string;
                     "updated_at"?: string;
                 };
                 Update: {
@@ -29,6 +31,7 @@ export type Database = {
                     "name"?: string;
                     "position"?: number;
                     "project_id"?: string;
+                    "stage"?: string;
                     "updated_at"?: string;
                 };
                 Relationships: [
@@ -149,11 +152,14 @@ export type Database = {
             };
             "tasks": {
                 Row: {
+                    "archived_at": string | null;
                     "column_id": string;
+                    "completed_on": string | null;
                     "created_at": string;
                     "description": string | null;
                     "due_date": string | null;
                     "id": string;
+                    "is_hidden": boolean;
                     "position": number;
                     "priority": string | null;
                     "project_id": string;
@@ -162,11 +168,14 @@ export type Database = {
                 };
                 ComputedFields: never;
                 Insert: {
+                    "archived_at"?: string | null;
                     "column_id": string;
+                    "completed_on"?: string | null;
                     "created_at"?: string;
                     "description"?: string | null;
                     "due_date"?: string | null;
                     "id"?: string;
+                    "is_hidden"?: boolean;
                     "position"?: number;
                     "priority"?: string | null;
                     "project_id": string;
@@ -174,11 +183,14 @@ export type Database = {
                     "updated_at"?: string;
                 };
                 Update: {
+                    "archived_at"?: string | null;
                     "column_id"?: string;
+                    "completed_on"?: string | null;
                     "created_at"?: string;
                     "description"?: string | null;
                     "due_date"?: string | null;
                     "id"?: string;
+                    "is_hidden"?: boolean;
                     "position"?: number;
                     "priority"?: string | null;
                     "project_id"?: string;
@@ -233,6 +245,22 @@ export type Database = {
                     "slug": string;
                     "status": string;
                 }[];
+            };
+            "mutate_task": {
+                Args: {
+                    "p_before"?: string;
+                    "p_column"?: string;
+                    "p_description"?: string;
+                    "p_due_date"?: string;
+                    "p_hidden"?: boolean;
+                    "p_operation": string;
+                    "p_priority"?: string;
+                    "p_project": string;
+                    "p_task": string;
+                    "p_title"?: string;
+                    "p_version"?: string;
+                };
+                Returns: string;
             };
         };
         Enums: {

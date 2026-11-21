@@ -36,21 +36,18 @@ The owner selected a presentation-only summary for the home page, with an introd
 ### Columns
 
 - Column CRUD is excluded from the initial product scope. This supersedes the earlier reusable-definition and propagation requirements.
-- Projects will use the same predefined set of columns. Define and implement that set during the task CRUD increment, not during project management.
-- Four columns were mentioned as a provisional starting point; the owner explicitly left the final count, names and meanings undecided.
-
-The existing database stores columns per project. No schema conversion, column creation, rename, deletion or task movement is authorized by this deferral. The task increment must propose how to populate the selected set for new and existing projects while preserving current data.
+- Every project uses the predefined To do, In progress, In review and Done columns in that order. The task-management migration initializes the set for new and existing projects while preserving existing column and task IDs.
 
 ### Tasks
 
-- Support creating, reading, updating, deleting and individually hiding tasks.
-- Support ordering and moving tasks between columns to change their state.
+- Support creating, reading, editing, archiving and individually hiding tasks. Archiving removes a task from the board and preserves its data.
+- A task belongs directly to one project. The owner can select its state in the edit dialog, drag it to a specific position in or across columns, or use the board's up and down controls to reorder it within a column.
 - Task content includes a title and description.
-- Priority, an expected completion date and comments are optional.
-- Record the actual completion date automatically when a task is marked completed. It must not be manually editable.
+- Priority and an expected completion date are optional. Task comments remain a separate product decision.
+- Entering Done records the actual completion date automatically. Leaving Done clears it. The date is read-only.
 - A hidden task inside a public project is visible only to the administrator.
 
-The completion rule, behavior when reopening a task and detailed interactions remain open. No drag-and-drop library or interaction pattern has been selected.
+The task-management controls use a working prototype. Visual acceptance awaits owner review.
 
 ### Comments
 
@@ -157,9 +154,9 @@ A future Settings entry has no current feature scope. Mobile settings access was
 | Public project listing and read-only boards | Listing available at `/projects`; existing board routes preserved; Overview has a responsive presentation-only summary; metrics and activity remain pending |
 | Administration | Shared views implement creation, reading, editing, publication, lifecycle, required cancellation reasons and listed-but-inaccessible hidden cards. Project DELETE is denied. Local validation passes; visual review of the new controls remains pending |
 | Project information | Description and objectives use optional rich-text JSONB; repository is optional HTTPS; editor, public rendering and private image upload/processing are implemented |
-| Columns | Stored per project today; column CRUD is excluded from the initial scope. A common predefined set is deferred to task CRUD; count, labels and meanings remain undecided |
-| Tasks | Existing schema has title, optional description, optional priority, optional `due_date`, column, ordering and timestamps |
-| New task requirements | Individual hiding, automatic actual completion date and comments are not implemented; expected-date semantics need review against `due_date` |
+| Columns | Four predefined stages stored per project, with localized interface labels |
+| Tasks | Shared-board creation, editing, movement, ordering, hiding and archiving implemented locally. The existing `due_date` stores the expected completion date. The actual completion date follows the Done transition |
+| Comments | Visibility, editing and deletion remain outside the task-management increment |
 | Language | English instructions and documentation; existing interface localized in English, Spanish and Catalan, with cookie selection and English fallback |
 | Visual foundation | Cozy palette centralized in CSS; shared sidebar shell implemented provisionally for visual review; project and task component restyling remains pending |
 | Hosting and remote services | No deployments or remote Supabase connection |
@@ -173,11 +170,8 @@ Project 404 responses currently deliver localized content through the React payl
 1. Home-page content, navigation and project information/board entry points.
 2. Screen-level visual design beyond the selected cozy direction and palette, component-library adoption and the review method for each UI change.
 3. Code-structure adjustments justified by the selected screens and interactions.
-4. The common predefined column set (final count, labels and meanings), its initial population and data-preserving migration during task CRUD; column CRUD is excluded.
-5. Task completion semantics, automatic date behavior and reopening rules.
-6. Task ordering/movement interactions and deletion or archival behavior.
-7. Comment visibility options, editing and deletion.
-8. Presentation of project evolution, if brought into a later task's scope.
+4. Comment visibility options, editing and deletion.
+5. Presentation of project evolution, if brought into a later task's scope.
 
 ## Earlier work boundary - superseded by the project increments below
 

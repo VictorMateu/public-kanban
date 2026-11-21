@@ -1802,3 +1802,51 @@ CodeQL was not run locally; a fresh hosted analysis after pushing this correctio
 is required to confirm both findings are resolved. The empty-database SQL suite
 was not run on the populated owner instance. Browser checks are automated
 assertions, not a new owner visual review or cross-platform certification.
+
+## Task management - 2026-11-21
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 passing tests) and
+  `npm run build` passed on Windows with Node.js 24.22.1 and npm 11.19.1.
+- Supabase CLI 2.122.0 applied migration `20261121000100` locally.
+  `supabase db lint --local --fail-on warning` passed. The existing project
+  received the four columns and had no previous tasks or columns to convert.
+- The rollback suite `tests/project-management-db.sql` passed through local
+  PostgreSQL with `ON_ERROR_STOP=1`. It checked owner authorization, cross-project
+  destination rejection, stale writes, retry-safe creation, completion,
+  reopening, archiving and per-task visibility without creating users.
+- `npm run test:public` against the local production server passed with 29
+  tests and one expected skip for the empty-list case on a populated database.
+- `node --test tests/task-browser.ts` passed in isolated Chromium at desktop
+  and mobile widths. It checked modal focus, create/edit, pointer reordering
+  and movement, keyboard ordering, touch movement, completion/reopening,
+  hiding, archiving and anonymous HTML/RSC exclusion. The test verified
+  fixture cleanup and preserved the existing population and authorization.
+- The disposable-database pgTAP suite was updated for the new schema.
+  It was not run on the populated owner instance because it creates fixed test
+  identities and requires an empty instance. Owner visual acceptance remains
+  pending.
+
+### Task editor picker styling
+
+The task status and priority menus use the shared palette where the browser
+supports customizable selects. The due-date field adds a themed calendar with
+keyboard navigation and keeps direct date entry. Visual acceptance is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests) and `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against the local production
+  build in isolated Chromium. It checks the styled status picker, keyboard
+  selection, the calendar bounds at 390 px, keyboard month/day navigation,
+  Escape dismissal and date persistence, alongside the existing task flows.
+- The browser run exposed a drag cancellation on ordinary focus changes.
+  Dragging now cancels for window blur and the pointer/touch checks pass.
+
+### Task editor footer and visibility control
+
+The edit dialog places Archive task in the footer opposite Close and Save.
+Hide from visitors uses the project visibility switch styling. Visual
+acceptance is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests) and `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against the local production
+  build in isolated Chromium. The test checked keyboard toggling and saved
+  visibility, footer placement and fit at 390 px, and archive confirmation.

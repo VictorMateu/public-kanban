@@ -65,7 +65,11 @@
     "emptyDescription": "Las columnas y las tareas de este proyecto aparecerán aquí cuando estén disponibles.",
     "region": "Columnas y tareas del tablero",
     "taskCount": "{count, plural, one {# tarea} other {# tareas}}",
-    "emptyColumn": "Sin tareas por ahora."
+    "emptyColumn": "Sin tareas por ahora.",
+    "todo": "Por hacer",
+    "in_progress": "En curso",
+    "review": "En revisión",
+    "done": "Hecho"
   },
   "Task": {
     "priority": "Prioridad",
@@ -73,7 +77,39 @@
     "low": "baja",
     "medium": "media",
     "high": "alta",
-    "dueDate": "Fecha límite:"
+    "dueDate": "Fecha límite:",
+    "completedOn": "Completada:"
+  },
+  "TaskManagement": {
+    "newTask": "Nueva tarea",
+    "editTask": "Editar tarea",
+    "editNamed": "Editar {title}",
+    "dragTask": "Arrastrar {title}",
+    "title": "Título",
+    "description": "Descripción",
+    "stage": "Estado",
+    "noPriority": "Sin prioridad",
+    "openCalendar": "Abrir calendario",
+    "calendar": "Calendario",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "clearDate": "Borrar fecha",
+    "today": "Hoy",
+    "expectedDate": "Fecha prevista de finalización",
+    "hideTask": "Ocultar a los visitantes",
+    "hiddenBadge": "Oculta",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "archiveTask": "Archivar tarea",
+    "archivePrompt": "¿Archivar «{title}»? Se retirará del tablero y se conservará en la base de datos.",
+    "close": "Cerrar",
+    "save": "Guardar tarea",
+    "saving": "Guardando…",
+    "ok": "Tablero actualizado.",
+    "invalid": "Revisa el título, la descripción y la fecha y vuelve a intentarlo.",
+    "stale": "El tablero ha cambiado. Vuelve a abrir la tarea e inténtalo de nuevo.",
+    "unauthorized": "Se requiere acceso de administrador.",
+    "unavailable": "No se pudo guardar el cambio. Inténtalo de nuevo."
   },
   "Auth": {
     "sessionActive": "Sesión de administrador iniciada",

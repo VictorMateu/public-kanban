@@ -36,6 +36,6 @@ export function localAdministratorToken() {
 // Only exact, validated fixtures from a test run may bypass application DELETE denial.
 export function removeLocalProjectFixture(id: string, slugs: string[]) {
   const fixtureId = z.uuid().parse(id);
-  const fixtureSlugs = z.array(z.string().regex(/^(rich-http|draft-action-http|action-http|images-browser|images-retry|images-keyboard|lifecycle-http)-[a-z0-9-]+$/)).min(1).parse(slugs);
+  const fixtureSlugs = z.array(z.string().regex(/^(rich-http|draft-action-http|action-http|images-browser|images-retry|images-keyboard|lifecycle-http|task-browser)-[a-z0-9-]+$/)).min(1).parse(slugs);
   sql("DELETE FROM public.projects WHERE id = '" + fixtureId + "'::UUID AND slug IN (" + fixtureSlugs.map((slug) => "'" + slug + "'").join(",") + ");");
 }

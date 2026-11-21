@@ -234,3 +234,18 @@ required reasons, reopening retention and DELETE denial. Test cleanup alone uses
 local PostgreSQL access for exact UUID-and-slug fixtures; application DELETE
 permissions remain denied. No broad cleanup, users, remote migration or deployment
 was introduced.
+
+## Task writes and per-task visibility - 2026-11-21
+
+It has been decided to preserve archived task rows and enforce task visibility
+at the database boundary. Anonymous and nonowner rows require a visible task
+and a visible, published project. Archived tasks are excluded from public
+reads and the managed board. The database continues to enforce the composite
+column/project foreign key.
+
+The authenticated RPC verifies the administrator and serializes mutations on
+the project row. Direct writes would leave placement and task versioning to
+separate browser requests. The RPC instead applies each change atomically,
+checks the expected task version and refuses destinations outside the project.
+Direct application writes to tasks and columns are revoked. A trigger assigns
+the UTC completion date on entry to Done and clears it on reopening.

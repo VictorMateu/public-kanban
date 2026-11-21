@@ -12,19 +12,16 @@ insert into private.administrator (user_id) values ('00000000-0000-4000-8000-000
 insert into public.projects (id, slug, name, is_published) values
   ('10000000-0000-4000-8000-000000000001', 'published-test', 'Published test', true),
   ('10000000-0000-4000-8000-000000000002', 'draft-test', 'Draft test', false);
-insert into public.columns (id, project_id, name) values
-  ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'Published column'),
-  ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', 'Draft column');
-insert into public.tasks (id, project_id, column_id, title) values
-  ('30000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'Published task'),
-  ('30000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000002', 'Draft task');
+insert into public.tasks (project_id, column_id, title)
+select c.project_id, c.id, p.name || ' task' from public.columns c join public.projects p on p.id = c.project_id
+where c.stage = 'todo';
 
 select ok((select bool_and(relrowsecurity) from pg_class where oid in ('public.projects'::regclass, 'public.columns'::regclass, 'public.tasks'::regclass, 'private.administrator'::regclass)), 'RLS enabled on every table');
 
 set local role anon;
 select results_eq('select slug from public.projects', array['published-test']::text[], 'Anonymous sees only published projects');
-select results_eq('select name from public.columns', array['Published column']::text[], 'Anonymous sees only published columns');
-select results_eq('select title from public.tasks', array['Published task']::text[], 'Anonymous sees only published tasks');
+select results_eq('select stage from public.columns order by position', array['todo', 'in_progress', 'review', 'done']::text[], 'Anonymous sees only published columns');
+select results_eq('select title from public.tasks', array['Published test task']::text[], 'Anonymous sees only published tasks');
 select throws_ok($$insert into public.projects (slug, name) values ('denied', 'Denied')$$, '42501', null, 'Anonymous cannot insert projects');
 select throws_ok($$update public.columns set name = 'Denied'$$, '42501', null, 'Anonymous cannot update columns');
 select throws_ok($$delete from public.tasks$$, '42501', null, 'Anonymous cannot delete tasks');
@@ -36,47 +33,53 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-000000000002","role":"authenticated","user_metadata":{"is_admin":true}}';
 select is(public.is_admin(), false, 'User metadata cannot grant administrator rights');
 select results_eq('select slug from public.projects', array['published-test']::text[], 'Other user cannot read draft projects');
-select results_eq('select name from public.columns', array['Published column']::text[], 'Other user cannot read draft columns');
-select results_eq('select title from public.tasks', array['Published task']::text[], 'Other user cannot read draft tasks');
+select results_eq('select stage from public.columns order by position', array['todo', 'in_progress', 'review', 'done']::text[], 'Other user cannot read draft columns');
+select results_eq('select title from public.tasks', array['Published test task']::text[], 'Other user cannot read draft tasks');
 select throws_ok($$insert into private.administrator (user_id) values ('00000000-0000-4000-8000-000000000002')$$, '42501', null, 'User cannot authorize themselves');
 select throws_ok($$insert into public.projects (slug, name) values ('denied', 'Denied')$$, '42501', null, 'Other user cannot insert projects');
 select throws_ok($$insert into public.columns (project_id, name) values ('10000000-0000-4000-8000-000000000001', 'Denied')$$, '42501', null, 'Other user cannot insert columns');
 select throws_ok($$insert into public.tasks (project_id, column_id, title) values ('10000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'Denied')$$, '42501', null, 'Other user cannot insert tasks');
 with changed as (update public.projects set name = 'Denied' returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot update projects');
-with changed as (update public.columns set name = 'Denied' returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot update columns');
-with changed as (update public.tasks set title = 'Denied' returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot update tasks');
+select throws_ok($$update public.columns set name = 'Denied'$$, '42501', null, 'Other user cannot update columns');
+select throws_ok($$update public.tasks set title = 'Denied'$$, '42501', null, 'Other user cannot update tasks');
 select throws_ok($$delete from public.projects$$, '42501', null, 'Other user cannot delete projects');
-with changed as (delete from public.columns returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot delete columns');
-with changed as (delete from public.tasks returning id) select is((select count(*) from changed), 0::bigint, 'Other user cannot delete tasks');
+select throws_ok($$delete from public.columns$$, '42501', null, 'Other user cannot delete columns');
+select throws_ok($$delete from public.tasks$$, '42501', null, 'Other user cannot delete tasks');
 reset role;
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-000000000001","role":"authenticated"}';
 select is(public.is_admin(), true, 'Authorized UUID is administrator');
 select is((select count(*) from public.projects), 2::bigint, 'Administrator sees draft projects');
-select is((select count(*) from public.columns), 2::bigint, 'Administrator sees draft columns');
+select is((select count(*) from public.columns), 8::bigint, 'Administrator sees draft columns');
 select is((select count(*) from public.tasks), 2::bigint, 'Administrator sees draft tasks');
 select throws_ok($$select * from private.administrator$$, '42501', null, 'Even administrator cannot directly access private registry');
 select lives_ok($$insert into public.projects (id, slug, name) values ('10000000-0000-4000-8000-000000000003', 'admin-test', 'Admin test')$$, 'Administrator can insert project');
-select lives_ok($$insert into public.columns (id, project_id, name) values ('20000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', 'Admin column')$$, 'Administrator can insert column');
-select lives_ok($$insert into public.tasks (id, project_id, column_id, title) values ('30000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000003', 'Admin task')$$, 'Administrator can insert task');
+select is((select count(*) from public.columns where project_id = '10000000-0000-4000-8000-000000000003'), 4::bigint, 'New projects receive four columns');
+select throws_ok($$insert into public.columns (project_id, name, stage) values ('10000000-0000-4000-8000-000000000003', 'Admin column', 'todo')$$, '42501', null, 'Administrator cannot create columns');
+select is(public.mutate_task('create', '10000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000003',
+  p_column => (select id from public.columns where project_id = '10000000-0000-4000-8000-000000000003' and stage = 'todo'),
+  p_title => 'Admin task', p_hidden => false), 'ok', 'Administrator can create tasks through the RPC');
 with changed as (update public.projects set name = 'Updated' where slug = 'admin-test' returning id) select is((select count(*) from changed), 1::bigint, 'Administrator can update project');
-with changed as (update public.columns set name = 'Updated' where id = '20000000-0000-4000-8000-000000000003' returning id) select is((select count(*) from changed), 1::bigint, 'Administrator can update column');
-with changed as (update public.tasks set title = 'Updated', created_at = '2000-01-01' where id = '30000000-0000-4000-8000-000000000003' returning id) select is((select count(*) from changed), 1::bigint, 'Administrator can update task');
-select ok((select updated_at >= created_at and created_at > '2000-01-01'::timestamptz from public.tasks where id = '30000000-0000-4000-8000-000000000003'), 'Trigger sets updated_at and preserves created_at');
-select throws_ok($$update public.tasks set column_id = '20000000-0000-4000-8000-000000000002' where id = '30000000-0000-4000-8000-000000000003'$$, '23503', null, 'Tasks cannot reference a column in another project');
+select throws_ok($$update public.columns set name = 'Updated'$$, '42501', null, 'Administrator cannot update columns');
+select throws_ok($$update public.tasks set title = 'Updated'$$, '42501', null, 'Administrator cannot bypass task RPC');
 select throws_ok($$update public.projects set position = -1 where slug = 'admin-test'$$, '23514', null, 'Project position cannot be negative');
-select throws_ok($$update public.columns set position = -1 where id = '20000000-0000-4000-8000-000000000003'$$, '23514', null, 'Column position cannot be negative');
-select throws_ok($$update public.tasks set position = -1 where id = '30000000-0000-4000-8000-000000000003'$$, '23514', null, 'Task position cannot be negative');
-select throws_ok($$update public.tasks set priority = 'invalid' where id = '30000000-0000-4000-8000-000000000003'$$, '23514', null, 'Priority is constrained');
 select throws_ok($$update public.projects set slug = 'Invalid Slug' where slug = 'admin-test'$$, '23514', null, 'Slug format is constrained');
 select throws_ok($$update public.projects set slug = 'published-test' where slug = 'admin-test'$$, '23505', null, 'Slugs are unique');
-select throws_ok($$update public.tasks set title = ' ' where id = '30000000-0000-4000-8000-000000000003'$$, '23514', null, 'Blank task titles are rejected');
-with changed as (delete from public.tasks where id = '30000000-0000-4000-8000-000000000003' returning id) select is((select count(*) from changed), 1::bigint, 'Administrator can delete task');
-with changed as (delete from public.columns where id = '20000000-0000-4000-8000-000000000003' returning id) select is((select count(*) from changed), 1::bigint, 'Administrator can delete column');
+select throws_ok($$delete from public.tasks$$, '42501', null, 'Administrator cannot permanently delete a task');
+select throws_ok($$delete from public.columns$$, '42501', null, 'Administrator cannot delete columns');
 select throws_ok($$delete from public.projects where slug = 'admin-test'$$, '42501', null, 'Administrator cannot delete projects; use cancellation');
 update public.projects set is_published = false where slug = 'published-test';
 reset role;
+
+select throws_ok($$update public.columns set position = -1 where project_id = '10000000-0000-4000-8000-000000000003'$$, '23514', null, 'Column position cannot be negative');
+select throws_ok($$update public.tasks set position = -1 where id = '30000000-0000-4000-8000-000000000003'$$, '23514', null, 'Task position cannot be negative');
+select throws_ok($$update public.tasks set priority = 'invalid' where id = '30000000-0000-4000-8000-000000000003'$$, '23514', null, 'Priority is constrained');
+select throws_ok($$update public.tasks set title = ' ' where id = '30000000-0000-4000-8000-000000000003'$$, '23514', null, 'Blank task titles are rejected');
+select throws_ok($$update public.tasks set column_id = (select id from public.columns where project_id = '10000000-0000-4000-8000-000000000002' and stage = 'todo')
+  where id = '30000000-0000-4000-8000-000000000003'$$, '23503', null, 'Tasks cannot reference a column in another project');
+select lives_ok($$update public.tasks set title = 'Updated', created_at = '2000-01-01' where id = '30000000-0000-4000-8000-000000000003'$$, 'Privileged fixture probes updated timestamp');
+select ok((select updated_at >= created_at and created_at > '2000-01-01'::timestamptz from public.tasks where id = '30000000-0000-4000-8000-000000000003'), 'Trigger sets updated_at and preserves created_at');
 
 set local role anon;
 select is((select count(*) from public.projects), 0::bigint, 'Unpublishing hides projects immediately');

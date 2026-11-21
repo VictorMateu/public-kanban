@@ -65,7 +65,11 @@
     "emptyDescription": "Les columnes i les tasques d'aquest projecte apareixeran aquí quan estiguin disponibles.",
     "region": "Columnes i tasques del tauler",
     "taskCount": "{count, plural, one {# tasca} other {# tasques}}",
-    "emptyColumn": "Encara no hi ha tasques."
+    "emptyColumn": "Encara no hi ha tasques.",
+    "todo": "Per fer",
+    "in_progress": "En curs",
+    "review": "En revisió",
+    "done": "Fet"
   },
   "Task": {
     "priority": "Prioritat",
@@ -73,7 +77,39 @@
     "low": "baixa",
     "medium": "mitjana",
     "high": "alta",
-    "dueDate": "Data límit:"
+    "dueDate": "Data límit:",
+    "completedOn": "Completada:"
+  },
+  "TaskManagement": {
+    "newTask": "Tasca nova",
+    "editTask": "Edita la tasca",
+    "editNamed": "Edita {title}",
+    "dragTask": "Arrossega {title}",
+    "title": "Títol",
+    "description": "Descripció",
+    "stage": "Estat",
+    "noPriority": "Sense prioritat",
+    "openCalendar": "Obre el calendari",
+    "calendar": "Calendari",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes següent",
+    "clearDate": "Esborra la data",
+    "today": "Avui",
+    "expectedDate": "Data prevista de finalització",
+    "hideTask": "Amaga als visitants",
+    "hiddenBadge": "Oculta",
+    "moveUp": "Puja",
+    "moveDown": "Baixa",
+    "archiveTask": "Arxiva la tasca",
+    "archivePrompt": "Vols arxivar «{title}»? Es retirarà del tauler i es conservarà a la base de dades.",
+    "close": "Tanca",
+    "save": "Desa la tasca",
+    "saving": "S’està desant…",
+    "ok": "Tauler actualitzat.",
+    "invalid": "Revisa el títol, la descripció i la data i torna-ho a provar.",
+    "stale": "El tauler ha canviat. Torna a obrir la tasca i torna-ho a provar.",
+    "unauthorized": "Cal accés d’administrador.",
+    "unavailable": "No s’ha pogut desar el canvi. Torna-ho a provar."
   },
   "Auth": {
     "sessionActive": "Sessió d’administrador iniciada",

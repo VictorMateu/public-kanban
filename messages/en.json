@@ -66,7 +66,11 @@
     "emptyDescription": "This project's columns and tasks will appear here when available.",
     "region": "Board columns and tasks",
     "taskCount": "{count, plural, one {# task} other {# tasks}}",
-    "emptyColumn": "No tasks yet."
+    "emptyColumn": "No tasks yet.",
+    "todo": "To do",
+    "in_progress": "In progress",
+    "review": "In review",
+    "done": "Done"
   },
   "Task": {
     "priority": "Priority",
@@ -74,7 +78,39 @@
     "low": "low",
     "medium": "medium",
     "high": "high",
-    "dueDate": "Due date:"
+    "dueDate": "Due date:",
+    "completedOn": "Completed:"
+  },
+  "TaskManagement": {
+    "newTask": "New task",
+    "editTask": "Edit task",
+    "editNamed": "Edit {title}",
+    "dragTask": "Drag {title}",
+    "title": "Title",
+    "description": "Description",
+    "stage": "Status",
+    "noPriority": "No priority",
+    "openCalendar": "Open calendar",
+    "calendar": "Calendar",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "clearDate": "Clear date",
+    "today": "Today",
+    "expectedDate": "Expected completion date",
+    "hideTask": "Hide from visitors",
+    "hiddenBadge": "Hidden",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "archiveTask": "Archive task",
+    "archivePrompt": "Archive “{title}”? It will be removed from the board and kept in the database.",
+    "close": "Close",
+    "save": "Save task",
+    "saving": "Saving…",
+    "ok": "Board updated.",
+    "invalid": "Check the title, description and date and try again.",
+    "stale": "The board changed. Reopen the task and try again.",
+    "unauthorized": "Administrator access is required.",
+    "unavailable": "Could not save the change. Try again."
   },
   "Auth": {
     "sessionActive": "Administrator signed in",

@@ -41,30 +41,32 @@ async function page(path, headers = {}) {
 test("public project pages use real local data and preserve existing users", async (context) => {
   const before = population();
   const marker = `public-check-${randomUUID()}`;
-  const projects = Array.from({ length: 4 }, () => randomUUID());
-  const columns = Array.from({ length: 4 }, () => randomUUID());
-  const tasks = Array.from({ length: 3 }, () => randomUUID());
-  const names = { published: `Published project ${marker}`, draft: `Unpublished project ${marker}`, noColumns: `Project without columns ${marker}`, noTasks: `Project without tasks ${marker}` };
+  const projects = Array.from({ length: 3 }, () => randomUUID());
+  const tasks = Array.from({ length: 5 }, () => randomUUID());
+  const names = { published: `Published project ${marker}`, draft: `Unpublished project ${marker}`, noTasks: `Project without tasks ${marker}` };
   const firstTask = `${marker}-first-task`;
   const secondTask = `${marker}-second-task`;
   const escapedTitle = `${marker} <script>alert("text only")</script>`;
+  const privateTitle = `${marker}-hidden-task`;
+  const archivedTitle = `${marker}-archived-task`;
 
   try {
     sql(`BEGIN;
       INSERT INTO public.projects (id, slug, name, description, is_published, position) VALUES
         ('${projects[0]}', '${marker}-published', ${literal(names.published)}, 'Descripción pública de prueba', TRUE, 1),
         ('${projects[1]}', '${marker}-draft', ${literal(names.draft)}, 'Descripción privada de prueba', FALSE, 0),
-        ('${projects[2]}', '${marker}-no-columns', ${literal(names.noColumns)}, NULL, TRUE, 2),
-        ('${projects[3]}', '${marker}-no-tasks', ${literal(names.noTasks)}, NULL, TRUE, 3);
-      INSERT INTO public.columns (id, project_id, name, position) VALUES
-        ('${columns[0]}', '${projects[0]}', '${marker}-later-column', 2),
-        ('${columns[1]}', '${projects[0]}', '${marker}-first-column', 0),
-        ('${columns[2]}', '${projects[0]}', '${marker}-empty-column', 1),
-        ('${columns[3]}', '${projects[3]}', '${marker}-no-tasks-column', 0);
-      INSERT INTO public.tasks (id, project_id, column_id, title, description, priority, due_date, position) VALUES
-        ('${tasks[0]}', '${projects[0]}', '${columns[1]}', ${literal(secondTask)}, NULL, 'low', NULL, 2),
-        ('${tasks[1]}', '${projects[0]}', '${columns[1]}', ${literal(firstTask)}, 'Descripción de tarea', 'high', '2026-11-01', 0),
-        ('${tasks[2]}', '${projects[0]}', '${columns[0]}', ${literal(escapedTitle)}, NULL, 'medium', NULL, 0);
+        ('${projects[2]}', '${marker}-no-tasks', ${literal(names.noTasks)}, NULL, TRUE, 3);
+      INSERT INTO public.tasks (id, project_id, column_id, title, description, priority, due_date, position, is_hidden, archived_at)
+      SELECT v.id::UUID, c.project_id, c.id, v.title, v.description, v.priority, v.due_date::DATE,
+        v.position, v.hidden, CASE WHEN v.archived THEN now() END
+      FROM (VALUES
+        ('${tasks[0]}', 'todo', ${literal(secondTask)}, NULL, 'low', NULL, 2, FALSE, FALSE),
+        ('${tasks[1]}', 'todo', ${literal(firstTask)}, 'Descripción de tarea', 'high', '2026-11-01', 0, FALSE, FALSE),
+        ('${tasks[2]}', 'review', ${literal(escapedTitle)}, NULL, 'medium', NULL, 0, FALSE, FALSE),
+        ('${tasks[3]}', 'todo', ${literal(privateTitle)}, NULL, NULL, NULL, 3, TRUE, FALSE),
+        ('${tasks[4]}', 'todo', ${literal(archivedTitle)}, NULL, NULL, NULL, 4, FALSE, TRUE)
+      ) v(id, stage, title, description, priority, due_date, position, hidden, archived)
+      JOIN public.columns c ON c.stage = v.stage AND c.project_id = '${projects[0]}';
       COMMIT;`);
 
     await context.test("keeps overview metrics pending without serializing project data", async () => {
@@ -82,10 +84,10 @@ test("public project pages use real local data and preserve existing users", asy
     await context.test("lists published projects in order on the projects route without exposing drafts", async () => {
       const result = await page("/projects");
       assert.equal(result.status, 200);
-      for (const name of [names.published, names.noColumns, names.noTasks]) assert.ok(result.html.includes(name));
+      for (const name of [names.published, names.noTasks]) assert.ok(result.html.includes(name));
       assert.ok(!result.html.includes(names.draft));
       assert.ok(!result.html.includes("Descripción privada de prueba"));
-      assert.ok(result.html.indexOf(names.published) < result.html.indexOf(names.noColumns));
+      assert.ok(result.html.indexOf(names.published) < result.html.indexOf(names.noTasks));
       assert.ok(result.html.includes(`/projects/${marker}-published`));
     });
 
@@ -97,11 +99,12 @@ test("public project pages use real local data and preserve existing users", asy
         assert.ok(boardText.includes(text), "Expected public board content should be rendered");
       }
       assert.doesNotMatch(result.renderedHtml, />Read only<\/span>/);
-      assert.ok(result.html.indexOf(`${marker}-first-column`) < result.html.indexOf(`${marker}-empty-column`), "Column positions should define board order");
-      assert.ok(result.html.indexOf(`${marker}-empty-column`) < result.html.indexOf(`${marker}-later-column`), "Later columns should follow earlier columns");
+      assert.match(boardText, /To do[\s\S]*In progress[\s\S]*In review[\s\S]*Done/);
       assert.ok(result.html.indexOf(firstTask) < result.html.indexOf(secondTask), "Task positions should define card order");
       assert.ok(result.html.includes('dateTime="2026-11-01"') || result.html.includes('datetime="2026-11-01"'), "Deadline should have a machine-readable date");
       assert.ok(!result.html.includes("draggable="), "Public cards must not expose editing interactions");
+      assert.ok(!result.html.includes(privateTitle) && !result.html.includes(archivedTitle), "Private task data must be absent from HTML and React payloads");
+      assert.ok(!result.html.includes("data-edit-task"));
     });
 
     await context.test("escapes text content instead of interpreting it as HTML", async () => {
@@ -142,13 +145,10 @@ test("public project pages use real local data and preserve existing users", asy
       assert.ok(!draft.html.includes(names.draft));
     });
 
-    await context.test("supports projects without columns and columns without tasks", async () => {
-      const noColumns = await page(`/projects/${marker}-no-columns`);
+    await context.test("seeds all four board columns for a project without tasks", async () => {
       const noTasks = await page(`/projects/${marker}-no-tasks`);
-      assert.equal(noColumns.status, 200);
       assert.equal(noTasks.status, 200);
-      assert.ok(noColumns.renderedHtml.includes("This board has no columns yet"));
-      assert.ok(noTasks.renderedHtml.includes("No tasks yet."));
+      assert.equal((noTasks.renderedHtml.match(/No tasks yet\./g) ?? []).length, 4);
     });
 
     await context.test("localizes board labels without translating data or exposing drafts", async () => {

@@ -281,7 +281,8 @@
   background: var(--palette-peach-soft);
   transition: background-color 180ms ease;
 }
-.project-visibility-switch[data-state="checked"] { background: var(--palette-sage); }
+.project-visibility-switch[data-state="checked"],
+input:checked + .project-visibility-switch { background: var(--palette-sage); }
 .project-visibility-thumb {
   height: 1.875rem;
   width: 1.875rem;
@@ -290,9 +291,11 @@
   box-shadow: 0 1px 4px color-mix(in srgb, var(--palette-espresso) 25%, transparent);
   transition: transform 180ms ease;
 }
-.project-visibility-switch[data-state="checked"] .project-visibility-thumb { transform: translateX(1.5rem); }
-.project-visibility-switch:disabled { opacity: .5; }
-.project-visibility-switch:focus-visible { outline: 2px solid var(--palette-espresso); outline-offset: 3px; }
+.project-visibility-switch[data-state="checked"] .project-visibility-thumb,
+input:checked + .project-visibility-switch .project-visibility-thumb { transform: translateX(1.5rem); }
+.project-visibility-switch:disabled, input:disabled + .project-visibility-switch { opacity: .5; }
+.project-visibility-switch:focus-visible,
+input:focus-visible + .project-visibility-switch { outline: 2px solid var(--palette-espresso); outline-offset: 3px; }
 
 .editor-shell {
   overflow: hidden;

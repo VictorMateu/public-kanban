@@ -269,3 +269,18 @@ existing switch style for hiding. Public hidden cards have no navigation; owner
 cards retain it. The common column set remains deferred, with no column/task
 mutations added. No dependencies were introduced. See ADR 0002 for implemented
 access and validation.md for actual test results.
+
+## Task ownership and shared board stages - 2026-11-21
+
+It has been decided to keep a mandatory `tasks.project_id`. A task is specific
+to one project, with its state, position, completion date and visibility on that
+row. A junction table would allow shared tasks across boards, but would
+require defining per-board state and visibility for a use case the product
+does not currently require.
+
+The project uses the same four predefined stages in each board. Stage keys
+are stable in the database and labels come from the locale catalogs. Existing
+recognizable columns retain their UUIDs and tasks. Ambiguous mappings stop the
+migration for review. The board supports a status selector, pointer and touch
+dragging, and keyboard-operable order controls. Pointer Events use the existing
+frontend stack without a new dependency. Exact presentation awaits owner review.
