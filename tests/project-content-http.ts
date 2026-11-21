@@ -9,6 +9,7 @@ import sharp from "sharp";
 import { richTextDocumentSchema, richTextToPlainText } from "../lib/projects/rich-text.ts";
 import { imageUploadResultSchema } from "../lib/projects/image-input.ts";
 import type { Database } from "../lib/supabase/database.types.ts";
+import { htmlText, serverMarkup } from "./helpers/html.ts";
 import { environment, origin, supabaseUrl, population, localAdministratorToken, hasLocalAdministrator, removeLocalProjectFixture } from "./support/local-project.ts";
 
 test("rich project HTTP paths enforce image visibility without creating users", { skip: !hasLocalAdministrator() && "Requires an existing local administrator; never creates users." }, async (context) => {
@@ -51,6 +52,20 @@ test("rich project HTTP paths enforce image visibility without creating users", 
     assert.equal(upload.error, null); uploaded = true;
     assert.equal((await admin.from("project_assets").update({ status: "ready" }).eq("id", assetId)).error, null);
     const publicPath = "/project-images/" + assetId;
+    await context.test("overview counts are the same with and without an administrator session", async () => {
+      const readCounts = async (headers?: HeadersInit) => {
+        const response = await fetch(origin.origin + "/", { headers });
+        assert.equal(response.status, 200);
+        const html = await response.text();
+        assert.ok(!html.includes(slug) && !html.includes("Private board fixture task"));
+        const counts = [...serverMarkup(html).matchAll(/<dd\b[^>]*>([\s\S]*?)<\/dd>/g)].map(([, value]) => htmlText(value ?? ""));
+        assert.equal(counts.length, 7);
+        assert.ok(counts.every(value => /^\d[\d,]*$/.test(value)));
+        return counts;
+      };
+      assert.deepEqual(await readCounts({ Cookie: cookie }), await readCounts());
+    });
+
     await context.test("draft images remain private even when public requests carry administrator cookies", async () => {
       assert.equal((await fetch(origin.origin + publicPath)).status, 404);
       assert.equal((await fetch(origin.origin + publicPath, { headers: { Cookie: cookie } })).status, 404);
