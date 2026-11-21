@@ -1,5 +1,5 @@
 ﻿import { useLocale, useTranslations } from "next-intl";
-import type { MouseEventHandler, PointerEventHandler, TouchEventHandler } from "react";
+import type { KeyboardEventHandler, MouseEventHandler, PointerEventHandler, TouchEventHandler } from "react";
 import type { Task } from "../../lib/tasks/queries";
 import { formatDueDate } from "../../lib/tasks/due-date";
 import styles from "./task-board.module.css";
@@ -17,19 +17,30 @@ export type TaskCardControl = {
   onClick: MouseEventHandler<HTMLButtonElement>;
   onPointerDown?: PointerEventHandler<HTMLButtonElement>;
   onTouchStart?: TouchEventHandler<HTMLButtonElement>;
+  onKeyDown?: KeyboardEventHandler<HTMLButtonElement>;
+  "aria-describedby"?: string;
+  "aria-keyshortcuts"?: string;
   disabled?: boolean;
 };
 
-export function TaskMetadata({ task, detail = false }: { task: TaskPreview; detail?: boolean }) {
+export function TaskMetadata({ task, detail = false, status }: {
+  task: TaskPreview;
+  detail?: boolean;
+  status?: { label: string; value: string };
+}) {
   const t = useTranslations("Task");
   const locale = useLocale();
   const priority = task.priority ? { color: priorities[task.priority], label: t(task.priority) } : null;
   const dueDate = task.due_date ? formatDueDate(task.due_date, locale) : null;
   const completedOn = detail && task.completed_on ? formatDueDate(task.completed_on, locale) : null;
-  if (!(priority || dueDate || completedOn || task.is_hidden)) return null;
+  if (!(status || priority || dueDate || completedOn || task.is_hidden)) return null;
 
   const badgeClass = detail ? "px-2.5 py-0.5" : "px-2 leading-5";
-  return <dl className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ${detail ? "mt-2" : "mt-1.5"}`}>
+  return <dl className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ${detail ? "" : "mt-1.5"}`}>
+    {status && <div className={`rounded-full bg-surface-warm ${badgeClass}`}>
+      <dt className="sr-only">{status.label}</dt>
+      <dd>{status.value}</dd>
+    </div>}
     {priority && <div className={`rounded-full ${badgeClass} ${priority.color}`}>
       <dt className="sr-only">{t("priority")}</dt>
       <dd>{detail ? t("priorityValue", { priority: priority.label }) : priority.label}</dd>

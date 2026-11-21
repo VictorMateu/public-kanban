@@ -2082,3 +2082,12 @@ columns, tasks and images. No remote database migration was applied.
 - The disposable `supabase test db --local` suite was left to CI because it
   requires an empty instance and creates user fixtures. No remote migration
   was applied.
+
+### Task detail metadata and board ordering
+
+- Lint, TypeScript, all 91 unit tests and the production build passed.
+- Chromium verified that the task detail groups status and visibility above
+  the description. The board supports drag and drop and Alt + Down from
+  the focused card, with focus restored after the order is saved.
+- The HTTP suite passed 29 checks. The empty catalog check was skipped
+  against the populated local database.

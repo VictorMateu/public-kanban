@@ -237,19 +237,15 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await has("[data-new-task]:not(:disabled)");
     assert.equal(await boardTop(), initialBoardTop);
 
-    // Use the keyboard alternative for ordering and the editor for changing stages.
+    // Reorder from the focused card, then change its stage in the editor.
     await waitFor(async () => !await exists(dialog), "drag does not open the task");
     await evaluate("function(selector) { document.querySelector(selector).focus(); }", [open(beta)]);
-    await press("Enter", 13);
-    await has(dialog + " [data-edit-task]");
-    const moveDown = dialog + " [data-move-down]:not(:disabled)";
-    await has(moveDown);
-    await evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
-    await evaluate("function(selector) { document.querySelector(selector).focus(); }", [moveDown]);
-    assert.equal(await evaluate("document.activeElement?.hasAttribute('data-move-down')"), true);
-    await send("Input.dispatchKeyEvent", { type: "keyDown", key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " });
-    await send("Input.dispatchKeyEvent", { type: "keyUp", key: " ", code: "Space", windowsVirtualKeyCode: 32 });
+    assert.equal(await exists(open(beta) + '[aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"]:focus'), true);
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: "ArrowDown", code: "ArrowDown", modifiers: 1, windowsVirtualKeyCode: 40 });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "ArrowDown", code: "ArrowDown", modifiers: 1, windowsVirtualKeyCode: 40 });
     await has(firstAdded + card(alpha));
+    await has(open(beta) + ":focus");
+    assert.equal(await exists(dialog), false);
     await edit(alpha);
     const status = `${dialog} select[name=columnId]`;
     await click(status);
