@@ -10,9 +10,10 @@ import { ProjectInformation } from "../../../components/projects/project-informa
 import { RichTextContent } from "../../../components/projects/rich-text-content";
 import { getManagedProjectBySlug, getPublishedProjectBySlug } from "../../../lib/projects/queries";
 import { isProjectSlug } from "../../../lib/projects/slug";
+import { ENABLED_QUERY_FLAG, PROJECT_SAVED_PARAM } from "../../../lib/projects/urls";
 import { isSupabaseConfigured } from "../../../lib/supabase/env";
 
-type ProjectPageProps = { params: Promise<{ slug: string }>; searchParams: Promise<{ edit?: string; saved?: string }> };
+type ProjectPageProps = { params: Promise<{ slug: string }>; searchParams: Promise<{ edit?: string; [PROJECT_SAVED_PARAM]?: string }> };
 const getProject = cache(getPublishedProjectBySlug);
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   const project = administrator ? await getManagedProjectBySlug(slug) : await getProject(slug);
   const form = await getTranslations("ProjectForm");
   const information = await getTranslations("ProjectInformation");
-  const { edit, saved } = await searchParams;
+  const { edit, [PROJECT_SAVED_PARAM]: saved } = await searchParams;
   if (!project) notFound();
   const cancelled = project.status === "cancelled";
   return (
@@ -79,7 +80,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
           {project.is_hidden && <span className="rounded-full border border-border/20 bg-surface/70 px-3 py-1 text-sm">{form("hidden")}</span>}
         </div>}
       </div>
-      {administrator && saved === "1" && <p role="status" className="sr-only">{form("saved")}</p>}
+      {administrator && saved === ENABLED_QUERY_FLAG && <p role="status" className="sr-only">{form("saved")}</p>}
       <section aria-labelledby="board-heading" className="mt-3 flex min-h-0 flex-1 flex-col border-t border-border/20 pt-3 sm:mt-4 sm:pt-4">
         <h2 id="board-heading" className="sr-only">{t("board")}</h2>
         <Suspense fallback={<p role="status" className="rounded-xl border border-slate-200 bg-white p-8 text-slate-600">{t("loading")}</p>}>

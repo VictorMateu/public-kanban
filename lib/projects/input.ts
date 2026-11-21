@@ -1,4 +1,4 @@
-import { projectDetailsSchema, projectContentSchema, projectPublicationSchema, projectManagementSchema, type ProjectDetails, type ProjectContentField, type ProjectFormField } from "./schemas.ts";
+import { projectDetailsSchema, projectFormFields, projectContentSchema, projectPublicationSchema, projectManagementSchema, type ProjectDetails, type ProjectContentField, type ProjectFormField } from "./schemas.ts";
 import { parseRichTextJson } from "./rich-text.ts";
 
 type ProjectField = keyof ProjectDetails;
@@ -17,8 +17,8 @@ function readField(formData: FormData, field: ProjectField): unknown {
 // Accept only editable details; publication, ordering and identity are separate operations.
 export function parseProjectDetails(formData: FormData): ProjectDetailsResult {
   const result = projectDetailsSchema.safeParse({
-    name: readField(formData, "name"),
-    slug: readField(formData, "slug"),
+    name: readField(formData, projectFormFields.name),
+    slug: readField(formData, projectFormFields.slug),
     description: readField(formData, "description"),
   });
   if (result.success) return { success: true, data: result.data };
@@ -45,9 +45,9 @@ export function parseProjectContent(form: FormData) {
     return parsed.success ? parsed.data : undefined;
   };
   const result = projectContentSchema.safeParse({
-    name: field("name"), slug: field("slug"),
-    description_content: rich("description_content"), objectives_content: rich("objectives_content"),
-    repository_url: field("repository_url"),
+    name: field(projectFormFields.name), slug: field(projectFormFields.slug),
+    description_content: rich(projectFormFields.description_content), objectives_content: rich(projectFormFields.objectives_content),
+    repository_url: field(projectFormFields.repository_url),
   });
   if (result.success) return { success: true as const, data: result.data };
   const errors: Partial<Record<ProjectContentField, InputError>> = {};
@@ -65,9 +65,9 @@ export function parseProjectSubmission(form: FormData) {
     const entries = form.getAll(name);
     return entries.length === 1 ? entries[0] : undefined;
   };
-  const publication = projectPublicationSchema.safeParse(field("is_published"));
+  const publication = projectPublicationSchema.safeParse(field(projectFormFields.is_published));
   const management = projectManagementSchema.safeParse({
-    status: field("status"), is_hidden: field("is_hidden"), cancellation_reason: field("cancellation_reason"),
+    status: field(projectFormFields.status), is_hidden: field(projectFormFields.is_hidden), cancellation_reason: field(projectFormFields.cancellation_reason),
   });
   const managementErrors: Partial<Record<ProjectFormField, InputError>> = {};
   if (!management.success) for (const issue of management.error.issues) {

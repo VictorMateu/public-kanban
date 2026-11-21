@@ -124,9 +124,6 @@ export function optionalRichText(document: RichTextDocument): RichTextDocument |
   return richTextToPlainText(document).trim() || richTextAssetIds(document).length ? document : null;
 }
 
-export function projectImageUrl(assetId: string, preview = false): string {
-  return "/project-images/" + encodeURIComponent(assetId) + (preview ? "?preview=1" : "");
-}
 
 export function readRichText(value: unknown, fallback: string | null = null): RichTextDocument {
   if (value === null || value === undefined) return plainTextDocument(fallback);

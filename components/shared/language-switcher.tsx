@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { setLocale } from "../../i18n/actions";
+import { localeFormField } from "../../i18n/locales";
 
 const languages = [
   { locale: "en", label: "english" },
@@ -19,7 +20,7 @@ export async function LanguageSwitcher() {
           <button
             key={language.locale}
             type="submit"
-            name="locale"
+            name={localeFormField}
             value={language.locale}
             lang={language.locale}
             aria-label={t(language.label)}

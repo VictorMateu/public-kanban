@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ListedProject } from "../../lib/projects/queries";
 import type { ProjectStatus } from "../../lib/projects/schemas";
-import { projectImageUrl } from "../../lib/projects/rich-text";
+import { projectImageUrl } from "../../lib/projects/urls";
 import { ProjectCancellationDialog } from "./project-cancellation-dialog";
 import { ProjectCoverImage } from "./project-cover-image";
 import styles from "./project-card.module.css";

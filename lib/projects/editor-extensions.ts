@@ -1,7 +1,8 @@
 import { Node } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { z } from "zod";
-import { projectImageUrl, safeLinkSchema } from "./rich-text.ts";
+import { safeLinkSchema } from "./rich-text.ts";
+import { projectImageUrl } from "./urls.ts";
 
 const imageAttributes = z.object({ assetId: z.uuid(), alt: z.string() });
 function projectImage(previewUrl?: (assetId: string) => string | undefined) { return Node.create({

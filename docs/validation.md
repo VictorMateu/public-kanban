@@ -2119,3 +2119,18 @@ columns, tasks and images. No remote database migration was applied.
 - `node --test tests/task-browser.ts` passed against the local production build.
   Chromium verified the System task badge on the card and in its detail,
   the read-only description, and the absence of edit and archive controls.
+
+### Shared form, image and task contracts
+
+- `npm run lint`, `npm run typecheck`, `npm test` (95 tests) and
+  `npm run build` passed. New tests check the published multipart field names,
+  duplicate and invalid form values, accepted image types, unchanged URL
+  flags and valid task RPC results.
+- The production HTTP suite passed 29 checks and skipped the empty catalog
+  check against populated local Supabase. The image browser suite passed all
+  10 checks. These runs reused the existing local administrator and cleaned
+  up only their own fixtures. No migration or remote check was performed.
+- The task browser suite stops at the starter-description assertion in
+  `tests/task-browser.ts:168`: DOM text content omits the expected line breaks.
+  An unchanged production build of `ea577bc` failed at the same assertion
+  against the same local instance. Later task browser steps were not verified.

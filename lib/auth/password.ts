@@ -1,5 +1,6 @@
 export type Credentials = { email: string; password: string };
 export type AuthFormState = { error: "invalidCredentials" | "signInUnavailable" | "signOutFailed" | null };
+export const SIGN_IN_FIELDS = { email: "email", password: "password" } as const;
 
 // Minimal interface for authorization tests without replacing actual persistence.
 export type PasswordClient = {
@@ -14,8 +15,8 @@ export type PasswordClient = {
 };
 
 export function parseCredentials(formData: FormData): Credentials | null {
-  const emailValue = formData.get("email");
-  const password = formData.get("password");
+  const emailValue = formData.get(SIGN_IN_FIELDS.email);
+  const password = formData.get(SIGN_IN_FIELDS.password);
   if (typeof emailValue !== "string" || typeof password !== "string") return null;
 
   const email = emailValue.trim();

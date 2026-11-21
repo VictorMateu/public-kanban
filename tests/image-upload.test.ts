@@ -1,10 +1,53 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { uploadProjectImage } from "../lib/projects/image-upload.ts";
+import { PROJECT_IMAGE_ACCEPT, parseImageUploadForm, stagedImageFileSchema } from "../lib/projects/image-input.ts";
+import { projectImageUrl, savedProjectUrl } from "../lib/projects/urls.ts";
 
 const projectId = "5139a508-e45c-49dd-942b-86f18954606b";
 const assetId = "b264f1b8-1101-4822-87da-1aee3ce8c02a";
 const file = new File([new Uint8Array([137, 80, 78, 71])], "fixture.png", { type: "image/png" });
+
+test("multipart parser preserves the upload wire contract without accepting ambiguous fields", () => {
+  const multipart = () => {
+    const form = new FormData();
+    form.set("project_id", projectId);
+    form.set("file", file);
+    return form;
+  };
+  assert.deepEqual(parseImageUploadForm(multipart()), { projectId, taskId: undefined, file });
+  const withTask = multipart();
+  withTask.set("task_id", assetId);
+  assert.deepEqual(parseImageUploadForm(withTask), { projectId, taskId: assetId, file });
+  for (const [key, value] of [["project_id", projectId], ["task_id", assetId], ["file", file]] as const) {
+    const duplicate = multipart();
+    duplicate.set(key, value);
+    duplicate.append(key, value);
+    assert.equal(parseImageUploadForm(duplicate), null, key);
+  }
+  for (const [key, value] of [["extra", "x"], ["project_id", "invalid"], ["task_id", ""], ["file", "text"], ["file", new File([], "empty.png")]] as const) {
+    const malformed = multipart();
+    malformed.set(key, value);
+    assert.equal(parseImageUploadForm(malformed), null, key);
+  }
+  const missingFile = multipart();
+  missingFile.delete("file");
+  assert.equal(parseImageUploadForm(missingFile), null);
+});
+
+test("the file picker and staged-image validation allow the three supported input MIME types", () => {
+  assert.equal(PROJECT_IMAGE_ACCEPT, "image/jpeg,image/png,image/webp");
+  for (const type of PROJECT_IMAGE_ACCEPT.split(",")) {
+    assert.equal(stagedImageFileSchema.safeParse(new File(["bytes"], "image", { type })).success, true, type);
+  }
+  assert.equal(stagedImageFileSchema.safeParse(new File(["bytes"], "image.gif", { type: "image/gif" })).success, false);
+});
+
+test("project URLs preserve the existing query flags and encode path segments", () => {
+  assert.equal(projectImageUrl("asset/id"), "/project-images/asset%2Fid");
+  assert.equal(projectImageUrl("asset/id", true), "/project-images/asset%2Fid?preview=1");
+  assert.equal(savedProjectUrl("project/slug"), "/projects/project%2Fslug?saved=1");
+});
 
 test("image upload sends the original File and project identity as browser-generated multipart", async (context) => {
   let received: { input: Parameters<typeof fetch>[0]; init: RequestInit | undefined } | undefined;
@@ -22,6 +65,11 @@ test("image upload sends the original File and project identity as browser-gener
   const uploaded = body.get("file"); assert.ok(uploaded instanceof File);
   assert.equal(uploaded.name, file.name); assert.equal(uploaded.type, file.type);
   assert.deepEqual(await uploaded.arrayBuffer(), await file.arrayBuffer());
+
+  assert.deepEqual(await uploadProjectImage(projectId, file, assetId), { success: true, assetId });
+  const taskBody = received.init?.body;
+  assert.ok(taskBody instanceof FormData);
+  assert.equal(taskBody.get("task_id"), assetId);
 });
 
 test("image upload preserves server rejection codes for actionable interface errors", async (context) => {
