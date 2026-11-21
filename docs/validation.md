@@ -1719,3 +1719,27 @@ Actual integrated-branch checks:
 
 The empty-database pgTAP suite was not run on the populated owner instance.
 Hosted checks and the remaining owner visual review are pending.
+
+
+## Local acceptance and publication preparation - 2026-11-20
+
+The owner accepted the local project-management increment and requested pushing
+the branch and creating a PR to main, then requested an architecture/structure
+summary in README before publication. README now describes the implemented
+routes, rendering boundaries, Server Actions, Zod validation, domain queries,
+Supabase authorization/RLS, image lifecycle, localization and directory roles.
+This documents the current design without changing its architecture or adopting
+a dependency. The acceptance scope is recorded in product.md.
+
+The local sign-in issue was configuration: main had an ignored .env.local but
+this worktree did not. The worktree now has only the two validated public values
+for the same existing loopback Supabase instance. Next was restarted, the
+unauthenticated login response contained its email/password form instead of the
+unavailable state, and Projects returned HTTP 200 without a data-unavailable
+state. No password was requested or automated successful password sign-in
+claimed. The environment file remains ignored and is excluded from commits.
+
+Documentation-only handoff checks: git diff --check and README local path/link
+checks passed. Application, database and browser checks were not repeated for
+these prose changes; the preceding integration entry records their actual
+results. Hosted validation of the feature branch remains pending.

@@ -408,3 +408,14 @@ Published hidden cards expose name/status without navigation or content to
 visitors; owner cards retain management access. Database, HTTP and isolated
 browser tests pass. The new form/card presentation remains pending owner visual
 review; see ADRs 0001/0002 and validation.md. No task or column CRUD was added.
+
+
+### Local project-management acceptance - 2026-11-20
+
+The owner accepted the reviewed project-management increment after the main
+integration and local sign-in configuration fix, and requested publication of
+the branch as a PR to main. This accepts the shared creation/editing and
+information dialogs, rich-text/image flow, lifecycle/cancellation and hidden
+visibility behavior within this increment. Earlier WIP commits and review notes
+remain historical. Task/column CRUD, the common column definition, file cleanup
+policy and remote deployment remain outside this acceptance.
