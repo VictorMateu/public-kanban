@@ -940,6 +940,12 @@ remains available where the themed calendar is unsupported. The editor uses
 the same switch styling as project visibility for Hide from visitors. The
 archive action is in the edit dialog footer and opens a confirmation view.
 
+The shared board uses cream task cards and four tones derived from the
+existing palette: peach, honey, warm cream and sage.
+Each owner column offers Add task, which opens the editor with that column
+selected. Completed cards carry a visual check and a struck-through title.
+The board scrolls horizontally within its region on narrow viewports.
+
 The board includes an independent drag handle and keyboard-operable
 up/down buttons. Selector moves append to the destination. Dragging uses the
 insertion marker and supports horizontal edge scrolling. Archiving preserves

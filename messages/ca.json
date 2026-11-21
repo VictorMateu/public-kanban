@@ -81,6 +81,8 @@
     "completedOn": "Completada:"
   },
   "TaskManagement": {
+    "addTask": "Afegeix una tasca",
+    "addTaskInColumn": "Afegeix una tasca a {column}",
     "newTask": "Tasca nova",
     "editTask": "Edita la tasca",
     "editNamed": "Edita {title}",

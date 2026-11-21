@@ -1,0 +1,102 @@
+.column {
+  --lane-surface: var(--palette-peach-soft);
+  --lane-accent: var(--palette-peach);
+  border-color: color-mix(in srgb, var(--palette-espresso) 15%, transparent);
+  background: var(--lane-surface);
+}
+
+.column[data-stage="in_progress"] {
+  --lane-surface: color-mix(in srgb, var(--palette-honey) 27%, var(--palette-cream));
+  --lane-accent: color-mix(in srgb, var(--palette-honey) 60%, var(--palette-cream));
+}
+
+.column[data-stage="review"] {
+  --lane-surface: color-mix(in srgb, var(--palette-cream) 96%, var(--palette-espresso));
+  --lane-accent: color-mix(in srgb, var(--palette-cream) 86%, var(--palette-espresso));
+}
+
+.column[data-stage="done"] {
+  --lane-surface: var(--palette-sage-soft);
+  --lane-accent: var(--palette-sage);
+}
+
+.columnHeader {
+  background: color-mix(in srgb, var(--lane-accent) 42%, transparent);
+}
+
+.stageMark, .taskMark {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  border: 1.5px solid;
+  border-radius: 50%;
+}
+
+.stageMark {
+  color: var(--palette-espresso);
+}
+
+.column[data-stage="in_progress"] .stageMark::after,
+.column[data-stage="review"] .stageMark::after {
+  inline-size: .45rem;
+  block-size: .45rem;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.column[data-stage="review"] .stageMark::after {
+  border: 1px solid;
+  background: transparent;
+}
+
+.taskCount {
+  min-block-size: 1.75rem;
+  background: var(--lane-accent);
+}
+
+.card, .addTask {
+  border-color: color-mix(in srgb, var(--palette-espresso) 17%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--palette-espresso) 10%, transparent);
+}
+
+.taskMark {
+  margin-block-start: .15rem;
+  color: color-mix(in srgb, var(--palette-espresso) 72%, var(--palette-cream));
+}
+
+.taskMark[data-completed] {
+  border-color: var(--palette-espresso);
+  background: var(--lane-accent);
+  color: var(--palette-espresso);
+}
+
+.column[data-stage="done"] .stageMark::after,
+.taskMark[data-completed]::after {
+  inline-size: .58rem;
+  block-size: .32rem;
+  border-block-end: 1.5px solid;
+  border-inline-start: 1.5px solid;
+  transform: translateY(-.06rem) rotate(-45deg);
+  content: "";
+}
+
+.addTask {
+  background: color-mix(in srgb, var(--palette-cream) 65%, transparent);
+}
+
+.addTask:hover:enabled {
+  background: var(--palette-cream);
+}
+
+.addTask:focus-visible {
+  outline: 2px solid var(--palette-espresso);
+  outline-offset: 2px;
+}
+
+.addTask:disabled {
+  opacity: .55;
+}

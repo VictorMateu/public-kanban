@@ -81,6 +81,8 @@
     "completedOn": "Completada:"
   },
   "TaskManagement": {
+    "addTask": "Añadir tarea",
+    "addTaskInColumn": "Añadir tarea en {column}",
     "newTask": "Nueva tarea",
     "editTask": "Editar tarea",
     "editNamed": "Editar {title}",

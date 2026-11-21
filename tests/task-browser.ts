@@ -105,6 +105,15 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const dateInput = `${dialog} [name=due_date]`;
     const alpha = await create("Task Alpha");
     const beta = await create("Task Beta");
+    const addInProgress = column(progress.id) + " [data-new-task]";
+    assert.equal(await evaluate("document.querySelectorAll('[data-new-task]').length"), 4);
+    assert.equal(await evaluate("new Set([...document.querySelectorAll('[data-stage]')].map(column => getComputedStyle(column).backgroundColor)).size"), 4);
+    await click(addInProgress);
+    await has(editable);
+    assert.equal(await evaluate("document.querySelector('dialog:modal [name=columnId]').value"), progress.id);
+    await press("Escape", 27);
+    await waitFor(async () => !await exists(dialog), "dismiss the column task editor");
+    assert.equal(await exists(addInProgress + ":focus"), true);
     await drag(card(beta) + " [data-task-drag]", card(alpha), 0.2);
     await has(column(todo.id) + " li:first-child" + card(beta));
     assert.deepEqual([(await task(beta)).position, (await task(alpha)).position], [0, 1]);
@@ -128,6 +137,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await waitFor(async () => !await exists(status + ":open"), "select status and dismiss menu");
     await click(confirm);
     await has(column(done.id) + " " + card(alpha));
+    await has(card(alpha) + " [data-completed]");
     assert.equal((await task(alpha)).completed_on, new Date().toISOString().slice(0, 10));
 
     await drag(card(alpha) + " [data-task-drag]", column(todo.id), 0.12);

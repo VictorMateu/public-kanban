@@ -104,7 +104,7 @@ test("public project pages use real local data and preserve existing users", asy
       assert.ok(result.html.includes('dateTime="2026-11-01"') || result.html.includes('datetime="2026-11-01"'), "Deadline should have a machine-readable date");
       assert.ok(!result.html.includes("draggable="), "Public cards must not expose editing interactions");
       assert.ok(!result.html.includes(privateTitle) && !result.html.includes(archivedTitle), "Private task data must be absent from HTML and React payloads");
-      assert.ok(!result.html.includes("data-edit-task"));
+      assert.ok(!result.html.includes("data-edit-task") && !result.html.includes("data-new-task"));
     });
 
     await context.test("escapes text content instead of interpreting it as HTML", async () => {

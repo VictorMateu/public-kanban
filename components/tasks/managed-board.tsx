@@ -10,9 +10,10 @@ import { ProjectDialog } from "../projects/project-dialog";
 import { BoardColumns, type DropTarget } from "./board-columns";
 import { TaskDateField } from "./task-date-field";
 import styles from "./task-fields.module.css";
+import boardStyles from "./task-board.module.css";
 import { useTaskDrag } from "./use-task-drag";
 
-type Editor = { id: string; task?: Task };
+type Editor = { id: string; columnId: string; task?: Task };
 const fieldClass = "min-h-11 w-full min-w-0 rounded-xl border border-border/30 bg-surface px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 export function ManagedBoard({ projectId, columns, tasks }: { projectId: string; columns: KanbanColumn[]; tasks: Task[] }) {
@@ -52,11 +53,11 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
 
   const drag = useTaskDrag(board, move);
 
-  function open(button: HTMLButtonElement, item?: Task) {
+  function open(button: HTMLButtonElement, columnId: string, item?: Task) {
     trigger.current = button;
     setResult(null);
     setConfirmArchive(false);
-    setEditor({ id: item?.id ?? crypto.randomUUID(), task: item });
+    setEditor({ id: item?.id ?? crypto.randomUUID(), columnId, task: item });
   }
 
   function save(event: FormEvent<HTMLFormElement>) {
@@ -76,18 +77,20 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
 
   const formId = "task-editor-form";
   return <div ref={board}>
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <p aria-live="polite" className="text-sm">{!editor && result ? t(result) : ""}</p>
-      <button type="button" data-new-task="" aria-haspopup="dialog" className="project-primary-action" disabled={columns.length === 0 || pending}
-        onClick={(event) => open(event.currentTarget)}>{t("newTask")}</button>
-    </div>
-    <BoardColumns columns={columns} tasks={tasks} dropTarget={drag.preview?.target} renderActions={(item, index, columnTasks) => (
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+    <p aria-live="polite" className="mb-3 text-sm empty:mb-0">{!editor && result ? t(result) : ""}</p>
+    <BoardColumns columns={columns} tasks={tasks} dropTarget={drag.preview?.target} renderAddTask={(column) => (
+      <button type="button" data-new-task="" aria-haspopup="dialog" aria-label={t("addTaskInColumn", { column: boardText(column.stage) })}
+        className={`${boardStyles.addTask} flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border px-2 py-1`}
+        disabled={pending} onClick={(event) => open(event.currentTarget, column.id)}>
+        <span aria-hidden="true" className="text-xl leading-none">+</span>{t("addTask")}
+      </button>
+    )} renderActions={(item, index, columnTasks) => (
+      <div className="flex flex-wrap items-center justify-between gap-1">
         {item.is_hidden && <span className="text-sm">{t("hiddenBadge")}</span>}
         <div className="flex flex-wrap gap-1">
-          <button type="button" data-edit-task={item.id} className="project-secondary-action"
+          <button type="button" data-edit-task={item.id} className="editor-tool min-h-11 px-2"
             aria-label={t("editNamed", { title: item.title })} aria-haspopup="dialog" disabled={pending}
-            onClick={(event) => open(event.currentTarget, item)}>{t("editTask")}</button>
+            onClick={(event) => open(event.currentTarget, item.column_id, item)}>{t("editTask")}</button>
           <button type="button" data-move-up="" className="editor-tool min-h-11 min-w-11"
             title={t("moveUp")} aria-label={t("moveUp")} disabled={pending || index === 0}
             onClick={() => { const previous = columnTasks[index - 1]; if (previous) move(item, { columnId: item.column_id, beforeId: previous.id }); }}>
@@ -128,7 +131,7 @@ export function ManagedBoard({ projectId, columns, tasks }: { projectId: string;
           </label>
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="grid gap-1">{t("stage")}
-              <select className={`${fieldClass} ${styles.select}`} name="columnId" required defaultValue={task?.column_id}>
+              <select className={`${fieldClass} ${styles.select}`} name="columnId" required defaultValue={editor?.columnId}>
                 {columns.map((column) => <option key={column.id} value={column.id}>{boardText(column.stage)}</option>)}
               </select>
             </label>

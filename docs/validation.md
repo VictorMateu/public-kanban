@@ -1850,3 +1850,20 @@ acceptance is pending.
 - `node --test tests/task-browser.ts` passed against the local production
   build in isolated Chromium. The test checked keyboard toggling and saved
   visibility, footer placement and fit at 390 px, and archive confirmation.
+
+### Pastel board presentation
+
+The shared board uses four tones derived from the existing palette,
+cream cards and a completion marker. Owners can open the task editor from
+any column with that stage selected. Owner visual acceptance is pending.
+
+- `npm run lint`, `npm run typecheck`, `npm test` (90 tests) and `npm run build` passed.
+- `node --test tests/task-browser.ts` passed against the local production
+  build in isolated Chromium. It covered per-column creation controls,
+  stage preselection, focus return, completion styling and the existing
+  desktop and mobile task flows.
+- `npm run test:public` passed the board rendering, localization and task
+  visibility checks. Two project-list assertions failed. The local
+  `list_project_summaries()` function returns a non-null description for a
+  published hidden project, which the application rejects. Its definition
+  differs from the versioned projection in this checkout.
