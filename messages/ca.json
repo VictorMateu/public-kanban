@@ -34,17 +34,17 @@
     "description": "Explora els projectes del portafolis i segueix l'evolució de les seves tasques en un tauler Kanban públic."
   },
   "Home": {
-    "eyebrow": "Idees en moviment",
-    "introduction": "Coneix els projectes del portafolis i segueix-ne l'evolució, tasca a tasca.",
+    "introduction": "Explora els projectes del portafolis i segueix-ne l'evolució.",
     "projects": "Projectes",
-    "openProject": "Obre un projecte per explorar-ne el tauler.",
     "loading": "Carregant projectes…",
     "publishedProjects": "Projectes publicats",
     "unavailableTitle": "Projectes no disponibles",
     "unavailableDescription": "Ara mateix no es poden consultar els projectes. Torna-ho a provar més tard.",
     "emptyTitle": "Encara no hi ha projectes publicats",
     "emptyDescription": "Aquest espai reunirà els projectes del portafolis i la seva evolució. Torna aviat per descobrir-los.",
-    "managedProjects": "Tots els projectes, inclosos els esborranys"
+    "managedProjects": "Tots els projectes, inclosos els esborranys",
+    "managedEmptyTitle": "Encara no has creat cap projecte",
+    "managedEmptyDescription": "Fes servir Nou projecte per crear el teu primer esborrany."
   },
   "Project": {
     "label": "Projecte",

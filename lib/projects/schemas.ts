@@ -57,11 +57,9 @@ export const projectSummarySchema = z.strictObject({
   position: z.number().int().nonnegative(),
 });
 export type ProjectSummary = z.infer<typeof projectSummarySchema>;
-export const publicProjectSummarySchema = projectSummarySchema.refine(
-  (value) => value.is_published && (value.is_hidden
-    ? value.slug === null && value.description === null
-    : value.slug !== null),
-);
+export const publicProjectSummarySchema = projectSummarySchema.extend({
+  description: z.string().refine((value) => [...value].length <= 240).nullable(),
+}).refine((value) => value.is_published && (value.is_hidden ? value.slug === null : value.slug !== null));
 
 export const projectFormFieldSchema = z.enum(["name", "slug", "description_content", "objectives_content", "repository_url", "is_published", "status", "is_hidden", "cancellation_reason"]);
 export const projectFormStateSchema = z.strictObject({
