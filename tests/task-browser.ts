@@ -39,7 +39,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const starterCount = starters.data.length;
     assert.equal(starterCount, 5);
     const architecture = starters.data.find(({ title }) => title === "Define the architecture and its boundaries");
-    assert.ok(architecture?.description);
+    assert.ok(architecture);
     const denied = await anon.rpc("mutate_task", { p_operation: "create", p_project: projectId, p_task: randomUUID(),
       p_column: todo.id, p_title: "Denied", p_hidden: false });
     assert.equal(denied.error?.code, "42501");
@@ -163,9 +163,14 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await evaluate("document.fonts.ready.then(() => true)");
     const initialBoardTop = await boardTop();
     const descriptionEditor = `${dialog} [contenteditable=true][role=textbox]`;
-    await edit(architecture.id);
+    await click(open(architecture.id));
+    await has(`${dialog} dl + .rich-text h3`);
+    await has(`${dialog} .rich-text ul li`);
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('dialog:modal dl dd')].map(item => item.textContent)"), ["To do", "Hidden"]);
+    await click(dialog + " [data-edit-task]");
     await has(descriptionEditor);
-    assert.equal(await evaluate("function(selector) { return document.querySelector(selector).textContent; }", [descriptionEditor]), architecture.description);
+    assert.deepEqual(await evaluate("function(selector) { return [...document.querySelectorAll(selector + ' h3')].map(heading => heading.textContent); }", [descriptionEditor]), ["Objective", "Steps", "Done when"]);
+    assert.match(z.string().parse(await evaluate("function(selector) { return document.querySelector(selector).textContent; }", [descriptionEditor])), /modular monolith.*microservices/u);
     await press("Escape", 27);
     await waitFor(async () => !await exists(dialog), "dismiss starter task editing");
     const descriptionImage = `${dialog} .rich-text img[alt="Task diagram"]`;

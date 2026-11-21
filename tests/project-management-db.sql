@@ -31,7 +31,8 @@ BEGIN
         'Set up tests and continuous integration'
       ]
       AND bool_and(c.stage = 'todo' AND t.is_hidden AND t.completed_on IS NULL
-        AND t.archived_at IS NULL AND coalesce(t.description, '') <> '')
+        AND t.archived_at IS NULL AND coalesce(t.description, '') <> ''
+        AND (t.description_content->>'type' = 'doc') IS TRUE)
       AND bool_or(t.title = 'Define the architecture and its boundaries' AND t.description LIKE '%microservices%')
   ) AS initialized), 'Each new project receives five ordered hidden To do tasks with English descriptions');
 END;

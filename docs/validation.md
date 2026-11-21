@@ -2091,3 +2091,16 @@ columns, tasks and images. No remote database migration was applied.
   the focused card, with focus restored after the order is saved.
 - The HTTP suite passed 29 checks. The empty catalog check was skipped
   against the populated local database.
+
+### Structured starter task descriptions
+
+- Migration `20261121000500` applied to local Supabase. The existing task
+  descriptions were identical before and after, and the project-management
+  SQL suite passed with rolled-back fixtures.
+- Lint, TypeScript, all 91 unit tests and the production build passed.
+- The HTTP suite passed 29 checks and skipped the empty catalog check on
+  the populated instance. The new checks validate each starter document
+  against the editor schema, verify its three sections and lists, and
+  compare the plain-text field to the rich-text document.
+- The task browser check verified that the structured architecture description
+  renders in the detail and opens with its headings intact in the editor.

@@ -929,8 +929,10 @@ not run against a populated owner instance.
 Project creation initializes five hidden starter tasks in the To do column in
 its database transaction. The versioned migration extends the project insert
 trigger. Later saves, draft retries and publication do not seed again. Starter
-rows use the same task fields and mutation RPC as manually created tasks. The
-plain-text descriptions load into the existing rich-text editor on edit.
+rows use the same task fields and mutation RPC as manually created tasks.
+Starter task descriptions use the editor's rich-text document format with headings
+and lists. The plain-text field mirrors the document for existing readers.
+The description migration applies to new inserts and preserves existing tasks.
 
 The shared board uses the four fixed stage keys `todo`, `in_progress`,
 `review` and `done`. A project insert initializes its columns in the same
