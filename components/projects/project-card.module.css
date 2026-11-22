@@ -1,7 +1,14 @@
 .cover {
   background:
-    radial-gradient(ellipse 64% 110% at 0% 108%, var(--palette-sage) 69%, transparent 70%),
-    radial-gradient(ellipse 62% 99% at 103% 102%, var(--palette-peach) 69%, transparent 70%),
-    radial-gradient(circle at 73% 29%, var(--palette-honey) 0 7%, transparent 7.5%),
-    linear-gradient(150deg, var(--palette-cream), var(--palette-peach-soft));
+    var(--cover-motif) center / cover,
+    linear-gradient(150deg, var(--palette-cream), var(--palette-peach));
+  --cover-motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 180'%3E%3Ccircle cx='237' cy='49' r='28' fill='%23e8b66d' opacity='.7'/%3E%3Cpath d='M0 158Q101 122 190 155t130 3v22H0z' fill='%23dce6d3'/%3E%3Cg fill='%239ca785' stroke='%2356634a' stroke-width='2' stroke-linejoin='round'%3E%3Cpath fill='none' d='M161 114q-4-34-25-60m25 60q15-23 27-39'/%3E%3Cpath d='M148 75q-28 1-28-28 22 3 28 28zm11 20q-24 3-31-20 19-4 31 20zm15-3q4-28 24-24-2 22-24 24z'/%3E%3C/g%3E%3Cpath d='M138 111h46l-7 36h-32z' fill='%23c68b72' stroke='%23885142' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+.cover[data-variant="1"] {
+  --cover-motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 180'%3E%3Cpath d='M0 130 320 65v115H0z' fill='%23d9a98e' opacity='.54'/%3E%3Cg transform='rotate(-14 154 95)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'%3E%3Crect x='98' y='44' width='113' height='94' rx='6' fill='%23faf4ee' stroke='%23916d59'/%3E%3Cpath d='M113 44v94m14-69h59m-59 16h59m-59 16h45' fill='none' stroke='%23bb927c'/%3E%3Cpath d='m193 127 42-65 5 3-42 66-7 2z' fill='%23e8b66d' stroke='%23916d59'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.cover[data-variant="2"] {
+  --cover-motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 180'%3E%3Cpath d='M0 135Q69 72 139 139t181-4v45H0z' fill='%23dce6d3'/%3E%3Cg transform='rotate(10 160 90)' stroke-width='2' stroke-linejoin='round'%3E%3Crect x='112' y='30' width='96' height='120' rx='6' fill='%23faf4ee' stroke='%23ba9884'/%3E%3Cpath d='M150 126q17-22 20-66' fill='none' stroke='%2356634a'/%3E%3Cpath d='M169 78q-18-7-21-23 19-2 21 23zm-3 15q10-20 25-18-2 17-25 18zm-8 17q-20-4-23-23 19 1 23 23z' fill='%23a6b18d' stroke='%2356634a'/%3E%3C/g%3E%3C/svg%3E");
 }

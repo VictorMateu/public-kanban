@@ -20,7 +20,7 @@ async function Projects({ administrator }: { administrator: boolean }) {
   const reasons = await listCancellationReasons(cancelledIds, administrator);
   return (
     <ul aria-label={t(administrator ? "managedProjects" : "publishedProjects")} className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18.75rem),1fr))] gap-5">
-      {projects.map((project) => <li key={project.id} className="min-w-0"><ProjectCard project={project} showVisibility={administrator} cancellationReason={reasons.get(project.id)} /></li>)}
+      {projects.map((project, index) => <li key={project.id} className="min-w-0"><ProjectCard project={project} showVisibility={administrator} cancellationReason={reasons.get(project.id)} coverVariant={index % 3} /></li>)}
     </ul>
   );
 }

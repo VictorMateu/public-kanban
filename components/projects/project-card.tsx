@@ -16,10 +16,11 @@ const statusTone = {
 
 const card = "relative isolate flex h-full min-w-0 flex-col rounded-2xl border border-border/20";
 
-export function ProjectCard({ project, showVisibility = false, cancellationReason }: {
+export function ProjectCard({ project, showVisibility = false, cancellationReason, coverVariant }: {
   project: ListedProject;
   showVisibility?: boolean;
   cancellationReason?: string;
+  coverVariant: number;
 }) {
   const t = useTranslations("Common");
   const form = useTranslations("ProjectForm");
@@ -37,7 +38,7 @@ export function ProjectCard({ project, showVisibility = false, cancellationReaso
 
   return (
     <article aria-labelledby={headingId} className={`${card} ${surface}`}>
-      <div className={`${styles.cover} relative aspect-[16/9] overflow-hidden rounded-t-[calc(1rem-1px)] border-b border-border/15`}>
+      <div className={`${styles.cover} relative aspect-[16/9] overflow-hidden rounded-t-[calc(1rem-1px)] border-b border-border/15`} data-variant={coverVariant}>
         {src && project.cover && <ProjectCoverImage key={src} src={src} alt={project.cover.alt} />}
       </div>
       <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
