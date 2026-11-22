@@ -432,12 +432,24 @@ cancellation reason the viewer can access, the cancelled status badge opens
 the reason directly from the catalog.
 
 The first image in the description supplies the cover and its alternative text.
-The current prototype uses a top-aligned 16:9 crop. A decorative palette
-illustration fills the same space when there is no image or loading fails. A
-hidden visitor card uses the illustration and remains non-interactive. It now
-shows the plain-text description excerpt, when present. The public listing API
+The current catalog uses a top-aligned 16:9 crop. Three static decorative
+illustrations alternate by position and fill the same space when there is no
+image or loading fails. A hidden visitor card uses the decorative fallback,
+remains non-interactive and shows a plain-text description excerpt when present.
+The public listing API
 returns up to 240 Unicode characters for any published project, including hidden
 projects. Hidden slugs, full details, covers, columns and tasks remain protected.
 Authorized administrators can open drafts and hidden projects and see their
 covers through the existing private preview route. The cover selection, crop
 and styling await owner visual review.
+
+### Botanical shell comparison
+
+The owner preferred the original shell to the matte limestone and clay trial.
+The original background and menu colors are restored. The owner liked the
+static olive-toned branch at the desktop canvas edge and requested a second
+vine wrapping the sidebar. The provisional sidebar vine runs behind the
+illustration, disappears below the navigation, and reappears beside the
+brand title on the right, leaving the links clear. It is shown only at
+desktop sizes that also show the sidebar illustration. Mobile has neither
+branch. Layout, forms, board and decorative cover rotation are unchanged.

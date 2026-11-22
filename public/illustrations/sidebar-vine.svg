@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 304 768" preserveAspectRatio="none" fill="none">
+  <defs>
+    <g id="broad-leaf">
+      <path d="M0 0C-19-10-19-32 0-48C16-34 18-12 0 0Z" fill="currentColor"/>
+      <path d="M0-2C2-16 2-30 0-42" stroke="#596044" stroke-width=".9" opacity=".55"/>
+    </g>
+  </defs>
+  <g opacity=".68">
+    <path d="M305 724C275 703 290 644 279 591C268 540 215 502 165 476C115 450 67 420 36 369C23 347 10 339-5 333M308 140C287 129 281 105 284 81C287 57 283 41 270 29C257 17 239 13 218 17" stroke="#626444" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M276 579C290 565 298 548 298 529M225 512C223 488 230 465 246 450M145 466C129 468 112 479 104 494M63 405C55 387 56 368 65 354M282 104C291 98 297 89 297 79M284 70C278 62 272 59 267 58M259 22C257 16 252 10 246 7" stroke="#626444" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M287 696c-12-2-21-15-17-30 13 5 21 17 17 30Zm-4-58c5-14 17-23 29-21-2 14-14 23-29 21Zm-8-61c-13 7-28 2-37-11 14-6 28-1 37 11Zm23-48c-11-5-15-18-11-31 11 5 16 19 11 31ZM248 529c2-15 13-25 28-26-1 14-12 25-28 26Zm-39-28c-16 4-30-4-35-18 16-4 29 4 35 18Z" fill="#838959"/>
+    <path d="M246 450c-4-15 4-30 17-36 5 15-3 29-17 36Zm-17 27c-11-12-10-29-1-40 10 12 10 27 1 40Zm-69-4c2-17 14-28 29-28-3 15-14 26-29 28Zm-56 21c0 14-10 25-24 26-1-14 9-25 24-26Zm-7-61c-16 5-29-3-35-16 15-4 29 3 35 16Zm-32-79c-10-12-6-26 6-36 8 13 6 27-6 36Z" fill="#939968"/>
+    <path d="M34 366c-14-1-24-12-25-25 14 0 24 10 25 25ZM297 79c-7-9-4-21 6-27 5 9 3 19-6 27ZM267 58c-10 1-17-5-20-12 9-4 17 3 20 12ZM246 7c-9 3-17-1-21-8 10-4 17 0 21 8ZM218 17c-8 7-18 5-24-2 6-7 17-5 24 2Z" fill="#788356"/>
+    <path d="m288 696-12-22m0-97-26-9m47-39-7-24m-81-4-25-12m62-39 12-26m-98 49 20-21m-76 42-16 19m-23-159 5-26" stroke="#596044" stroke-width=".85" stroke-linecap="round" opacity=".65"/>
+    <path d="M105 443C140 443 149 397 189 363M44 381C57 359 82 357 108 331M212 503C241 484 263 484 285 451M276 576C259 587 249 604 246 623" stroke="#626444" stroke-width="1.9" stroke-linecap="round"/>
+    <use href="#broad-leaf" transform="translate(108 331) rotate(43) scale(.75)" color="#788356"/>
+    <use href="#broad-leaf" transform="translate(74 358) rotate(-24) scale(.75)" color="#939968"/>
+    <use href="#broad-leaf" transform="translate(189 363) rotate(38) scale(.95)" color="#838959"/>
+    <use href="#broad-leaf" transform="translate(154 400) rotate(-32) scale(.92)" color="#788356"/>
+    <use href="#broad-leaf" transform="translate(154 405) rotate(80) scale(.9)" color="#939968"/>
+    <use href="#broad-leaf" transform="translate(285 451) rotate(28) scale(.85)" color="#838959"/>
+    <use href="#broad-leaf" transform="translate(252 480) rotate(105) scale(.78)" color="#788356"/>
+    <use href="#broad-leaf" transform="translate(246 623) rotate(-140) scale(.76)" color="#939968"/>
+    <use href="#broad-leaf" transform="translate(284 112) rotate(-24) scale(.42)" color="#939968"/>
+    <use href="#broad-leaf" transform="translate(280 44) rotate(22) scale(.56)" color="#838959"/>
+  </g>
+</svg>
