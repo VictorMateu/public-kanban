@@ -71,18 +71,21 @@
 .workspace-stage {
   --workspace-inset: clamp(0.5rem, 1vw, 1rem);
   --workspace-sidebar-width: 19rem;
+  --workspace-ambient:
+    radial-gradient(ellipse at 85% 10%, color-mix(in srgb, var(--palette-honey) 45%, transparent), transparent 55%),
+    radial-gradient(ellipse at 10% 90%, color-mix(in srgb, var(--palette-espresso) 12%, transparent), transparent 60%);
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   min-height: 100svh;
   background-color: var(--palette-peach);
-  background-image:
-    radial-gradient(ellipse at 85% 10%, color-mix(in srgb, var(--palette-honey) 45%, transparent), transparent 55%),
-    radial-gradient(ellipse at 10% 90%, color-mix(in srgb, var(--palette-espresso) 12%, transparent), transparent 60%);
+  background-image: var(--workspace-ambient);
 }
 
 .workspace-sidebar {
+  --workspace-sidebar-surface: linear-gradient(155deg, var(--palette-peach), var(--palette-peach-soft));
+
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -94,7 +97,7 @@
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--palette-cream) 80%, transparent);
   border-radius: clamp(1rem, 1.5vw, 1.5rem);
-  background: linear-gradient(155deg, var(--palette-peach), var(--palette-peach-soft));
+  background: var(--workspace-sidebar-surface);
   box-shadow: 0 8px 28px color-mix(in srgb, var(--palette-espresso) 12%, transparent);
 }
 
@@ -111,7 +114,7 @@
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--palette-cream) 80%, transparent);
   border-radius: 1.5rem;
-  background: linear-gradient(155deg, var(--palette-peach), var(--palette-peach-soft));
+  background: var(--workspace-sidebar-surface);
   box-shadow: var(--shadow-panel);
   transform-origin: top right;
 }
@@ -189,6 +192,10 @@
   .workspace-stage {
     grid-template-columns: calc(var(--workspace-sidebar-width) + var(--workspace-inset)) minmax(0, 1fr);
     grid-template-rows: auto;
+    background-image: url("/illustrations/garden-branch.svg"), var(--workspace-ambient);
+    background-position: top right, center, center;
+    background-repeat: no-repeat;
+    background-size: clamp(14rem, 24vw, 23rem) auto, auto, auto;
   }
 
   .workspace-sidebar {
@@ -213,6 +220,12 @@
     background: none;
     box-shadow: none;
     animation: none;
+  }
+}
+
+@media (width >= 64rem) and (height >= 42rem) {
+  .workspace-sidebar {
+    background: url("/illustrations/sidebar-vine.svg") center / 100% 100% no-repeat, var(--workspace-sidebar-surface);
   }
 }
 
