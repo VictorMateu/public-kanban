@@ -1,0 +1,164 @@
+name: Production release
+
+on:
+  workflow_run:
+    workflows: [CI, Security]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Production operation for the selected main commit
+        required: true
+        default: deploy
+        type: choice
+        options: [deploy, apply-migrations-and-deploy]
+
+permissions:
+  actions: read
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+
+jobs:
+  qualify:
+    name: Require successful main push checks
+    if: >-
+      vars.PRODUCTION_RELEASE_ENABLED == 'true' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      eligible: ${{ steps.verify.outputs.eligible }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release.ts qualify
+
+  migrate:
+    name: Apply explicitly approved production migrations
+    needs: qualify
+    if: needs.qualify.outputs.eligible == 'true' && github.event_name == 'workflow_dispatch' && inputs.operation == 'apply-migrations-and-deploy'
+    environment: production-migrations
+    concurrency:
+      group: production-changes
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install checksum-verified Supabase CLI
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            https://github.com/supabase/cli/releases/download/v2.122.0/supabase_2.122.0_linux_amd64.tar.gz \
+            --output supabase.tar.gz
+          echo '59ed066847b98d7461c60e9109d40cab6b9756177ce06ebb05b51338519f5136  supabase.tar.gz' | sha256sum --check --strict
+          mkdir -p supabase-bin
+          tar -xzf supabase.tar.gz -C supabase-bin supabase
+          echo "$RUNNER_TEMP/supabase-bin" >> "$GITHUB_PATH"
+      - name: Verify the approved commit is still current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release.ts require-eligible
+      - name: Link and dry-run without publishing credential-bearing output
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_DB_PASSWORD"
+          [[ "$SUPABASE_PROJECT_REF" =~ ^[a-z]{20}$ ]]
+          umask 077
+          if ! { supabase link --project-ref "$SUPABASE_PROJECT_REF" &&
+            supabase db push --dry-run --yes; } >"$RUNNER_TEMP/supabase-migrations.log" 2>&1; then
+            echo "::error::Supabase link or dry run failed; raw output is not published."
+            exit 1
+          fi
+      - name: Recheck the approved commit before writing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release.ts require-eligible
+      - name: Apply migrations without publishing credential-bearing output
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          umask 077
+          if ! supabase db push --yes >"$RUNNER_TEMP/supabase-migrations.log" 2>&1; then
+            echo "::error::Supabase migration failed; inspect production history before retrying."
+            exit 1
+          fi
+      - name: Remove temporary CLI output
+        if: always()
+        run: rm -f "$RUNNER_TEMP/supabase-migrations.log"
+
+  deploy:
+    name: Deploy the validated commit to Vercel
+    needs: [qualify, migrate]
+    if: >-
+      !cancelled() && needs.qualify.result == 'success' && needs.qualify.outputs.eligible == 'true' &&
+      (needs.migrate.result == 'success' ||
+       (needs.migrate.result == 'skipped' &&
+        (github.event_name == 'workflow_run' || inputs.operation == 'deploy')))
+    environment: production
+    concurrency:
+      group: production-changes
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.22.1
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Recheck eligibility before reading production
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release.ts require-eligible
+      - name: Block deployment if production migrations are not current
+        env:
+          SUPABASE_HISTORY_TOKEN: ${{ secrets.SUPABASE_HISTORY_TOKEN }}
+        run: node scripts/ci/release.ts check-migrations
+      - name: Deploy and wait for Vercel
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          VERCEL_PROJECT_NAME: ${{ vars.VERCEL_PROJECT_NAME }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/ci/release.ts deploy
