@@ -25,11 +25,12 @@ const handlee = Handlee({
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
   const common = await getTranslations("Common");
+  const icons = { icon: { url: "/brand/logo.svg", type: "image/svg+xml", sizes: "any" } };
   if ((await headers()).get(PROJECT_NOT_FOUND_HEADER) === "1") {
     const project = await getTranslations("Project");
-    return { title: `${project("notFoundTitle")} | ${common("appName")}`, robots: { index: false, follow: false } };
+    return { title: `${project("notFoundTitle")} | ${common("appName")}`, robots: { index: false, follow: false }, icons };
   }
-  return { title: common("appName"), description: t("description") };
+  return { title: common("appName"), description: t("description"), icons };
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
