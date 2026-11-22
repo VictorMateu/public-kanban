@@ -71,6 +71,18 @@ After the first hosted analyses identified ten results in HTTP-test HTML filters
 
 Alternatives were maintaining a custom tokenizer or approving scanner exclusions. A maintained HTML parser was selected to address malformed/nested markup and assertion reliability without weakening the all-results CodeQL policy. The consequences are two additional development packages, ongoing dependency review and browser-compatible serialization/entity behavior in tests. Parser regressions and HTTP checks validate that interpretation; parser tests are not visual/browser verification. Full dependency audit, required gates and database-fixture restrictions remain unchanged. See the [validation evidence](../validation.md#owner-approved-test-only-html-parser--2026-11-15).
 
+## Subsequent owner-approved production release extension
+
+The CI and Security workflows still validate only and receive no production
+secrets. A separate release workflow may publish the current protected
+`main` commit after both push runs pass. Vercel's independent Git-triggered
+deployment would bypass this gate, so the project uses an explicit deployment
+for the checked SHA instead. Production releases check the remote migration
+history; database writes require a manual dispatch and separate environment
+secrets. Automatic migration was not selected: an application rollback cannot
+undo database changes. See the [production release guide](../development.md#production-release-through-github-actions)
+for the activation prerequisites and remaining production verification.
+
 ## Operational references
 
 - [Development and GitHub activation](../development.md#continuous-integration-and-security)

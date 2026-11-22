@@ -2191,3 +2191,29 @@ Lint, TypeScript, 97 unit tests, and the production build passed. The HTTP
 suite against existing local Supabase passed 30 checks and skipped the
 empty-catalog check on the populated database. It used the existing owner and
 removed only its own fixtures. No migration or browser run was performed.
+
+### Production release workflow preparation
+
+On 2026-11-22, a clean locked install without lifecycle scripts, lint,
+typecheck, 100 unit tests, and the production build passed locally. The new
+tests cover exact main-SHA eligibility, rejection of stale or unsuccessful
+validation, and current, pending, and divergent migration histories.
+Actionlint 1.7.12 validated the workflows, and Gitleaks 8.30.1 found no
+secrets in new code or added documentation lines. The full scan of this
+validation document returned a finding both before and after the change.
+Read-only GitHub API queries confirmed that the
+existing CI and Security push runs can be selected by workflow and exact SHA.
+
+No GitHub secrets, environments or settings were written. No production
+credentials, remote migration, hosted workflow execution, or Vercel release
+was used for validation. Local Supabase-backed HTTP checks were not repeated
+because the Docker engine was unavailable. Remote release, HTTPS
+authentication and storage verification remain pending.
+
+Subsequent setup verified that the production Supabase project recorded all
+11 initial migrations after a successful CLI dry run and push. GitHub
+environment secret names and the exact `main` branch policy were verified
+without printing values. The separate Vercel Hobby project was verified as
+linked to the repository with `main` as its production branch and automatic
+Git deployments disabled. It reported zero deployments before PR
+publication. The workflow activation flag was not set.

@@ -369,7 +369,11 @@ These routes describe the existing authentication flow. The intended administrat
 
 ## Remote project
 
-No remote project has been connected or configured. Before doing so, explicitly confirm the destination and migrations, and inspect any existing tables or data.
+The production Supabase project is `project-garden` (Free, Ireland).
+Its initial 11 migrations were applied and verified against the remote
+history. No local app data was copied. Before linking any other remote
+project or applying further migrations, explicitly confirm the destination
+and migrations and inspect any existing tables or data.
 
 In Authentication, disable **Allow new users to sign up** and anonymous sign-ins, retain the Email provider and email confirmation, and set Site URL to the application origin. Password sign-in needs neither an OAuth callback nor magic links. `config.toml` configures the local environment and does not automatically change the remote Dashboard.
 
@@ -383,6 +387,81 @@ npx supabase@2.122.0 db push
 ```
 
 Review the dry run before the final command, which applies migrations. Never publish database passwords or CLI tokens. Create and authorize the owner as described above. Verify permissions, sign-in, session renewal and sign-out in that environment, and review Supabase Auth rate limits before publishing the application.
+
+## Production release through GitHub Actions
+
+The production workflow is disabled until the repository Actions variable
+`PRODUCTION_RELEASE_ENABLED` is exactly `true`. Once enabled on `main`, it
+requires successful **push** runs of both CI and Security for the same current
+`main` commit. PR, merge-group, scheduled and manual validation runs do not
+qualify. A failed or stale candidate cannot start a deployment. If a release
+was already submitted to Vercel when `main` advanced, it may finish before
+the next eligible release.
+
+Before enabling it, confirm the dedicated Supabase project and the Vercel
+team/project. Configure Vercel for this repository, Next.js, Node.js 24.x,
+and a production branch of `main`. Disable Vercel's independent Git-triggered
+deployments before linking/importing if that operation would deploy code;
+do not use an import path that publishes immediately. The checked-in
+`vercel.json` also disables Git-triggered deployments; GitHub Actions uses an
+explicit Vercel API deployment for the validated SHA. Do not add a separate
+Vercel deploy hook or point preview deployments at production Supabase.
+The `project-garden` Hobby project is already linked to the repository,
+with `main` as its production branch, automatic Git deployments disabled,
+and Node.js 24.x functions in Dublin. The deployment workflow remains
+disabled until explicitly enabled through the repository variable.
+
+Configure GitHub Actions as follows. Restrict both environments to the
+protected `main` branch only; do not put production secrets at repository or
+organization scope.
+
+| Location | Name | Purpose |
+| --- | --- | --- |
+| Repository Actions variable | `SUPABASE_PROJECT_REF` | Production Supabase project reference, not a credential |
+| `production` variable | `VERCEL_PROJECT_ID` | Production Vercel project ID |
+| `production` variable | `VERCEL_PROJECT_NAME` | Production Vercel project name |
+| `production` variable | `VERCEL_TEAM_ID` | Vercel scope ID |
+| `production` secret | `VERCEL_TOKEN` | Token scoped to the intended Vercel team |
+| `production` secret | `SUPABASE_HISTORY_TOKEN` | Supabase Management API token for migration-history reads; restrict to database read and the production project when available |
+| `production` secret | `SUPABASE_PUBLISHABLE_KEY` | Production project publishable key; passed to Vercel, intentionally public in browser code, never stored in Git |
+| `production-migrations` secret | `SUPABASE_ACCESS_TOKEN` | Separate token for the Supabase CLI to link the approved project |
+| `production-migrations` secret | `SUPABASE_DB_PASSWORD` | Production database password used by the CLI |
+
+Use environment secrets via the GitHub settings UI or secure CLI input, never
+source files, workflow inputs, command-line values or logs. The application
+build on Vercel receives only the two public Supabase values; it does not
+receive deployment credentials or migration secrets. Restrict and rotate
+provider tokens; verify their effective permissions before enabling. If using
+a personal token for the history endpoint, verify its access: the workflow
+only uses GET but cannot make a broad token read-only. The owner chose to
+reuse one project-scoped PAT for both Supabase token secrets, so the
+automatic deployment job also has the token's CLI linking permissions,
+including read access to privileged API keys. Rotate both secret entries
+when the PAT expires. The database password remains migration-only.
+
+For the first release, provision Supabase, configure Auth, review and apply
+the migrations and authorize the owner as described above. Only then enable
+the workflow and use **Production release → Run workflow → deploy** on
+`main` (both push workflows must already be green). Set the definitive
+HTTPS origin in Supabase Auth. Verify public reads, draft/hidden detail and
+image access, owner sign-in/session renewal/sign-out and image uploads over
+HTTPS. Vercel's standard 4.5 MB function-body limit is below the application's
+8 MiB source-file allowance; large uploads may be rejected before reaching
+the app. The upload policy is unchanged by this release workflow.
+
+For future schema changes, the automatic job compares production's recorded
+migration versions with the checkout and blocks on pending or divergent
+history or read failures. Review the migration SQL and a dry run against the
+confirmed target before authorizing writes. Select **apply-migrations-and-deploy**
+manually on `main`; configure required reviewers for
+`production-migrations` when a reviewer is available. The explicit dispatch
+is the approval boundary in a single-owner setup without a separate
+reviewer. The job dry-runs again before applying pending migrations and
+rechecks that the commit is still eligible. It does not seed, reset, repair,
+or run the local fixture suites against production. If a write fails,
+inspect the database history before retrying; Vercel rollback does not roll
+back database changes. Prefer schema changes compatible with the currently
+deployed application so a failed or delayed Vercel build leaves it usable.
 
 ## Types and current code organization
 
