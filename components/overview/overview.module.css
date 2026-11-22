@@ -241,6 +241,7 @@
     align-items: center;
     justify-content: space-between;
     margin-top: clamp(0.75rem, 1.5svh, 1.25rem);
+    padding-inline: 0.75rem;
   }
 
   .activityControls button {
