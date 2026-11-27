@@ -14,6 +14,7 @@
 | Tailwind CSS / @tailwindcss/postcss | 4.3.3 |
 | PostCSS | 8.5.31 |
 | ESLint | 9.39.5 |
+| Prettier (development only) | 3.10.1 |
 | parse5 (test-only development dependency) | 8.1.1 |
 | @supabase/supabase-js | 2.118.0 |
 | @supabase/ssr | 0.12.7 |
@@ -42,6 +43,17 @@ npm start
 The owner approved `parse5@8.1.1` solely for HTTP-test inspection. `tests/helpers/html.ts` parses server markup, excludes script/style/template payloads and comments from the inspection copy, and reads decoded text while ignoring `aria-hidden="true"` decoration. Both HTTP suites retain the original response separately for private-data and React-payload assertions. The helper is not a sanitizer, a browser renderer or production code; it does not execute scripts or evaluate CSS visibility. Do not reuse it to make untrusted content safe for rendering. Parser regressions cover malformed script endings, comments, escaped owner content, nested hidden decorations, catalog-only payloads and entity semantics. The dependency and its transitive `entities` package are locked as development-only and included in the full blocking audit.
 
 The application builds without Supabase configuration and does not query the database during compilation. After changing `NEXT_PUBLIC_*` variables, restart `dev` and rebuild before using `start`: those variables are incorporated into the browser bundle at build time.
+
+### Formatting
+
+Pass the paths you want to format or check:
+
+```sh
+npm run format -- package.json
+npm run format:check -- package.json
+```
+
+Prettier uses its defaults and keeps each file's existing line-ending style. It respects `.gitignore`, and `.prettierignore` also excludes the npm lockfile and Supabase database types. Apply formatting to the files you are working on. Existing files may report differences, and formatting is a local command outside the CI checks.
 
 ## Continuous integration and security
 
@@ -121,14 +133,37 @@ Every action is pinned by full commit SHA. Binary hashes were verified against t
 
 Default token permission is `contents: read`. Only CodeQL has `security-events: write`. Checkout does not persist credentials. There are no production secrets, OIDC permissions, shared caches, untrusted event expressions embedded in shell commands or `pull_request_target` executions.
 
-Dependabot checks npm and Actions weekly on Monday at 08:00 Europe/Madrid, opening at most five version-update PRs per ecosystem. It never merges/deploys. Review versions, lockfiles and workflow/script changes before merging. Binary pins and Node/npm versions need deliberate manual maintenance; this Dependabot configuration does not update them. Alerts/security-update PRs require separate GitHub settings.
+Dependabot checks npm and Actions weekly on Monday at 08:00 Europe/Madrid, opening at most five version-update PRs per ecosystem. Binary pins and Node/npm versions need deliberate manual maintenance. Alerts and security-update PRs require separate GitHub settings.
+
+### Dependabot merge automation
+
+The `Dependabot merge` workflow scans every four hours and supports manual
+dispatch in read-only mode by default. It recognizes a single stable patch
+or minor update from a signed Dependabot commit. npm updates may touch the
+root manifest and lockfile. Action updates may change pinned references for
+the declared action in existing workflows. Major, `0.x`, prerelease and
+unrecognized updates stay open for review. The merge requires the current
+`main`, successful CI and Security PR runs and GitHub's normal ruleset.
+The workflow merges at most one PR per run. Dependabot can rebase the other
+branches onto the new `main`. Older PRs can need a Dependabot rebase or
+recreate request before the workflow can evaluate their latest checks.
+
+Install a dedicated private GitHub App on this repository without ruleset
+bypass. Grant Contents write, Pull requests read and Workflows write for
+action updates. Save its numeric ID in `DEPENDABOT_MERGE_APP_ID` and its
+private key in the `DEPENDABOT_MERGE_APP_PRIVATE_KEY` Actions secret. Run a
+read-only dispatch before setting `DEPENDABOT_AUTOMERGE_ENABLED` to `true`.
+To pause automatic merges, remove that variable or set it to `false`.
+The workflow calls the merge API when a PR is ready. The repository's
+native auto-merge setting can stay disabled. The App's merge triggers the
+usual push validation and gated release for the new `main` commit.
 
 ### GitHub activation checklist
 
 Versioned YAML alone does not enforce branch protection. The owner authorized publication and repository activation on 2026-11-15; the applied settings are recorded below. Retain this checklist for maintenance and outstanding hosted verification.
 
 1. Enable GitHub Actions for the pinned actions; approve first-time contributor runs when required. Keep default token permissions read-only and do not permit workflows to create/approve PRs.
-2. Enable the dependency graph, Dependabot alerts and security-update PRs. Keep automatic merging disabled. Enable secret scanning and push protection where available.
+2. Enable the dependency graph, Dependabot alerts and security-update PRs. Keep GitHub's native auto-merge disabled. Enable secret scanning and push protection where available.
 3. Use CodeQL **advanced setup** with `security.yml`, not an additional default setup. Verify successful uploads for both languages in Security. Missing product access or failed uploads must not bypass the gate.
 4. Create an active `main` ruleset: require PRs, `CI gate` and `Security gate` from GitHub Actions, and an up-to-date branch; block force pushes/deletion and leave no routine administrator/bypass exemption. Select actual check names from the first run, not merely a scan-completed check.
 5. Where available, additionally require CodeQL merge protection at all available security/alert thresholds. The repository SARIF gate remains mandatory regardless of that feature.

@@ -1438,6 +1438,15 @@ retained. The generated AGENTS.md block was preserved.
 
 ## Strict CI and security pipeline — 2026-11-14
 
+### Dependabot merge automation — 2026-11-27
+
+Local validation passed for `npm run lint`, `npm run typecheck`, `npm test`
+(100 tests), `npm run build`, the shell policy tests and `actionlint`. A
+read-only scan against GitHub found five eligible updates (PRs #22–#25 and
+#27) and excluded the ESLint major update (PR #26). The scan checked the
+signed commits, their current base and both successful PR workflows. It did
+not exercise the GitHub App merge or the resulting production release.
+
 The owner approved GitHub Actions validation, low-severity vulnerability blocking, CodeQL, Gitleaks, Dependency Review, weekly Dependabot proposals and documentation, with deployment explicitly deferred. The SQL suite's two fixture users and temporary administrator authorization were approved only on a fresh disposable CI database. [ADR 0004](adr/0004-strict-ci-and-security.md) records this accepted policy; the [development guide](development.md#continuous-integration-and-security) describes operation and the still-pending GitHub activation.
 
 ### Implemented scope
@@ -2238,3 +2247,19 @@ publication. The workflow activation flag was not set.
   removal, focus, duplicate feedback, saving a typed tag, clearing all tags,
   archive detail and wrapping on a 390 CSS pixel viewport. Owner visual
   review is pending.
+
+## Local Prettier commands
+
+On Windows with Node.js 24.22.1 and npm 11.19.1, the Prettier 3.10.1
+commands passed on the package manifest and formatter configuration. A
+temporary TypeScript file failed `format:check` before formatting and passed
+after `format` rewrote it while preserving CRLF. The ignore rules excluded
+the npm lockfile, Supabase database types, and generated Next.js declarations.
+The read-only repository-wide check reported 117 files with formatting
+differences before this entry was added. Existing files were left in place,
+and the formatter is available as a local command.
+
+`npm run lint`, `npm run typecheck`, `npm test` (100 tests), and
+`npm run build` passed. `npm audit --audit-level=low` reported zero
+vulnerabilities. No database, HTTP, or hosted CI checks were run for this
+development tooling change.
