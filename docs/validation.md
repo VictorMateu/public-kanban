@@ -2217,3 +2217,19 @@ without printing values. The separate Vercel Hobby project was verified as
 linked to the repository with `main` as its production branch and automatic
 Git deployments disabled. It reported zero deployments before PR
 publication. The workflow activation flag was not set.
+
+## Local Prettier commands
+
+On Windows with Node.js 24.22.1 and npm 11.19.1, the Prettier 3.10.1
+commands passed on the package manifest and formatter configuration. A
+temporary TypeScript file failed `format:check` before formatting and passed
+after `format` rewrote it while preserving CRLF. The ignore rules excluded
+the npm lockfile, Supabase database types, and generated Next.js declarations.
+The read-only repository-wide check reported 117 files with formatting
+differences before this entry was added. Existing files were left in place,
+and the formatter is available as a local command.
+
+`npm run lint`, `npm run typecheck`, `npm test` (100 tests), and
+`npm run build` passed. `npm audit --audit-level=low` reported zero
+vulnerabilities. No database, HTTP, or hosted CI checks were run for this
+development tooling change.

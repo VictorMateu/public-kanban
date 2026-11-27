@@ -53,6 +53,8 @@ Open [localhost:3000](http://localhost:3000). The Overview presentation works wi
 | Command | Purpose |
 | --- | --- |
 | `npm run lint` | Check code without warnings |
+| `npm run format -- <paths>` | Format selected files with Prettier |
+| `npm run format:check -- <paths>` | Check formatting without writing files |
 | `npm run typecheck` | Generate route types and check TypeScript |
 | `npm test` | Run application tests |
 | `npm run test:public` | Test public HTTP routes with local Next.js and Supabase running |
