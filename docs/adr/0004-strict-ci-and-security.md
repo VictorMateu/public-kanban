@@ -83,6 +83,20 @@ secrets. Automatic migration was not selected: an application rollback cannot
 undo database changes. See the [production release guide](../development.md#production-release-through-github-actions)
 for the activation prerequisites and remaining production verification.
 
+## Owner-approved Dependabot merge policy
+
+The project automatically integrates single, verifiable stable patch and
+minor updates proposed by Dependabot for npm and GitHub Actions. Major
+updates, `0.x` updates and changes outside the recognized dependency files
+need manual review. This supersedes the original decision to leave all
+Dependabot merges manual.
+
+The automation runs from `main`, requires the current base and successful
+PR checks, and uses a dedicated GitHub App to merge the verified head SHA.
+The App has no ruleset bypass. Its merges can trigger the ordinary `main`
+push workflows and qualify for production through the existing release
+criteria. See the [development guide](../development.md#dependabot-merge-automation).
+
 ## Operational references
 
 - [Development and GitHub activation](../development.md#continuous-integration-and-security)

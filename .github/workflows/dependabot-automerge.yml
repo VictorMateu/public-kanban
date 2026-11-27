@@ -1,0 +1,42 @@
+name: Dependabot merge
+
+on:
+  schedule:
+    - cron: "37 */4 * * *"
+  workflow_dispatch:
+    inputs:
+      merge:
+        description: Merge an eligible Dependabot pull request
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+  statuses: read
+
+concurrency:
+  group: dependabot-automerge
+  cancel-in-progress: false
+
+jobs:
+  dependabot:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Test the merge policy
+        run: bash tests/dependabot-automerge.sh
+      - name: Check Dependabot updates and merge at most one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MERGE: ${{ vars.DEPENDABOT_AUTOMERGE_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.merge) }}
+          MERGE_APP_ID: ${{ vars.DEPENDABOT_MERGE_APP_ID }}
+          MERGE_APP_PRIVATE_KEY: ${{ secrets.DEPENDABOT_MERGE_APP_PRIVATE_KEY }}
+          MERGE_CHECK_WORKFLOWS: ci.yml security.yml
+          MERGE_LOCKFILE: package-lock.json
+        run: bash scripts/ci/dependabot-automerge.sh
