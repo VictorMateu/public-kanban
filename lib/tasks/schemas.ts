@@ -3,6 +3,12 @@ import { optionalRichText, parseRichTextJson, richTextToPlainText } from "../pro
 import type { Database } from "../supabase/database.types.ts";
 
 export const TASK_DESCRIPTION_LIMIT = 10000;
+export const TASK_TAG_LIMIT = 5;
+export const TASK_TAG_LENGTH_LIMIT = 30;
+export const taskTagsSchema = z.array(z.string().trim().min(1)
+  .refine((tag) => !tag.includes("\0") && [...tag].length <= TASK_TAG_LENGTH_LIMIT))
+  .max(TASK_TAG_LIMIT)
+  .refine((tags) => new Set(tags.map((tag) => tag.toLowerCase())).size === tags.length);
 export const taskPrioritySchema = z.enum(["low", "medium", "high"]);
 export const boardStageSchema = z.enum(["todo", "in_progress", "review", "done"]);
 
@@ -30,6 +36,7 @@ const taskDescriptionContent = z.string().transform((value, context) => {
 });
 const taskFields = {
   ...taskDetailsSchema.shape, descriptionContent: taskDescriptionContent.optional(), columnId: z.uuid(), hidden: z.boolean(),
+  tags: taskTagsSchema.optional(),
 };
 
 export const taskMutationSchema = z.discriminatedUnion("operation", [

@@ -72,6 +72,9 @@ test("public project pages use real local data and preserve existing users", asy
   const escapedTitle = `${marker} <script>alert("text only")</script>`;
   const privateTitle = `${marker}-hidden-task`;
   const archivedTitle = `${marker}-archived-task`;
+  const tagSuffix = marker.slice(-12);
+  const tags = ["public", "second", "extra", "hidden-task", "archived", "draft", "hidden-project"]
+    .map((prefix) => `${prefix}-${tagSuffix}`);
 
   try {
     sql(`BEGIN;
@@ -102,6 +105,14 @@ test("public project pages use real local data and preserve existing users", asy
       SELECT CASE WHEN c.project_id = '${projects[1]}' THEN '${tasks[7]}'::UUID ELSE '${tasks[8]}'::UUID END,
         c.project_id, c.id, '${marker}-private-board-task', 0
       FROM public.columns c WHERE c.stage = 'done' AND c.project_id IN ('${projects[1]}', '${projects[5]}');
+      UPDATE public.tasks SET tags = CASE id
+        WHEN '${tasks[1]}' THEN ARRAY[${tags.slice(0, 3).map(literal).join(", ")}]
+        WHEN '${tasks[3]}' THEN ARRAY[${literal(tags[3])}]
+        WHEN '${tasks[4]}' THEN ARRAY[${literal(tags[4])}]
+        WHEN '${tasks[7]}' THEN ARRAY[${literal(tags[5])}]
+        WHEN '${tasks[8]}' THEN ARRAY[${literal(tags[6])}]
+      END
+      WHERE id IN ('${tasks[1]}', '${tasks[3]}', '${tasks[4]}', '${tasks[7]}', '${tasks[8]}');
       COMMIT;`);
 
     await context.test("counts public board projects and visible tasks without serializing fixture content", async () => {
@@ -153,6 +164,32 @@ test("public project pages use real local data and preserve existing users", asy
       assert.ok(!result.html.includes('<script>alert("text only")</script>'), "Task title must not become an executable script");
     });
 
+    await context.test("shows two public tags on the card and omits private tags from HTML and React", async () => {
+      const path = `/projects/${marker}-published`;
+      const html = await page(path);
+      let flight = await page(path, { RSC: "1" });
+      if (flight.status === 307) {
+        const location = flight.headers.get("location");
+        assert.ok(location);
+        const canonical = new URL(location, origin);
+        assert.equal(canonical.origin, origin.origin);
+        assert.equal(canonical.pathname, path);
+        assert.ok(canonical.searchParams.has("_rsc"));
+        flight = await page(canonical, { RSC: "1" });
+      }
+      assert.equal(html.status, 200);
+      assert.equal(flight.status, 200);
+      assert.match(flight.headers.get("content-type") ?? "", /text\/x-component/);
+      const boardText = htmlText(html.renderedHtml);
+      for (const tag of tags.slice(0, 2)) assert.ok(boardText.includes(tag));
+      assert.ok(boardText.includes("1 more tag"));
+      assert.ok(!boardText.includes(tags[2]));
+      for (const tag of tags.slice(0, 3)) assert.ok(flight.html.includes(tag), "The detail payload has all public tags");
+      for (const tag of tags.slice(3)) {
+        assert.ok(!html.html.includes(tag) && !flight.html.includes(tag), "Private tags must be absent on the public board");
+      }
+    });
+
     await context.test("provides keyboard navigation and labelled board regions", async () => {
       const result = await page(`/projects/${marker}-published`);
       const backLink = [...result.renderedHtml.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].find(([, , body]) =>
@@ -184,6 +221,7 @@ test("public project pages use real local data and preserve existing users", asy
           assert.ok(!body.includes(names.draft), "Private project name must not appear in metadata or body");
           assert.ok(!body.includes("Descripción privada de prueba"));
           assert.ok(!body.includes(`${marker}-private-board-task`));
+          for (const tag of tags.slice(5)) assert.ok(!body.includes(tag), "Private project tags must be absent from the 404");
         }
       }
       const published = await page(`/projects/${marker}-published`, { [PROJECT_NOT_FOUND_HEADER]: "1" });

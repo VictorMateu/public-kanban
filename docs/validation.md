@@ -2217,3 +2217,24 @@ without printing values. The separate Vercel Hobby project was verified as
 linked to the repository with `main` as its production branch and automatic
 Git deployments disabled. It reported zero deployments before PR
 publication. The workflow activation flag was not set.
+
+## Task tags - 2026-11-27
+
+- `npm run lint`, `npm run typecheck`, `npm test` (101 tests), and
+  `npm run build` passed.
+- `supabase migration up --local` applied `20261127000100`.
+  Supabase schema lint passed. The migration gave all 19 existing tasks an
+  empty list and preserved the project, task, user and administrator counts.
+- `tests/project-management-db.sql` passed with all fixtures rolled back.
+  It checked tag limits, rejected duplicate and stale writes, and verified
+  clearing, retries, moves, archival, system-task protection and read
+  permissions. The empty-instance database suite was left to CI.
+- `npm run test:public` passed 31 checks and skipped the empty-catalog case
+  on populated local Supabase. Public HTML renders two tags and an accessible
+  count. HTML and RSC responses omit tags from hidden or archived tasks and
+  from draft or hidden projects.
+- `node --test tests/task-browser.ts` passed against the local production
+  build in Chrome. Automated browser checks covered keyboard addition and
+  removal, focus, duplicate feedback, saving a typed tag, clearing all tags,
+  archive detail and wrapping on a 390 CSS pixel viewport. Owner visual
+  review is pending.

@@ -86,13 +86,19 @@
     "medium": "medium",
     "high": "high",
     "dueDate": "Due date:",
-    "completedOn": "Completed:"
+    "completedOn": "Completed:",
+    "tags": "Tags",
+    "moreTags": "{count, plural, one {# more tag} other {# more tags}}"
   },
   "TaskManagement": {
     "addTask": "Add task",
     "addTaskInColumn": "Add task in {column}",
     "newTask": "New task",
     "editTask": "Edit task",
+    "addTag": "Add",
+    "removeTag": "Remove tag {tag}",
+    "tagLimits": "Optional. Up to {count} tags, {length} characters each.",
+    "invalidTag": "Enter a unique tag within the limits shown.",
     "title": "Title",
     "description": "Description",
     "stage": "Status",
@@ -115,7 +121,7 @@
     "close": "Close",
     "save": "Save task",
     "saving": "Saving…",
-    "invalid": "Check the title, description and date and try again.",
+    "invalid": "Check the title, description, tags and date and try again.",
     "stale": "The board changed. Reopen the task and try again.",
     "unauthorized": "Administrator access is required.",
     "unavailable": "Could not save the change. Try again."

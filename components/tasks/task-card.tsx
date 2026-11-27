@@ -11,7 +11,7 @@ const priorities = {
   high: "bg-surface-secondary",
 };
 
-export type TaskPreview = Pick<Task, "id" | "column_id" | "title" | "description" | "description_content" | "priority" | "due_date" | "completed_on" | "is_hidden" | "is_system">;
+export type TaskPreview = Pick<Task, "id" | "column_id" | "title" | "description" | "description_content" | "priority" | "due_date" | "completed_on" | "is_hidden" | "is_system" | "tags">;
 
 export type TaskCardControl = {
   onClick: MouseEventHandler<HTMLButtonElement>;
@@ -66,16 +66,36 @@ export function TaskMetadata({ task, detail = false, status }: {
 
 export function TaskCard({ task, completed, control }: { task: TaskPreview; completed: boolean; control: TaskCardControl }) {
   const titleId = `task-${task.id}`;
+  const tagsId = task.tags.length ? `${titleId}-tags` : undefined;
+  const descriptionIds = [tagsId, control["aria-describedby"]].filter(Boolean).join(" ");
   const t = useTranslations("Task");
   return <article aria-labelledby={titleId} className={`${styles.card} relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 rounded-2xl border bg-surface px-3.5 py-3`}>
     <span className={styles.taskMark} data-completed={completed || undefined} aria-hidden="true" />
     <div className="min-w-0">
       <h4 id={titleId} className={`font-sans text-lg font-normal leading-snug wrap-anywhere${completed ? " line-through" : ""}`}>{task.title}</h4>
       <TaskMetadata task={task} />
+      <TaskTags id={tagsId} tags={task.tags} />
     </div>
     <button type="button" data-open-task={task.id} data-task-drag={control.onPointerDown ? "" : undefined}
       aria-label={t("openNamed", { title: task.title })} aria-haspopup="dialog"
       className={`${styles.cardControl} absolute inset-0 rounded-2xl ${control.onPointerDown ? "cursor-grab select-none active:cursor-grabbing" : "cursor-pointer"}`}
-      {...control} />
+      {...control} aria-describedby={descriptionIds || undefined} />
   </article>;
+}
+
+export function TaskTags({ id, tags, detail = false }: { id?: string; tags: string[]; detail?: boolean }) {
+  const t = useTranslations("Task");
+  if (tags.length === 0) return null;
+  const shown = detail ? tags : tags.slice(0, 2);
+  const remaining = tags.length - shown.length;
+  return <div id={id} className={detail ? "grid gap-1" : "mt-1.5"}>
+    <p className={detail ? "text-sm text-foreground/85" : "sr-only"}>{t("tags")}</p>
+    <ul role="list" className="flex min-w-0 flex-wrap gap-1.5 text-sm">
+      {shown.map((tag) => <li key={tag} className="max-w-full rounded-full bg-surface-warm px-2 leading-5 wrap-anywhere">{tag}</li>)}
+      {remaining > 0 && <li className="rounded-full bg-surface-warm px-2 leading-5">
+        <span aria-hidden="true">+{remaining}</span>
+        <span className="sr-only">{t("moreTags", { count: remaining })}</span>
+      </li>}
+    </ul>
+  </div>;
 }
