@@ -180,6 +180,9 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await press("Escape", 27);
     await waitFor(async () => !await exists(dialog), "dismiss starter task details");
     const descriptionImage = `${dialog} .rich-text img[alt="Task diagram"]`;
+    const tagInput = `${dialog} input[name=tagDraft]`;
+    const alphaTags = ["Internationalization".repeat(2).slice(0, 30), "Accessibility", "Documentation"];
+    const tagList = (id: string) => card(id) + ` [id="task-${id}-tags"]`;
     const png = await sharp({ create: { width: 64, height: 32, channels: 3, background: "#cba56b" } }).png().toBuffer();
     let imagePath = "";
     const alpha = await create("Task Alpha", async () => {
@@ -208,6 +211,25 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       assert.equal((await fetch(preview)).status, 404, "Anonymous requests cannot use the preview URL");
       assert.equal(await evaluate("async function(src) { return (await fetch(src)).status; }", [preview]), 200);
       assert.equal((await fetch(origin.origin + imagePath)).status, 404, "An upload is private before saving the task");
+      await click(tagInput);
+      for (const tag of alphaTags) {
+        await send("Input.insertText", { text: tag });
+        await press("Enter", 13);
+      }
+      await send("Input.insertText", { text: " accessibility " });
+      await press("Enter", 13);
+      await has(tagInput + '[aria-invalid="true"]:focus');
+      await evaluate("function(selector) { document.querySelector(selector).select(); }", [tagInput]);
+      await send("Input.insertText", { text: "Temporary" });
+      await press("Tab", 9);
+      await has(`${dialog} button[type=button]:focus`);
+      assert.equal(await evaluate("document.activeElement.textContent"), "Add");
+      await press("Enter", 13);
+      const removable = `${dialog} button[aria-label="Remove tag Temporary"]`;
+      await evaluate("function(selector) { document.querySelector(selector).focus(); }", [removable]);
+      await press("Enter", 13);
+      assert.equal(await exists(removable), false);
+      await has(tagInput + ":focus");
     });
     async function assertImageVisibility(visible: boolean) {
       const response = await fetch(origin.origin + imagePath);
@@ -220,6 +242,15 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
       await response.body?.cancel();
     }
     await assertImageVisibility(true);
+    assert.deepEqual((await task(alpha)).tags, alphaTags);
+    assert.deepEqual(await evaluate("function(selector) { return [...document.querySelectorAll(selector + ' li')].slice(0, 2).map(item => item.textContent); }",
+      [tagList(alpha)]), alphaTags.slice(0, 2));
+    assert.equal(await evaluate("function(selector) { return document.querySelector(selector + ' li:last-child [aria-hidden]').textContent; }",
+      [tagList(alpha)]), "+1");
+    assert.equal(await evaluate("function(selector) { return document.querySelector(selector + ' li:last-child .sr-only').textContent; }",
+      [tagList(alpha)]), "1 more tag");
+    assert.ok(z.string().parse(await evaluate("function(selector) { return document.querySelector(selector).getAttribute('aria-describedby'); }",
+      [open(alpha)])).includes(`task-${alpha}-tags`));
     const alphaDocument = (await task(alpha)).description_content;
     assert.ok(alphaDocument);
     assert.equal((await task(alpha)).description, "Task with a diagram");
@@ -228,10 +259,20 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await click(open(alpha));
     await has(`${dialog} .rich-text strong`);
     await has(descriptionImage);
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('dialog:modal ul[role=list] li')].map(item => item.textContent)"), alphaTags);
     await press("Escape", 27);
     await waitFor(async () => !await exists(dialog), "close formatted task detail");
     assert.equal(await boardTop(), initialBoardTop);
-    const beta = await create("Task Beta");
+    const beta = await create("Task Beta", async () => {
+      await click(tagInput);
+      await send("Input.insertText", { text: "Draft tag" });
+    });
+    assert.deepEqual((await task(beta)).tags, ["Draft tag"]);
+    await edit(beta);
+    await click(`${dialog} button[aria-label="Remove tag Draft tag"]`);
+    await click(confirm);
+    await waitFor(async () => !await exists(dialog), "save an empty label list");
+    assert.deepEqual((await task(beta)).tags, []);
     const addInProgress = column(progress.id) + " [data-new-task]";
     assert.equal(await evaluate("document.querySelectorAll('[data-new-task]').length"), 4);
     assert.equal(await evaluate("new Set([...document.querySelectorAll('[data-stage]')].map(column => getComputedStyle(column).backgroundImage)).size"), 4);
@@ -277,6 +318,13 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await setViewport(390, 844, true);
     await send("Emulation.setTouchEmulationEnabled", { enabled: true });
     await waitFor(() => visible(toggle(todo.id) + '[aria-expanded="true"]'), "the first populated column is expanded on mobile");
+    assert.equal(await evaluate(`function(selector) {
+      const list = document.querySelector(selector);
+      if (!list.getClientRects().length) return false;
+      const bounds = list.getBoundingClientRect();
+      return [...list.querySelectorAll("li")].every(item => item.scrollWidth <= item.clientWidth
+        && item.getBoundingClientRect().right <= bounds.right);
+    }`, [tagList(alpha)]), true, "Long and compact tags fit the narrow card");
     assert.equal(await visible(list(progress.id)), false);
     await evaluate('function(selector) { document.querySelector(selector).scrollIntoView({block:"center",behavior:"instant"}); }', [toggle(progress.id)]);
     const togglePoint = await point(toggle(progress.id));
@@ -424,6 +472,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     await evaluate("document.querySelectorAll('dialog:modal summary')[1].focus()");
     await press("Enter", 13);
     await has(`${dialog} details[open] .rich-text strong`);
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('dialog:modal details[open] ul[role=list] li')].map(item => item.textContent)"), alphaTags);
     assert.equal(await evaluate("document.querySelector('dialog:modal details[open] img').getAttribute('src').endsWith('?preview=1')"), true);
     assert.equal(await exists(`${dialog} [data-edit-task], ${dialog} [data-archive-task]`), false);
     await press("Escape", 27);

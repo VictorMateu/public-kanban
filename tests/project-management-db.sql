@@ -39,6 +39,8 @@ END;
 $$;
 INSERT INTO public.tasks (project_id, column_id, title)
 SELECT c.project_id, c.id, 'Private task' FROM public.columns c JOIN lifecycle_fixtures f ON f.id = c.project_id WHERE c.stage = 'todo';
+UPDATE public.tasks SET tags = ARRAY['Private project tag']
+WHERE project_id IN (SELECT id FROM lifecycle_fixtures WHERE NOT published OR hidden) AND NOT is_system;
 INSERT INTO public.project_assets (id, project_id, object_path, status, byte_size, width, height)
 SELECT asset_id, id, id::TEXT || '/' || asset_id::TEXT || '.webp', 'ready', 1, 1, 1 FROM lifecycle_fixtures;
 UPDATE public.projects p SET description_content = jsonb_build_object('type','doc','content',jsonb_build_array(jsonb_build_object('type','image','attrs',jsonb_build_object('assetId',f.asset_id::TEXT,'alt','Private image'))))
@@ -50,6 +52,14 @@ DO $$
 DECLARE fixture UUID; next_status TEXT; blank_reason TEXT;
 BEGIN
   SELECT id INTO fixture FROM lifecycle_fixtures LIMIT 1;
+  BEGIN
+    UPDATE public.tasks SET tags = ARRAY['1','2','3','4','5','6'] WHERE project_id = fixture;
+    RAISE EXCEPTION 'Oversized tag list accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+  BEGIN
+    UPDATE public.tasks SET tags = ARRAY[repeat('x', 31)] WHERE project_id = fixture;
+    RAISE EXCEPTION 'Oversized tag accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
   PERFORM pg_temp.assert_true((SELECT bool_and(status = 'development' AND cancellation_reason IS NULL) FROM public.projects WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'New projects default to active');
   BEGIN
     UPDATE public.projects SET status = 'archived' WHERE id = fixture;
@@ -87,6 +97,7 @@ BEGIN
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.projects WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Only published nonhidden full projects are public');
   PERFORM pg_temp.assert_true((SELECT count(*) = 4 FROM public.columns WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden columns remain private');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.tasks WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden tasks remain private');
+  PERFORM pg_temp.assert_true((SELECT tags = ARRAY[]::TEXT[] FROM public.tasks WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Tasks without supplied tags default to an empty list');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.project_assets WHERE project_id IN (SELECT id FROM lifecycle_fixtures)), 'Hidden asset metadata remains private');
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM storage.objects WHERE name IN (SELECT id::TEXT || '/' || asset_id::TEXT || '.webp' FROM lifecycle_fixtures)), 'Direct hidden Storage downloads denied');
 END;
@@ -101,7 +112,8 @@ BEGIN
   PERFORM pg_temp.assert_true((SELECT count(*) = 1 FROM public.projects WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Nonowner identity cannot bypass hidden access');
   PERFORM pg_temp.assert_true((SELECT count(*) = 2 FROM public.list_project_summaries() WHERE id IN (SELECT id FROM lifecycle_fixtures)), 'Nonowner sees only public summaries');
   BEGIN
-    PERFORM public.mutate_task('archive', (SELECT id FROM lifecycle_fixtures LIMIT 1), gen_random_uuid());
+    PERFORM public.mutate_task('create', (SELECT id FROM lifecycle_fixtures LIMIT 1), gen_random_uuid(),
+      p_tags => ARRAY['Denied']);
     RAISE EXCEPTION 'Nonowner task mutation unexpectedly allowed';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END;
@@ -138,12 +150,17 @@ BEGIN
   PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, first_id,
     p_column => wrong_column, p_title => 'Cross-project task', p_hidden => FALSE) = 'invalid', 'Wrong-project column is rejected');
   PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, first_id,
-    p_column => todo, p_title => 'First task', p_hidden => FALSE) = 'ok', 'Task is created');
+    p_column => todo, p_title => 'First task', p_hidden => FALSE, p_tags => ARRAY['Accessibility', repeat(chr(127793), 30)]) = 'ok', 'Task is created with its tags');
   PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, first_id,
-    p_column => todo, p_title => 'Retried creation', p_hidden => FALSE) = 'ok', 'Create is retry-safe');
-  PERFORM pg_temp.assert_true((SELECT title = 'First task' AND NOT is_system FROM public.tasks WHERE id = first_id), 'Create retry preserves the manual task');
+    p_column => todo, p_title => 'Retried creation', p_hidden => FALSE, p_tags => ARRAY['Replacement']) = 'ok', 'Create is retry-safe');
+  PERFORM pg_temp.assert_true((SELECT title = 'First task' AND NOT is_system AND tags = ARRAY['Accessibility', repeat(chr(127793), 30)]
+    FROM public.tasks WHERE id = first_id), 'Create retry preserves the manual task and its tags');
   PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, second_id,
-    p_column => todo, p_title => 'Second task', p_hidden => TRUE) = 'ok', 'Owner can create hidden task');
+    p_column => todo, p_title => 'Invalid task', p_hidden => TRUE, p_tags => ARRAY[chr(201) || 'TÉ', chr(233) || 'té']) = 'invalid',
+    'Case-insensitive duplicates are rejected at the database boundary');
+  PERFORM pg_temp.assert_true(NOT EXISTS (SELECT 1 FROM public.tasks WHERE id = second_id), 'Rejected tags do not create tasks');
+  PERFORM pg_temp.assert_true(public.mutate_task('create', visible_project, second_id,
+    p_column => todo, p_title => 'Second task', p_hidden => TRUE, p_tags => ARRAY['Hidden task tag']) = 'ok', 'Owner can create hidden task');
   SELECT updated_at INTO original_version FROM public.tasks WHERE id = first_id;
   PERFORM pg_temp.assert_true(public.mutate_task('move', visible_project, first_id, original_version, done,
     second_id) = 'stale', 'Anchor outside destination is rejected');
@@ -154,16 +171,25 @@ BEGIN
   SELECT updated_at INTO new_version FROM public.tasks WHERE id = first_id;
   PERFORM pg_temp.assert_true(public.mutate_task('edit', visible_project, first_id, new_version, todo,
     p_title => 'Reopened task', p_hidden => FALSE) = 'ok', 'Stage can change during editing');
-  PERFORM pg_temp.assert_true((SELECT completed_on IS NULL AND position = 7 FROM public.tasks WHERE id = first_id),
-    'Reopening clears completion and appends to column');
+  PERFORM pg_temp.assert_true((SELECT completed_on IS NULL AND position = 7 AND tags[1] = 'Accessibility' FROM public.tasks WHERE id = first_id),
+    'Moving and editing without a tag argument preserve tags');
+  PERFORM pg_temp.assert_true(public.mutate_task('edit', visible_project, first_id, '2000-01-01', todo,
+    p_title => 'Stale edit', p_hidden => FALSE, p_tags => ARRAY['Stale tag']) = 'stale', 'An old version cannot replace tags');
+  SELECT updated_at INTO new_version FROM public.tasks WHERE id = second_id;
+  PERFORM pg_temp.assert_true(public.mutate_task('edit', visible_project, second_id, new_version, todo,
+    p_title => 'Cleared tags', p_hidden => TRUE, p_tags => ARRAY[]::TEXT[]) = 'ok', 'An empty list removes all tags');
+  PERFORM pg_temp.assert_true((SELECT tags = ARRAY[]::TEXT[] FROM public.tasks WHERE id = second_id), 'Cleared tags stay empty');
+  SELECT updated_at INTO new_version FROM public.tasks WHERE id = second_id;
+  PERFORM pg_temp.assert_true(public.mutate_task('edit', visible_project, second_id, new_version, todo,
+    p_title => 'Second task', p_hidden => TRUE, p_tags => ARRAY['Hidden task tag']) = 'ok', 'An edit replaces the tags');
   SELECT updated_at INTO new_version FROM public.tasks WHERE id = first_id;
   PERFORM pg_temp.assert_true(public.mutate_task('archive', visible_project, first_id, new_version) = 'ok', 'Task is archived');
-  PERFORM pg_temp.assert_true((SELECT archived_at IS NOT NULL FROM public.tasks WHERE id = first_id), 'Archived data retained');
+  PERFORM pg_temp.assert_true((SELECT archived_at IS NOT NULL AND tags[1] = 'Accessibility' FROM public.tasks WHERE id = first_id), 'Archived data and tags retained');
 
   SELECT * INTO STRICT system_task FROM public.tasks
     WHERE project_id = visible_project AND is_system ORDER BY position, id LIMIT 1;
   PERFORM pg_temp.assert_true(public.mutate_task('edit', visible_project, system_task.id,
-    system_task.updated_at, todo, p_title => 'Changed title', p_hidden => FALSE) = 'invalid',
+    system_task.updated_at, todo, p_title => 'Changed title', p_hidden => FALSE, p_tags => ARRAY['System tag']) = 'invalid',
     'System tasks cannot be edited through the task RPC');
   PERFORM pg_temp.assert_true(public.mutate_task('archive', visible_project, system_task.id,
     system_task.updated_at) = 'invalid', 'System tasks cannot be archived through the task RPC');

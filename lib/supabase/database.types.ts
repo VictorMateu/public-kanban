@@ -168,6 +168,7 @@ export type Database = {
                     "position": number;
                     "priority": string | null;
                     "project_id": string;
+                    "tags": string[];
                     "title": string;
                     "updated_at": string;
                 };
@@ -186,6 +187,7 @@ export type Database = {
                     "position"?: number;
                     "priority"?: string | null;
                     "project_id": string;
+                    "tags"?: string[];
                     "title": string;
                     "updated_at"?: string;
                 };
@@ -203,6 +205,7 @@ export type Database = {
                     "position"?: number;
                     "priority"?: string | null;
                     "project_id"?: string;
+                    "tags"?: string[];
                     "title"?: string;
                     "updated_at"?: string;
                 };
@@ -266,6 +269,7 @@ export type Database = {
                     "p_operation": string;
                     "p_priority"?: string;
                     "p_project": string;
+                    "p_tags"?: string[];
                     "p_task": string;
                     "p_title"?: string;
                     "p_version"?: string;

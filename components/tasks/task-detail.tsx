@@ -1,7 +1,9 @@
 ﻿import { useTranslations } from "next-intl";
 import type { KanbanColumn } from "../../lib/columns/queries";
+import type { TaskPreview } from "../../lib/tasks/queries";
 import { RichTextContent } from "../projects/rich-text-content";
-import { TaskMetadata, type TaskPreview } from "./task-card";
+import { TaskMetadata } from "./task-metadata";
+import { TaskTags } from "./task-tags";
 
 export function TaskDetail({ task, stage, preview }: { task: TaskPreview; stage: KanbanColumn["stage"] | undefined; preview?: boolean }) {
   const t = useTranslations("Task");
@@ -9,6 +11,7 @@ export function TaskDetail({ task, stage, preview }: { task: TaskPreview; stage:
   const board = useTranslations("Board");
   return <div className="space-y-4">
     <TaskMetadata task={task} detail status={stage ? { label: management("stage"), value: board(stage) } : undefined} />
+    <TaskTags tags={task.tags} detail />
     {task.description_content ? <RichTextContent document={task.description_content} preview={preview} />
       : <p className="leading-relaxed whitespace-pre-wrap wrap-anywhere">{task.description || t("noDescription")}</p>}
   </div>;

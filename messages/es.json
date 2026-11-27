@@ -85,7 +85,9 @@
     "medium": "media",
     "high": "alta",
     "dueDate": "Fecha límite:",
-    "completedOn": "Completada:"
+    "completedOn": "Completada:",
+    "tags": "Etiquetas",
+    "moreTags": "{count, plural, one {# etiqueta más} other {# etiquetas más}}"
   },
   "TaskManagement": {
     "addTask": "Añadir tarea",
@@ -94,6 +96,10 @@
     "editTask": "Editar tarea",
     "title": "Título",
     "description": "Descripción",
+    "addTag": "Añadir",
+    "removeTag": "Quitar etiqueta {tag}",
+    "tagLimits": "Opcional. Hasta {count} etiquetas de {length} caracteres cada una.",
+    "invalidTag": "Introduce una etiqueta distinta dentro de los límites indicados.",
     "stage": "Estado",
     "noPriority": "Sin prioridad",
     "openCalendar": "Abrir calendario",
@@ -114,7 +120,7 @@
     "close": "Cerrar",
     "save": "Guardar tarea",
     "saving": "Guardando…",
-    "invalid": "Revisa el título, la descripción y la fecha y vuelve a intentarlo.",
+    "invalid": "Revisa el título, la descripción, las etiquetas y la fecha y vuelve a intentarlo.",
     "stale": "El tablero ha cambiado. Vuelve a abrir la tarea e inténtalo de nuevo.",
     "unauthorized": "Se requiere acceso de administrador.",
     "unavailable": "No se pudo guardar el cambio. Inténtalo de nuevo."

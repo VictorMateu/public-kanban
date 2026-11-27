@@ -1139,6 +1139,12 @@ transaction. Direct column and task writes are denied to application roles.
 Public reads use the anonymous client and require a visible, published
 project and a visible, active task.
 
+Task tags use `tasks.tags` and are persisted in the same transaction as
+creation or editing. Apply the task tags migration before running the new
+application build against Supabase. An omitted RPC tag argument keeps the
+current value on edit, and an empty array clears it. Moving and archiving
+preserve tags. See the [task tag decision](adr/0005-task-tags.md).
+
 Run `node --test tests/task-browser.ts` against a local production server and
 Supabase with the existing local administrator configured. The test uses an
 isolated Chromium profile and removes only its own project fixture. The

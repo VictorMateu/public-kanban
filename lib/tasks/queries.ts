@@ -8,7 +8,7 @@ import type { z } from "zod";
 import { createPublicSupabaseClient } from "../supabase/public";
 import type { Database } from "../supabase/database.types";
 import { richTextDocumentSchema, type RichTextDocument } from "../projects/rich-text";
-import { taskPrioritySchema } from "./schemas";
+import { taskPrioritySchema, taskTagsSchema } from "./schemas";
 
 const prioritySchema = taskPrioritySchema.nullable();
 // PostgreSQL TEXT CHECK constraints generate a string type; validate before narrowing it.
@@ -16,10 +16,17 @@ export type Task = Omit<Database["public"]["Tables"]["tasks"]["Row"], "priority"
   priority: z.infer<typeof prioritySchema>;
   description_content: RichTextDocument | null;
 };
+export type TaskPreview = Pick<Task, "id" | "column_id" | "title" | "description" | "description_content" | "priority" | "due_date" | "completed_on" | "is_hidden" | "is_system" | "tags">;
+
 const descriptionSchema = richTextDocumentSchema.nullable();
 
 function parseTask(row: Database["public"]["Tables"]["tasks"]["Row"]): Task {
-  return { ...row, priority: prioritySchema.parse(row.priority), description_content: descriptionSchema.parse(row.description_content) };
+  return {
+    ...row,
+    priority: prioritySchema.parse(row.priority),
+    description_content: descriptionSchema.parse(row.description_content),
+    tags: taskTagsSchema.parse(row.tags),
+  };
 }
 
 export async function listPublishedTasks(projectId: string): Promise<Task[]> {

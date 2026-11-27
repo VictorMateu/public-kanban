@@ -1,8 +1,9 @@
 import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import type { KanbanColumn } from "../../lib/columns/queries";
+import type { TaskPreview } from "../../lib/tasks/queries";
 import { EmptyState } from "../shared/empty-state";
-import { TaskCard, type TaskCardControl, type TaskPreview } from "./task-card";
+import { TaskCard, type TaskCardControl } from "./task-card";
 import styles from "./task-board.module.css";
 
 const stageIcons = {

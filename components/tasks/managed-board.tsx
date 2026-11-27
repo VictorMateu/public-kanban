@@ -6,7 +6,7 @@ import { mutateTask } from "../../app/projects/task-actions";
 import type { KanbanColumn } from "../../lib/columns/queries";
 import { plainTextDocument, RICH_TEXT_LIMITS, type RichTextDocument, type RichTextInline } from "../../lib/projects/rich-text";
 import type { Task } from "../../lib/tasks/queries";
-import { TASK_DESCRIPTION_LIMIT, taskPrioritySchema, type TaskMutation, type TaskMutationResult } from "../../lib/tasks/schemas";
+import { TASK_DESCRIPTION_LIMIT, taskPrioritySchema, taskTagsSchema, type TaskMutation, type TaskMutationResult } from "../../lib/tasks/schemas";
 import { RichTextEditor } from "../projects/rich-text-editor";
 import { ProjectDialog } from "../projects/project-dialog";
 import selectStyles from "../shared/select.module.css";
@@ -14,12 +14,15 @@ import { ArchivedTasks } from "./archived-tasks";
 import { BoardColumns, type DropTarget } from "./board-columns";
 import { TaskDetail } from "./task-detail";
 import { TaskDateField } from "./task-date-field";
+import { TaskTagsField } from "./task-tags-field";
 import boardStyles from "./task-board.module.css";
 import { useTaskDrag } from "./use-task-drag";
 
 type Editor = { id: string; columnId: string; task?: Task };
 const fieldClass = "min-h-11 w-full min-w-0 rounded-xl border border-border/30 bg-surface px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
-const taskFormFields = { columnId: "columnId", title: "title", priority: "priority", dueDate: "due_date", hidden: "hidden" } as const;
+const taskFormFields = {
+  columnId: "columnId", title: "title", priority: "priority", dueDate: "due_date", hidden: "hidden", tags: "tags", tagDraft: "tagDraft",
+} as const;
 
 function initialDescription(task?: Task): RichTextDocument {
   if (task?.description_content) return task.description_content;
@@ -120,8 +123,10 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
       priority: fields.get(taskFormFields.priority), due_date: String(fields.get(taskFormFields.dueDate)), hidden: fields.has(taskFormFields.hidden),
     };
     const priority = values.priority === "" ? "" as const : taskPrioritySchema.safeParse(values.priority).data;
-    if (priority === undefined) { setError("invalid"); return; }
-    const details = { ...values, priority };
+    const tagDraft = String(fields.get(taskFormFields.tagDraft) ?? "").trim();
+    const tags = taskTagsSchema.safeParse([...fields.getAll(taskFormFields.tags), ...(tagDraft ? [tagDraft] : [])]);
+    if (priority === undefined || !tags.success) { setError("invalid"); return; }
+    const details = { ...values, priority, tags: tags.data };
     submit(task ? { ...details, operation: "edit", version: task.updated_at } : { ...details, operation: "create" });
   }
 
@@ -174,6 +179,8 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
           {editor && <RichTextEditor label={t("description")} projectId={projectId} taskId={editor.id}
             initial={initialDescription(task)} maxTextLength={TASK_DESCRIPTION_LIMIT} disabled={pending}
             onBusyChange={setUploading} onChange={(value, valid) => setContent(valid ? value : null)} />}
+          <TaskTagsField name={taskFormFields.tags} draftName={taskFormFields.tagDraft}
+            initialTags={task?.tags ?? []} fieldClass={fieldClass} />
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="grid gap-1">{t("stage")}
               <select className={`${fieldClass} ${selectStyles.select}`} name={taskFormFields.columnId} required defaultValue={editor?.columnId}>

@@ -28,6 +28,7 @@ export async function mutateTask(input: unknown): Promise<TaskMutationResult> {
           : task.descriptionContent ? richTextToPlainText(task.descriptionContent).trim() || undefined : undefined,
         p_description_content: task.descriptionContent ?? undefined,
         p_priority: task.priority ?? undefined, p_due_date: task.due_date ?? undefined, p_hidden: task.hidden,
+        p_tags: task.tags,
       }),
     });
     if (error) return error.code === INSUFFICIENT_PRIVILEGE ? "unauthorized" : "unavailable";

@@ -85,7 +85,9 @@
     "medium": "mitjana",
     "high": "alta",
     "dueDate": "Data límit:",
-    "completedOn": "Completada:"
+    "completedOn": "Completada:",
+    "tags": "Etiquetes",
+    "moreTags": "{count, plural, one {# etiqueta més} other {# etiquetes més}}"
   },
   "TaskManagement": {
     "addTask": "Afegeix una tasca",
@@ -94,6 +96,10 @@
     "editTask": "Edita la tasca",
     "title": "Títol",
     "description": "Descripció",
+    "addTag": "Afegeix",
+    "removeTag": "Treu l’etiqueta {tag}",
+    "tagLimits": "Opcional. Fins a {count} etiquetes de {length} caràcters cadascuna.",
+    "invalidTag": "Introdueix una etiqueta diferent dins dels límits indicats.",
     "stage": "Estat",
     "noPriority": "Sense prioritat",
     "openCalendar": "Obre el calendari",
@@ -114,7 +120,7 @@
     "close": "Tanca",
     "save": "Desa la tasca",
     "saving": "S’està desant…",
-    "invalid": "Revisa el títol, la descripció i la data i torna-ho a provar.",
+    "invalid": "Revisa el títol, la descripció, les etiquetes i la data i torna-ho a provar.",
     "stale": "El tauler ha canviat. Torna a obrir la tasca i torna-ho a provar.",
     "unauthorized": "Cal accés d’administrador.",
     "unavailable": "No s’ha pogut desar el canvi. Torna-ho a provar."

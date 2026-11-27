@@ -43,6 +43,7 @@ The owner selected a presentation-only summary for the home page, with an introd
 - Support creating, reading, editing, archiving and individually hiding tasks. Archiving removes a task from the board and preserves its data. The owner can open a read-only archive from the same project, ordered most recently archived first.
 - A task belongs directly to one project. The owner can select its state in the edit dialog, drag the card to a specific position in or across columns, or press Alt + Up or Alt + Down on the focused card to reorder it within its column.
 - Task content includes a title and an optional rich-text description with images. The form and detail dialog reuse the project editor and renderer. Existing plain-text descriptions are readable and editable.
+- A task can have up to five owner-authored tags of up to 30 characters each. Tags preserve their casing and order, trim surrounding whitespace and must be unique within the task regardless of case. The card shows the first two tags and the number remaining. The detail and the owner-only archive show all tags. Tags follow task and project visibility and remain in the language in which the owner wrote them.
 - Priority and an expected completion date are optional.
 - Entering Done records the actual completion date automatically. Leaving Done clears it. The date is read-only.
 - A hidden task inside a public project is visible only to the administrator. Task images follow the visibility of the referencing task and its project.

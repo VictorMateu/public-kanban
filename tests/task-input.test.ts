@@ -44,3 +44,27 @@ test("task mutations validate rich descriptions and preserve image-only content"
   assert.equal(parse([{ ...image, attrs: { ...image.attrs, assetId: "external-image" } }]).success, false);
   assert.equal(parse([{ type: "paragraph", content: [{ type: "text", text: "a".repeat(10001) }] }]).success, false);
 });
+
+test("task mutations trim labels, preserve their order and distinguish omission from clearing", () => {
+  const input = {
+    ...fields, operation: "edit", projectId: randomUUID(), taskId: randomUUID(), columnId: randomUUID(),
+    hidden: false, version: "2026-11-27T10:00:00Z",
+  };
+  const parse = (tags?: unknown) => {
+    const result = taskMutationSchema.parse({ ...input, tags });
+    assert.equal(result.operation, "edit");
+    return result.tags;
+  };
+  assert.equal(parse(), undefined);
+  assert.deepEqual(parse([]), []);
+  const longTag = String.fromCodePoint(0x1f331).repeat(30);
+  assert.deepEqual(parse(["  Accessibilité ", "UI", longTag, "QA", "Docs"]), ["Accessibilité", "UI", longTag, "QA", "Docs"]);
+  for (const tags of [
+    [" ÉTÉ", "été "], ["\u00a0", "UI"], [longTag + "x"], ["A", "B", "C", "D", "E", "F"], ["a\0b"], [null],
+  ]) {
+    assert.equal(taskMutationSchema.safeParse({ ...input, tags }).success, false);
+  }
+  assert.equal(taskMutationSchema.safeParse({
+    operation: "archive", projectId: input.projectId, taskId: input.taskId, version: input.version, tags: [],
+  }).success, false);
+});
