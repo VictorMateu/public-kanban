@@ -1,7 +1,9 @@
 ﻿import { useTranslations } from "next-intl";
 import type { KanbanColumn } from "../../lib/columns/queries";
+import type { TaskPreview } from "../../lib/tasks/queries";
 import { RichTextContent } from "../projects/rich-text-content";
-import { TaskMetadata, TaskTags, type TaskPreview } from "./task-card";
+import { TaskMetadata } from "./task-metadata";
+import { TaskTags } from "./task-tags";
 
 export function TaskDetail({ task, stage, preview }: { task: TaskPreview; stage: KanbanColumn["stage"] | undefined; preview?: boolean }) {
   const t = useTranslations("Task");

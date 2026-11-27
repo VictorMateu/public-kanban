@@ -16,6 +16,8 @@ export type Task = Omit<Database["public"]["Tables"]["tasks"]["Row"], "priority"
   priority: z.infer<typeof prioritySchema>;
   description_content: RichTextDocument | null;
 };
+export type TaskPreview = Pick<Task, "id" | "column_id" | "title" | "description" | "description_content" | "priority" | "due_date" | "completed_on" | "is_hidden" | "is_system" | "tags">;
+
 const descriptionSchema = richTextDocumentSchema.nullable();
 
 function parseTask(row: Database["public"]["Tables"]["tasks"]["Row"]): Task {

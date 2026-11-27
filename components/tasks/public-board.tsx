@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { KanbanColumn } from "../../lib/columns/queries";
-import type { TaskPreview } from "./task-card";
+import type { TaskPreview } from "../../lib/tasks/queries";
 import { ProjectDialog } from "../projects/project-dialog";
 import { BoardColumns } from "./board-columns";
 import { TaskDetail } from "./task-detail";
