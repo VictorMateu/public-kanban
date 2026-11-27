@@ -1438,6 +1438,15 @@ retained. The generated AGENTS.md block was preserved.
 
 ## Strict CI and security pipeline — 2026-11-14
 
+### Dependabot merge automation — 2026-11-27
+
+Local validation passed for `npm run lint`, `npm run typecheck`, `npm test`
+(100 tests), `npm run build`, the shell policy tests and `actionlint`. A
+read-only scan against GitHub found five eligible updates (PRs #22–#25 and
+#27) and excluded the ESLint major update (PR #26). The scan checked the
+signed commits, their current base and both successful PR workflows. It did
+not exercise the GitHub App merge or the resulting production release.
+
 The owner approved GitHub Actions validation, low-severity vulnerability blocking, CodeQL, Gitleaks, Dependency Review, weekly Dependabot proposals and documentation, with deployment explicitly deferred. The SQL suite's two fixture users and temporary administrator authorization were approved only on a fresh disposable CI database. [ADR 0004](adr/0004-strict-ci-and-security.md) records this accepted policy; the [development guide](development.md#continuous-integration-and-security) describes operation and the still-pending GitHub activation.
 
 ### Implemented scope
