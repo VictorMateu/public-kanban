@@ -275,3 +275,24 @@ characters of the description for every published project. It still returns a
 null slug for hidden projects. Drafts, hidden project detail, rich documents,
 assets, columns and tasks keep their existing access policies. Hidden visitor
 cards use the decorative cover and provide no navigation to the board.
+
+## Task comments and images
+
+The project uses a task-owned comments table with per-comment visibility
+and private as the default. The administrator writes through an RPC that
+checks the task and project, rejects changes to archived tasks, and
+checks the saved version before edits or deletion. The public comment
+policy checks the comment flag and the visibility of both parents.
+
+Comment images reuse the private bucket and controlled image route.
+Their metadata binds them to a comment UUID reserved before saving.
+Project descriptions, task descriptions and comments have separate image
+scopes. The comment RPC only accepts ready images within its comment
+scope. Public access to an image requires a public reference in that
+comment and a visible task and project. An unreferenced image remains
+private.
+
+Making comments inherit task visibility alone would expose working notes
+on public tasks. A separate bucket would isolate comment uploads at the
+cost of duplicating storage controls. The shared bucket retains the
+existing file cleanup policy.

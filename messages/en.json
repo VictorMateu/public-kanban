@@ -1,4 +1,35 @@
 {
+  "TaskComments": {
+    "history": "History",
+    "shortcut": "Ctrl+Enter or ⌘+Enter",
+    "imagePending": "Insert or clear the selected image before posting.",
+    "heading": "Comments",
+    "empty": "There are no comments yet.",
+    "loading": "Loading comments…",
+    "loadFailed": "Comments could not be loaded.",
+    "retry": "Try again",
+    "loadOlder": "Load earlier comments",
+    "add": "Add comment",
+    "edit": "Edit comment",
+    "delete": "Delete comment",
+    "deletePrompt": "Permanently delete this comment?",
+    "deleting": "Deleting comment…",
+    "cancel": "Cancel",
+    "content": "Comment",
+    "visibility": "Visibility",
+    "private": "Private",
+    "public": "Public",
+    "publicHelp": "Visitors can read this comment and see its images while the task and project are public.",
+    "post": "Post comment",
+    "save": "Save comment",
+    "saving": "Saving comment…",
+    "edited": "Edited",
+    "invalid": "Add text or an image uploaded for this comment.",
+    "stale": "The comment or task has changed. Reload the comments to continue.",
+    "reload": "Reload comments",
+    "unauthorized": "An administrator session is required.",
+    "unavailable": "The comment could not be saved or deleted. Try again."
+  },
   "Common": {
     "appName": "Project Garden",
     "sidebar": "Workspace sidebar",
@@ -74,6 +105,7 @@
     "done": "Done"
   },
   "Task": {
+    "detailSections": "Task details",
     "openNamed": "Open {title}",
     "noDescription": "No description yet.",
     "visibility": "Visibility",
@@ -159,6 +191,7 @@
     "description": "The board is under construction. Here you will be able to explore portfolio projects, their tasks and progress."
   },
   "Editor": {
+    "attachImage": "Attach image",
     "formatting": "Text formatting",
     "bold": "Bold",
     "italic": "Italic",

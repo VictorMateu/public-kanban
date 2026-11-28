@@ -72,10 +72,8 @@ The current information requirement is description, objectives and a repository 
 
 ## Task comments
 
-The owner could add comments to tasks and choose each comment's visibility.
-Public comments would remain subject to the visibility of the parent task and
-project. Editing, deletion, available visibility options, and presentation need
-definition before implementation. Comments are not part of the initial Kanban.
+The owner has since approved rich-text task comments with images, editing,
+deletion and individual visibility. See the [task requirements](product.md#tasks).
 
 ## Customizable Kanban columns
 

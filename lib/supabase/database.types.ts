@@ -51,6 +51,7 @@ export type Database = {
             "project_assets": {
                 Row: {
                     "byte_size": number;
+                    "comment_id": string | null;
                     "created_at": string;
                     "height": number;
                     "id": string;
@@ -64,6 +65,7 @@ export type Database = {
                 ComputedFields: never;
                 Insert: {
                     "byte_size": number;
+                    "comment_id"?: string | null;
                     "created_at"?: string;
                     "height": number;
                     "id": string;
@@ -76,6 +78,7 @@ export type Database = {
                 };
                 Update: {
                     "byte_size"?: number;
+                    "comment_id"?: string | null;
                     "created_at"?: string;
                     "height"?: number;
                     "id"?: string;
@@ -151,6 +154,42 @@ export type Database = {
                     "updated_at"?: string;
                 };
                 Relationships: [
+                ];
+            };
+            "task_comments": {
+                Row: {
+                    "body": Json;
+                    "created_at": string;
+                    "id": string;
+                    "is_public": boolean;
+                    "task_id": string;
+                    "updated_at": string;
+                };
+                ComputedFields: never;
+                Insert: {
+                    "body": Json;
+                    "created_at"?: string;
+                    "id": string;
+                    "is_public"?: boolean;
+                    "task_id": string;
+                    "updated_at"?: string;
+                };
+                Update: {
+                    "body"?: Json;
+                    "created_at"?: string;
+                    "id"?: string;
+                    "is_public"?: boolean;
+                    "task_id"?: string;
+                    "updated_at"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "task_comments_task_id_fkey";
+                        columns: ["task_id"];
+                        isOneToOne: false;
+                        referencedRelation: "tasks";
+                        referencedColumns: ["id"];
+                    }
                 ];
             };
             "tasks": {
@@ -257,6 +296,18 @@ export type Database = {
                     "slug": string;
                     "status": string;
                 }[];
+            };
+            "mutate_task_comment": {
+                Args: {
+                    "p_operation": string;
+                    "p_project": string;
+                    "p_task": string;
+                    "p_comment": string;
+                    "p_version"?: string;
+                    "p_body"?: Json;
+                    "p_public"?: boolean;
+                };
+                Returns: string;
             };
             "mutate_task": {
                 Args: {

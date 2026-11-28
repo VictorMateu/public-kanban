@@ -368,6 +368,7 @@ input:focus-visible + .project-visibility-switch { outline: 2px solid var(--pale
 .editor-tool:disabled { opacity: .35; }
 .editor-tool.project-close-icon { border-radius: 50%; }
 .editor-writing-area { position: relative; min-height: 12rem; padding: 1.25rem; }
+.editor-shell[data-compact] .editor-writing-area { min-height: 5.5rem; padding: .75rem; }
 .editor-writing-area:has(> p:only-child > br.ProseMirror-trailingBreak:only-child)::before {
   position: absolute;
   inset-inline: 1.25rem;

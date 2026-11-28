@@ -1049,6 +1049,23 @@ pgTAP suite's project-delete expectation was updated but that suite must still
 not run against a populated owner instance.
 ## Task management
 
+The task dialog requests an exact visible comment count when the detail
+opens and refreshes it after posting or deleting. When the Comments tab
+first opens, the dialog fetches `/task-comments/[taskId]` with 20 comments
+per page and an option to load earlier entries. The
+regular view uses the public Supabase client even when an administrator
+cookie is present. The managed and archive views request a verified
+owner preview. Comment actions use the existing rich-text validation and
+image workflow with a comment-specific upload scope. Switching tabs
+preserves the current draft while the dialog is open. The composer
+keeps a selected image pending until the owner inserts or clears it.
+
+Run `node --test tests/task-comments-browser.ts` against the configured local
+app and Supabase instance with an existing administrator. The test uses
+a temporary project containing a task, comments and an image. Run
+`tests/task-comments-db.sql` with local `psql` to verify RLS, the mutation
+RPC and image access with rolled-back fixtures.
+
 Project creation initializes five hidden starter tasks in the To do column in
 its database transaction. The versioned migration extends the project insert
 trigger. Later saves, draft retries and publication do not seed again. Starter

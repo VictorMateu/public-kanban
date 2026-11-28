@@ -47,6 +47,7 @@ The owner selected a presentation-only summary for the home page, with an introd
 - Priority and an expected completion date are optional.
 - Entering Done records the actual completion date automatically. Leaving Done clears it. The date is read-only.
 - A hidden task inside a public project is visible only to the administrator. Task images follow the visibility of the referencing task and its project.
+- The task detail separates Description and Comments into tabs. The Comments tab shows the total visible to the viewer. The administrator can write a rich-text comment below the chronological history, submit with Ctrl+Enter or Command+Enter, and edit or delete saved comments from their icon controls. The editor places formatting above the text and expands the attachment control on demand. Each comment defaults to private and has its own visibility switch. Visitors can read a public comment and see its referenced images while both the task and project are public. The owner can read comments on archived tasks.
 - Successful task changes update the board without a confirmation banner. Failures remain visible.
 
 The owner chose the warm gradient design from the visual proposals. The board takes the remaining viewport height below the project header, and task lists scroll vertically within their columns. Very short windows allow document scrolling to keep controls reachable. The owner's Add task action sits directly below the cards and scrolls with the column. Activating a card opens the task detail. Visitors can read visible tasks, and the owner can edit or archive from the dialog. The detail groups status, priority, dates and visibility above the description. On touch screens, swiping scrolls and holding the card initiates dragging.
@@ -60,7 +61,7 @@ The owner accepts the current 1,000-task read limit for now. The public board, o
 ### Progress and evolution
 
 - A current-state Kanban is the minimum required experience.
-- [Task comments](ideas.md#task-comments), [customizable columns](ideas.md#customizable-kanban-columns), and [history and development updates](ideas.md#history-and-development-updates) are possible future extensions, not requirements for the initial Kanban or approved implementation work.
+- [Customizable columns](ideas.md#customizable-kanban-columns) and [history and development updates](ideas.md#history-and-development-updates) are possible future extensions, not requirements for the initial Kanban or approved implementation work.
 
 ## Technical and quality boundaries
 

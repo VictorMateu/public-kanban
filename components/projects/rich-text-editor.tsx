@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { EditorImageUpload } from "./editor-image-upload";
@@ -10,11 +10,14 @@ import { projectEditorExtensions, projectEditorExtensionsWithPreviews } from "..
 import { richTextDocumentSchema, richTextToPlainText, safeLinkSchema, type RichTextDocument } from "../../lib/projects/rich-text";
 
 
-export function RichTextEditor({ label, initial, disabled, projectId, taskId, imageStaging, maxTextLength, onBusyChange, onChange }: {
+export function RichTextEditor({ label, initial, disabled, projectId, taskId, commentId, imageStaging, maxTextLength, autoFocus, attachmentActions, onImageSelectionChange, onBusyChange, onChange }: {
   label: string; initial: RichTextDocument; disabled: boolean;
-  projectId?: string; taskId?: string; imageStaging?: ProjectImageStaging; onBusyChange: (busy: boolean) => void;
+  projectId?: string; taskId?: string; commentId?: string; imageStaging?: ProjectImageStaging; onBusyChange: (busy: boolean) => void;
   maxTextLength?: number;
-  onChange: (value: string, valid: boolean) => void;
+  autoFocus?: boolean;
+  attachmentActions?: ReactNode;
+  onImageSelectionChange?: (selected: boolean) => void;
+  onChange: (value: string, valid: boolean, document: RichTextDocument | null) => void;
 }) {
   const t = useTranslations("Editor");
   const id = useId();
@@ -27,11 +30,12 @@ export function RichTextEditor({ label, initial, disabled, projectId, taskId, im
     const parsed = richTextDocumentSchema.safeParse(document);
     const valid = parsed.success && (maxTextLength === undefined || [...richTextToPlainText(parsed.data)].length <= maxTextLength);
     setInvalid(!valid);
-    onChange(JSON.stringify(document), valid);
+    onChange(JSON.stringify(document), valid, parsed.success ? parsed.data : null);
   };
   const extensions = useMemo(() => imageStaging ? projectEditorExtensionsWithPreviews(imageStaging.previewUrl) : projectEditorExtensions, [imageStaging]);
   const editor = useEditor({
     immediatelyRender: false,
+    autofocus: autoFocus ?? false,
     editable: !disabled,
     extensions,
     content: initial,
@@ -51,6 +55,7 @@ export function RichTextEditor({ label, initial, disabled, projectId, taskId, im
     undo: current?.can().undo() ?? false, redo: current?.can().redo() ?? false,
   }) });
   const button = "project-secondary-action";
+  const compact = Boolean(onImageSelectionChange);
   const toggles = editor && active ? [
     { key: "bold", pressed: active.bold, run: () => editor.chain().focus().toggleBold().run() },
     { key: "italic", pressed: active.italic, run: () => editor.chain().focus().toggleItalic().run() },
@@ -66,7 +71,7 @@ export function RichTextEditor({ label, initial, disabled, projectId, taskId, im
   return (
     <div>
       <p id={id + "-label"} className="mb-3 text-lg">{label}</p>
-      <div className="editor-shell">
+      <div className="editor-shell" data-compact={compact ? "" : undefined}>
         <fieldset disabled={disabled || uploading} className="min-w-0">
           <legend className="sr-only">{label}</legend>
           <div role="group" aria-label={t("formatting")} className="editor-toolbar">
@@ -97,7 +102,9 @@ export function RichTextEditor({ label, initial, disabled, projectId, taskId, im
           {!editor && <p role="status" className="p-4">{t("loading")}</p>}
           <EditorContent editor={editor} />
         </fieldset>
-        <EditorImageUpload projectId={projectId} taskId={taskId} imageStaging={imageStaging} disabled={disabled || !editor} onBusyChange={(busy) => { setUploading(busy); onBusyChange(busy); }} onInsert={(assetId, alt) => {
+        <EditorImageUpload projectId={projectId} taskId={taskId} commentId={commentId} imageStaging={imageStaging}
+          disabled={disabled || !editor} actions={attachmentActions} onSelectionChange={onImageSelectionChange}
+          onBusyChange={(busy) => { setUploading(busy); onBusyChange(busy); }} onInsert={(assetId, alt) => {
           if (!editor) return false;
           const document: unknown = editor.getJSON();
           const parsed = richTextDocumentSchema.safeParse(document);

@@ -170,7 +170,7 @@ test("owner manages tasks with the dialog, keyboard, pointer and touch", { timeo
     const descriptionEditor = `${dialog} [contenteditable=true][role=textbox]`;
     assert.match(z.string().parse(await evaluate("function(selector) { return document.querySelector(selector).closest('article').textContent; }", [open(architecture.id)])), /System task/u);
     await click(open(architecture.id));
-    await has(`${dialog} dl + .rich-text h3`);
+    await has(`${dialog} [role=tabpanel]:not([hidden]) .rich-text h3`);
     await has(`${dialog} .rich-text ul li`);
     assert.deepEqual(await evaluate("[...document.querySelectorAll('dialog:modal dl dd')].map(item => item.textContent)"), ["To do", "System task", "Hidden"]);
     assert.equal(await exists(`${dialog} fieldset, ${dialog} [data-edit-task], ${dialog} [data-archive-task]`), false);

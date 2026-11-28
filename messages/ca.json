@@ -1,4 +1,35 @@
 {
+  "TaskComments": {
+    "history": "Historial",
+    "shortcut": "Ctrl+Enter o ⌘+Enter",
+    "imagePending": "Insereix o treu la imatge seleccionada abans de publicar.",
+    "heading": "Comentaris",
+    "empty": "Encara no hi ha comentaris.",
+    "loading": "S'estan carregant els comentaris…",
+    "loadFailed": "No s'han pogut carregar els comentaris.",
+    "retry": "Torna-ho a provar",
+    "loadOlder": "Carrega els comentaris anteriors",
+    "add": "Afegeix un comentari",
+    "edit": "Edita el comentari",
+    "delete": "Suprimeix el comentari",
+    "deletePrompt": "Vols suprimir aquest comentari permanentment?",
+    "deleting": "S'està suprimint el comentari…",
+    "cancel": "Cancel·la",
+    "content": "Comentari",
+    "visibility": "Visibilitat",
+    "private": "Privat",
+    "public": "Públic",
+    "publicHelp": "Els visitants podran llegir aquest comentari i veure'n les imatges mentre la tasca i el projecte siguin públics.",
+    "post": "Publica el comentari",
+    "save": "Desa el comentari",
+    "saving": "S'està desant el comentari…",
+    "edited": "Editat",
+    "invalid": "Afegeix text o una imatge pujada per a aquest comentari.",
+    "stale": "El comentari o la tasca ha canviat. Torna a carregar els comentaris per continuar.",
+    "reload": "Torna a carregar els comentaris",
+    "unauthorized": "Has d'iniciar sessió com a administrador.",
+    "unavailable": "No s'ha pogut desar o suprimir el comentari. Torna-ho a provar."
+  },
   "Common": {
     "sidebar": "Barra lateral",
     "mainContent": "Contingut principal",
@@ -73,6 +104,7 @@
     "done": "Fet"
   },
   "Task": {
+    "detailSections": "Detall de la tasca",
     "openNamed": "Obre {title}",
     "noDescription": "Sense descripció.",
     "visibility": "Visibilitat",
@@ -158,6 +190,7 @@
     "description": "El tauler està en construcció. Aquí podràs conèixer els projectes del portafolis, les seves tasques i la seva evolució."
   },
   "Editor": {
+    "attachImage": "Adjunta una imatge",
     "formatting": "Format de text",
     "bold": "Negreta",
     "italic": "Cursiva",
