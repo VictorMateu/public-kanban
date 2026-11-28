@@ -49,6 +49,7 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
   const [error, setError] = useState<Exclude<TaskMutationResult, "ok"> | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [commentBusy, setCommentBusy] = useState(false);
   const [pending, startTransition] = useTransition();
   const reorderHintId = useId();
   const task = editor?.task;
@@ -155,10 +156,10 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
     {drag.preview && <div aria-hidden="true" className="pointer-events-none fixed z-50 max-w-48 rounded-lg border border-focus bg-surface p-2 text-sm shadow-panel wrap-anywhere"
       style={{ left: Math.min(drag.preview.point.x + 12, window.innerWidth - 200), top: drag.preview.point.y + 12 }}>{drag.preview.task.title}</div>}
 
-    <ProjectDialog id="task-editor" open={editor !== null} busy={pending || uploading} triggerRef={trigger}
+    <ProjectDialog id="task-editor" open={editor !== null} busy={pending || uploading || commentBusy} triggerRef={trigger}
       title={confirmArchive ? t("archiveTask") : task?.title ?? t("newTask")}
       closeLabel={t("close")} onClose={() => setEditor(null)}
-      leadingAction={task && !task.is_system && !confirmArchive && <button type="button" data-archive-task="" disabled={pending || uploading}
+      leadingAction={task && !task.is_system && !confirmArchive && <button type="button" data-archive-task="" disabled={pending || uploading || commentBusy}
         className="project-secondary-action me-auto"
         onClick={() => { setError(null); setConfirmArchive(true); setContent(null); }}>{t("archiveTask")}</button>}
       actions={task?.is_system ? null : confirmArchive && task
@@ -166,11 +167,12 @@ export function ManagedBoard({ projectId, columns, tasks, archived }: { projectI
           operation: "archive", projectId, taskId: task.id, version: task.updated_at,
         })}>{t("archiveTask")}</button>
         : showDetail
-          ? <button key="edit" type="button" data-edit-task="" className="project-primary-action" disabled={pending}
+          ? <button key="edit" type="button" data-edit-task="" className="project-primary-action" disabled={pending || commentBusy}
             onClick={() => { setShowDetail(false); document.getElementById("task-editor-heading")?.focus(); }}>{t("editTask")}</button>
           : <button key="save" type="submit" form={formId} className="project-primary-action" disabled={pending || uploading || content === null}>{t(pending ? "saving" : "save")}</button>}>
       {confirmArchive ? <p>{t("archivePrompt", { title: task?.title ?? "" })}</p> : showDetail && task ? (
-        <TaskDetail task={task} stage={taskColumn?.stage} preview />
+        <TaskDetail key={task.id} task={task} stage={taskColumn?.stage} preview
+          management={{ projectId, onBusyChange: setCommentBusy }} />
       ) : <form id={formId} key={editor?.id} onSubmit={save} className="space-y-4">
         <fieldset disabled={pending} className="grid min-w-0 gap-4">
           <label className="grid gap-1">{t("title")}

@@ -1,4 +1,35 @@
 {
+  "TaskComments": {
+    "history": "Historial",
+    "shortcut": "Ctrl+Enter o ⌘+Enter",
+    "imagePending": "Inserta o quita la imagen seleccionada antes de publicar.",
+    "heading": "Comentarios",
+    "empty": "Todavía no hay comentarios.",
+    "loading": "Cargando comentarios…",
+    "loadFailed": "No se han podido cargar los comentarios.",
+    "retry": "Volver a intentar",
+    "loadOlder": "Cargar comentarios anteriores",
+    "add": "Añadir comentario",
+    "edit": "Editar comentario",
+    "delete": "Borrar comentario",
+    "deletePrompt": "¿Quieres borrar este comentario de forma permanente?",
+    "deleting": "Borrando comentario…",
+    "cancel": "Cancelar",
+    "content": "Comentario",
+    "visibility": "Visibilidad",
+    "private": "Privado",
+    "public": "Público",
+    "publicHelp": "Los visitantes podrán leer este comentario y ver sus imágenes mientras la tarea y el proyecto sean públicos.",
+    "post": "Publicar comentario",
+    "save": "Guardar comentario",
+    "saving": "Guardando comentario…",
+    "edited": "Editado",
+    "invalid": "Añade texto o una imagen subida para este comentario.",
+    "stale": "El comentario o la tarea ha cambiado. Recarga los comentarios para continuar.",
+    "reload": "Recargar comentarios",
+    "unauthorized": "Debes iniciar sesión como administrador.",
+    "unavailable": "No se ha podido guardar o borrar el comentario. Vuelve a intentarlo."
+  },
   "Common": {
     "sidebar": "Barra lateral",
     "mainContent": "Contenido principal",
@@ -73,6 +104,7 @@
     "done": "Hecho"
   },
   "Task": {
+    "detailSections": "Detalle de la tarea",
     "openNamed": "Abrir {title}",
     "noDescription": "Sin descripción.",
     "visibility": "Visibilidad",
@@ -158,6 +190,7 @@
     "description": "El tablero está en construcción. Aquí podrás conocer los proyectos del portfolio, sus tareas y su evolución."
   },
   "Editor": {
+    "attachImage": "Adjuntar imagen",
     "formatting": "Formato de texto",
     "bold": "Negrita",
     "italic": "Cursiva",

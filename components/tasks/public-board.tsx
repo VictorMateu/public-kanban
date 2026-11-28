@@ -22,7 +22,7 @@ export function PublicBoard({ columns, tasks }: { columns: KanbanColumn[]; tasks
     })} />
     <ProjectDialog id="task-detail" title={task?.title ?? ""} open={Boolean(task)} closeLabel={t("close")}
       onClose={() => setSelectedId(null)} triggerRef={trigger}>
-      {task && <TaskDetail task={task} stage={columns.find(({ id }) => id === task.column_id)?.stage} />}
+      {task && <TaskDetail key={task.id} task={task} stage={columns.find(({ id }) => id === task.column_id)?.stage} />}
     </ProjectDialog>
   </>;
 }

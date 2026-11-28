@@ -2263,3 +2263,62 @@ and the formatter is available as a local command.
 `npm run build` passed. `npm audit --audit-level=low` reported zero
 vulnerabilities. No database, HTTP, or hosted CI checks were run for this
 development tooling change.
+
+## Task comments - 2026-11-27
+
+- `npm run lint`, `npm run typecheck`, `npm test` (103 tests),
+  `npm run build` and `git diff --check` passed.
+- Migration `20261127000200` was applied to local Supabase. The local
+  instance also contained the task-tags migration from another branch.
+  `supabase db lint --local --fail-on warning` and
+  `tests/task-comments-db.sql` passed. The SQL test checks owner and
+  nonowner writes, stale versions, task and image scope, and comment and
+  Storage access as visibility changes. Its fixtures roll back.
+- The focused Chromium test exercised the production app at 1440px and
+  390px. It checked keyboard opening and focus return, loading and retry,
+  private default visibility, upload and rendering of a real image,
+  publication, visitor reading, confirmed deletion, read-only archive
+  access and pagination. It also checked the public HTML and RSC payload
+  for private comment content and used the real image URL and Storage API.
+- The HTTP regression suite passed 30 checks and skipped the empty-catalog
+  case on the populated instance. The existing project image browser suite
+  passed its 10 checks. The task browser suite passed on the final build
+  after the owner dialog kept the Add comment control in place during loading.
+  Local integration tests used the existing administrator and preserved
+  the existing population. Owner visual review is pending.
+
+On 2026-11-28, the comment visibility field adopted the same select
+styles as the task and project forms. The focused Chromium test verified
+that Enter opens the styled picker and Escape closes it with focus
+retained inside the task dialog. Lint, type checking, 103 unit tests and
+the production build passed.
+
+The tabbed task detail and inline composer were verified in Chromium
+against the production build at desktop and mobile widths. The focused
+task and comment tests passed. They cover arrow-key tab navigation,
+draft preservation across tabs, ordinary Enter adding a line, Ctrl+Enter
+posting, and a real image inserted with Enter from the alternative-text
+field. Posting is blocked while a selected image is still pending.
+The project image browser suite passed all 10 checks. Lint, type checking,
+103 unit tests and the production build also passed. Owner review of the
+tab layout and attachment control is pending.
+
+The follow-up layout places the composer below the comment list and the
+formatting toolbar above the text area. Chromium verified both positions,
+the keyboard-operated visibility switch, and the labelled edit and delete
+icons. The counter updated after posting and deleting, counted more than
+one page in the archive, and excluded private comments from the public
+endpoint even with an administrator cookie. The task and comment browser
+suites, lint, type checking, 103 unit tests and the production build passed.
+
+The comment editor now groups image attachment and visibility in its
+footer. Chromium verified desktop alignment and mobile reflow, alongside
+the existing keyboard, attachment and comment publishing checks. Lint,
+type checking, 103 unit tests and the production build passed.
+
+After updating the branch to the main revision that includes task tags,
+the task detail retained its tags alongside the comment tabs. Lint,
+type checking, 104 unit tests and the production build passed. The HTTP
+and focused Chromium suites passed 33 checks and skipped the empty
+catalog check on the populated instance. The task comment and project
+management SQL suites passed with rolled-back fixtures.

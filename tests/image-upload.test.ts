@@ -19,7 +19,13 @@ test("multipart parser preserves the upload wire contract without accepting ambi
   const withTask = multipart();
   withTask.set("task_id", assetId);
   assert.deepEqual(parseImageUploadForm(withTask), { projectId, taskId: assetId, file });
-  for (const [key, value] of [["project_id", projectId], ["task_id", assetId], ["file", file]] as const) {
+  const commentId = "9c030518-c28f-411f-b67f-b7be1b0cdf27";
+  withTask.set("comment_id", commentId);
+  assert.deepEqual(parseImageUploadForm(withTask), { projectId, taskId: assetId, commentId, file });
+  const withoutTask = multipart();
+  withoutTask.set("comment_id", commentId);
+  assert.equal(parseImageUploadForm(withoutTask), null);
+  for (const [key, value] of [["project_id", projectId], ["task_id", assetId], ["comment_id", commentId], ["file", file]] as const) {
     const duplicate = multipart();
     duplicate.set(key, value);
     duplicate.append(key, value);
